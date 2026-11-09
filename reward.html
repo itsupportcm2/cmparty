@@ -62,16 +62,20 @@
         </div>
 
         <!-- Summary Counters -->
-        <div class="flex items-center gap-2.5 text-xs sm:text-sm">
-          <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-xl border border-white/20 text-center">
+        <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+          <div class="bg-blue-500/25 backdrop-blur px-3 py-2 rounded-xl border border-blue-300/30 text-center" title="จำนวนผู้ลงทะเบียนจาก Sheet Register">
+            <span class="block text-[11px] text-blue-100">ผู้ลงทะเบียน (Register)</span>
+            <span id="statRegistered" class="font-bold text-lg text-blue-200">0</span>
+          </div>
+          <div class="bg-white/15 backdrop-blur px-3 py-2 rounded-xl border border-white/20 text-center">
             <span class="block text-[11px] text-red-100">รางวัลทั้งหมด</span>
             <span id="statTotal" class="font-bold text-lg text-white">0</span>
           </div>
-          <div class="bg-green-500/25 backdrop-blur px-3.5 py-2 rounded-xl border border-green-300/30 text-center">
+          <div class="bg-green-500/25 backdrop-blur px-3 py-2 rounded-xl border border-green-300/30 text-center">
             <span class="block text-[11px] text-green-100">แจกแล้ว</span>
             <span id="statAssigned" class="font-bold text-lg text-green-300">0</span>
           </div>
-          <div class="bg-amber-500/25 backdrop-blur px-3.5 py-2 rounded-xl border border-amber-300/30 text-center">
+          <div class="bg-amber-500/25 backdrop-blur px-3 py-2 rounded-xl border border-amber-300/30 text-center">
             <span class="block text-[11px] text-amber-100">คงเหลือ</span>
             <span id="statRemaining" class="font-bold text-lg text-yellow-300">0</span>
           </div>
@@ -110,20 +114,22 @@
             </select>
           </div>
 
-          <!-- 2. กรอกรหัสพนักงาน (type="tel") -->
+          <!-- 2. กรอกรหัสพนักงาน (ดึงจาก Sheet Register) -->
           <div class="md:col-span-3">
             <label class="block text-xs font-semibold text-gray-600 mb-1">
-              <i class="fa-solid fa-id-card text-red-600 mr-1"></i>รหัสพนักงาน
+              <i class="fa-solid fa-id-card text-red-600 mr-1"></i>รหัสพนักงาน (Sheet Register)
             </label>
             <div class="relative">
               <input
                 type="tel"
                 inputmode="numeric"
                 id="empIdInput"
+                list="registeredEmployeesDatalist"
                 autocomplete="off"
-                placeholder="พิมพ์รหัส เช่น 672002"
+                placeholder="พิมพ์รหัสผู้ลงทะเบียน..."
                 class="w-full pl-3.5 pr-9 py-2.5 rounded-xl border border-gray-300 focus:border-red-600 focus:ring-2 focus:ring-red-500/20 outline-none text-sm font-bold text-red-700"
               />
+              <datalist id="registeredEmployeesDatalist"></datalist>
               <span id="empMatchIcon" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-green-600">
                 <i class="fa-solid fa-circle-check"></i>
               </span>
@@ -252,59 +258,122 @@
     let currentFilter = 'all';
     let currentMatchedEmployee = null;
 
-    // โหลดข้อมูลทั้งหมด (ดึงรายชื่อพนักงาน + UID จาก Sheet "Register" และรายการรางวัลจาก gid=195154721)
+    // ตรวจสอบว่าข้อมูล Gviz ที่ได้มาจาก Sheet "Register" จริงหรือไม่ (ต้องมีคอลัมน์ LINE UID หรือมีอย่างน้อย 6 คอลัมน์ ไม่ใช่แผ่นงานแรก)
+    function isValidRegisterGvizTable(gvizObj) {
+      if (!gvizObj || !gvizObj.table) return false;
+      const cols = gvizObj.table.cols || [];
+      const rows = gvizObj.table.rows || [];
+      if (cols.length >= 6) return true;
+      if (rows.length > 0 && rows[0].c && rows[0].c.length >= 6) return true;
+      return false;
+    }
+
+    // แปลงข้อมูลจาก Gviz ของ Sheet "Register" เป็น Map
+    function parseRegisterGvizToMap(gvizObj) {
+      const cols = (gvizObj.table && gvizObj.table.cols) || [];
+      const regRows = (gvizObj.table && gvizObj.table.rows) || [];
+      let labelC = (cols[2] && cols[2].label) ? String(cols[2].label) : '';
+      let labelD = (cols[3] && cols[3].label) ? String(cols[3].label) : '';
+
+      // หากหัวตารางอยู่ในแถวแรกของ rows (กรณี parsedNumHeaders = 0)
+      if (!labelC && !labelD && regRows.length > 0) {
+        const firstRow = regRows[0].c || [];
+        if (cleanCell(firstRow[1]) === 'รหัสพนักงาน') {
+          labelC = cleanCell(firstRow[2]);
+          labelD = cleanCell(firstRow[3]);
+        }
+      }
+
+      const isColCName = labelC.indexOf('ชื่อ') !== -1 && labelD.indexOf('แผนก') !== -1;
+      const newEmpMap = {};
+      const uidMap = {};
+
+      for (let i = 0; i < regRows.length; i++) {
+        const c = regRows[i].c || [];
+        const empId = cleanCell(c[1]);
+        if (!empId || empId === 'รหัสพนักงาน') continue;
+
+        const valC = cleanCell(c[2]);
+        const valD = cleanCell(c[3]);
+        const branch = cleanCell(c[4]);
+        const uid = cleanCell(c[5]);
+        const displayName = cleanCell(c[6]);
+        const pic = cleanCell(c[7]);
+
+        const empName = isColCName ? valC : valD;
+        const department = isColCName ? valD : valC;
+
+        uidMap[empId] = { uid, pictureUrl: pic };
+        newEmpMap[empId] = {
+          empId,
+          empName,
+          department,
+          branch,
+          uid,
+          displayName,
+          pictureUrl: pic
+        };
+      }
+      return { newEmpMap, uidMap };
+    }
+
+    // โหลดข้อมูลทั้งหมด (ดึงรายชื่อผู้ลงทะเบียน + UID จาก Sheet "Register" เท่านั้น และรายการรางวัลจาก gid=195154721)
     async function loadAllData(showToast = false) {
       const refreshIcon = document.getElementById('refreshIcon');
       if (refreshIcon) refreshIcon.classList.add('fa-spin');
 
       try {
-        // ดึงข้อมูลจาก Sheet "Register" และ Sheet รางวัล (gid=195154721)
-        const [regRes, rewardRes] = await Promise.allSettled([
+        // 1. เรียกข้อมูลจาก GAS API (getRewardInitData ซึ่งดึงจาก Sheet "Register" โดยตรงผ่าน getSheetSafely) ควบคู่กับ Gviz
+        const [apiRes, regRes1, regRes2, rewardRes] = await Promise.allSettled([
+          callGasApi({ action: 'getRewardInitData' }),
           fetchSheetGvizJson(`sheet=${encodeURIComponent(REGISTER_SHEET_NAME)}`),
+          fetchSheetGvizJson(`sheet=${encodeURIComponent(REGISTER_SHEET_NAME + ' ')}`),
           fetchSheetGvizJson(`gid=${REWARD_SHEET_GID}`)
         ]);
 
-        const uidMap = {};
-        if (regRes.status === 'fulfilled' && regRes.value) {
-          const cols = (regRes.value.table && regRes.value.table.cols) || [];
-          const regRows = (regRes.value.table && regRes.value.table.rows) || [];
-          const labelC = (cols[2] && cols[2].label) ? String(cols[2].label) : '';
-          const labelD = (cols[3] && cols[3].label) ? String(cols[3].label) : '';
-          const isColCName = labelC.indexOf('ชื่อ') !== -1 && labelD.indexOf('แผนก') !== -1;
+        let uidMap = {};
+        let loadedEmployeesFromApi = false;
 
-          const newEmpMap = {};
-          for (let i = 0; i < regRows.length; i++) {
-            const c = regRows[i].c || [];
-            const empId = cleanCell(c[1]);
-            if (!empId || empId === 'รหัสพนักงาน') continue;
-
-            const valC = cleanCell(c[2]);
-            const valD = cleanCell(c[3]);
-            const branch = cleanCell(c[4]);
-            const uid = cleanCell(c[5]);
-            const displayName = cleanCell(c[6]);
-            const pic = cleanCell(c[7]);
-
-            const empName = isColCName ? valC : valD;
-            const department = isColCName ? valD : valC;
-
-            uidMap[empId] = { uid, pictureUrl: pic };
-            newEmpMap[empId] = {
-              empId,
-              empName,
-              department,
-              branch,
-              uid,
-              displayName,
-              pictureUrl: pic
-            };
+        // หาก GAS API ตอบกลับรายชื่อผู้ลงทะเบียนจาก Sheet Register สำเร็จ ให้ใช้เป็นหลัก
+        if (apiRes.status === 'fulfilled' && apiRes.value && apiRes.value.status === 'success') {
+          if (apiRes.value.employees && Object.keys(apiRes.value.employees).length > 0) {
+            employeesMap = apiRes.value.employees;
+            Object.keys(employeesMap).forEach(id => {
+              uidMap[id] = {
+                uid: employeesMap[id].uid || '',
+                pictureUrl: employeesMap[id].pictureUrl || ''
+              };
+            });
+            loadedEmployeesFromApi = true;
           }
-          employeesMap = newEmpMap;
+          if (Array.isArray(apiRes.value.rewards) && apiRes.value.rewards.length > 0) {
+            rewardsList = apiRes.value.rewards;
+          }
         }
 
+        // หากยังไม่ได้รายชื่อจาก API ให้ใช้ Gviz ของ Sheet "Register" (ตรวจสอบว่าเป็นแท็บ Register จริง ไม่ใช่แท็บแรก)
+        if (!loadedEmployeesFromApi) {
+          let validRegGviz = null;
+          if (regRes1.status === 'fulfilled' && isValidRegisterGvizTable(regRes1.value)) {
+            validRegGviz = regRes1.value;
+          } else if (regRes2.status === 'fulfilled' && isValidRegisterGvizTable(regRes2.value)) {
+            validRegGviz = regRes2.value;
+          }
+
+          if (validRegGviz) {
+            const parsed = parseRegisterGvizToMap(validRegGviz);
+            employeesMap = parsed.newEmpMap;
+            uidMap = parsed.uidMap;
+          }
+        }
+
+        // อัปเดตรายการรางวัลจาก Sheet รางวัล (gid=195154721)
         if (rewardRes.status === 'fulfilled' && rewardRes.value) {
-          const rows = (rewardRes.value.table && rewardRes.value.table.rows) || [];
+          const table = rewardRes.value.table || {};
+          const rows = table.rows || [];
+          const parsedHeaders = table.parsedNumHeaders || 0;
           const parsedRewards = [];
+
           for (let i = 0; i < rows.length; i++) {
             const c = rows[i].c || [];
             const rName = cleanCell(c[0]);
@@ -312,10 +381,11 @@
             // ข้ามแถวหัวตารางแถวแรก
             if (i === 0 && rName === 'ชื่อรางวัล') continue;
 
-            const rowIndex = i + 1; // เนื่องจาก parsedNumHeaders: 0 แถวที่ 0 คือ Row 1
-            const rEmpName = cleanCell(c[2]);
-            const rDept = cleanCell(c[3]);
-            const rBranch = cleanCell(c[4]);
+            const rowIndex = i + 1 + parsedHeaders;
+            const regEmp = rEmpId ? employeesMap[rEmpId] : null;
+            const rEmpName = cleanCell(c[2]) || (regEmp ? regEmp.empName : '');
+            const rDept = cleanCell(c[3]) || (regEmp ? regEmp.department : '');
+            const rBranch = cleanCell(c[4]) || (regEmp ? regEmp.branch : '');
             const rUid = cleanCell(c[5]) || (uidMap[rEmpId] ? uidMap[rEmpId].uid : '');
 
             if (rName || rEmpId) {
@@ -331,13 +401,6 @@
             }
           }
           rewardsList = parsedRewards;
-        } else {
-          // Fallback เรียกผ่าน GAS API
-          const apiData = await callGasApi({ action: 'getRewardInitData' });
-          if (apiData && apiData.status === 'success') {
-            rewardsList = apiData.rewards || [];
-            employeesMap = apiData.employees || {};
-          }
         }
 
         updateStatsAndDropdown();
@@ -348,9 +411,9 @@
             toast: true,
             position: 'top-end',
             icon: 'success',
-            title: 'อัปเดตข้อมูลล่าสุดแล้ว',
+            title: `อัปเดตข้อมูลแล้ว (ผู้ลงทะเบียนใน Sheet Register ${Object.keys(employeesMap).length} คน)`,
             showConfirmButton: false,
-            timer: 1500
+            timer: 1800
           });
         }
       } catch (err) {
@@ -383,7 +446,7 @@
           if (payload.action === 'getRewardInitData') runner.getRewardInitData();
           else if (payload.action === 'saveReward') runner.saveRewardRecord(payload);
           else if (payload.action === 'deleteReward') runner.deleteRewardRecord(payload);
-          else runner.checkEmployeeById(payload.empId);
+          else runner.checkRegisteredEmployeeById(payload.empId);
         });
       }
 
@@ -411,15 +474,26 @@
       }
     }
 
-    // อัปเดตตัวเลขสรุปและ Dropdown เลือกรางวัล
+    // อัปเดตตัวเลขสรุป, รายชื่อผู้ลงทะเบียนจาก Sheet Register และ Dropdown เลือกรางวัล
     function updateStatsAndDropdown() {
+      const registeredCount = Object.keys(employeesMap).length;
       const total = rewardsList.length;
       const assigned = rewardsList.filter(r => r.empId && r.empId.trim() !== '').length;
       const remaining = total - assigned;
 
+      const statRegEl = document.getElementById('statRegistered');
+      if (statRegEl) statRegEl.innerText = registeredCount;
       document.getElementById('statTotal').innerText = total;
       document.getElementById('statAssigned').innerText = assigned;
       document.getElementById('statRemaining').innerText = remaining;
+
+      // อัปเดต Datalist รายชื่อผู้ลงทะเบียนจาก Sheet Register
+      const datalist = document.getElementById('registeredEmployeesDatalist');
+      if (datalist) {
+        datalist.innerHTML = Object.values(employeesMap)
+          .map(emp => `<option value="${escapeHtml(emp.empId)}">${escapeHtml(emp.empName)} (${escapeHtml(emp.department)} - ${escapeHtml(emp.branch)})</option>`)
+          .join('');
+      }
 
       const select = document.getElementById('rewardSelect');
       const previousVal = select.value;
@@ -588,15 +662,36 @@
           updateStatsAndDropdown();
           renderRewardsTable();
 
-          Swal.fire({
-            toast: true,
-            position: 'top-end',
-            icon: 'success',
-            title: `บันทึก "${rewardObj.rewardName}" ให้คุณ ${payload.empName} สำเร็จ!`,
-            text: res.lineSent ? 'ส่ง Flex Message แจ้งเตือนทาง LINE แล้ว' : (res.lineMessageStatus || ''),
-            showConfirmButton: false,
-            timer: 2800
-          });
+          const statusText = String(res.lineMessageStatus || '');
+          if (!res.lineSent && (statusText.includes('script.external_request') || statusText.includes('UrlFetchApp'))) {
+            Swal.fire({
+              icon: 'warning',
+              title: `บันทึกรางวัลลง Sheet สำเร็จ! (แต่ยังไม่ได้อนุมัติสิทธิ์ส่ง LINE)`,
+              html: `
+                <div class="text-left text-xs space-y-2 bg-amber-50 p-3.5 rounded-xl border border-amber-300 text-gray-700">
+                  <p class="font-bold text-red-700">วิธีเปิดสิทธิ์ส่งข้อความ LINE (ทำครั้งเดียวใน Google Apps Script):</p>
+                  <ol class="list-decimal pl-4 space-y-1">
+                    <li>เปิดหน้า <b>Google Apps Script Editor</b></li>
+                    <li>ที่แถบด้านบน เลือกฟังก์ชัน <b><code>initRegisterSheetHeaders</code></b> หรือ <b><code>setupAndAuthorize</code></b> แล้วกดปุ่ม <b>Run (เรียกใช้)</b></li>
+                    <li>กด <b>Review permissions (ตรวจสอบสิทธิ์) &gt; Allow (อนุญาต)</b></li>
+                    <li>กด <b>Deploy &gt; Manage deployments &gt; แก้ไข (ไอคอนดินสอ) &gt; เลือก Version: New version &gt; Deploy</b></li>
+                  </ol>
+                </div>
+              `,
+              confirmButtonText: 'รับทราบ',
+              confirmButtonColor: '#b91c1c'
+            });
+          } else {
+            Swal.fire({
+              toast: true,
+              position: 'top-end',
+              icon: 'success',
+              title: `บันทึก "${rewardObj.rewardName}" ให้คุณ ${payload.empName} สำเร็จ!`,
+              text: res.lineSent ? 'ส่ง Flex Message แจ้งเตือนทาง LINE แล้ว' : statusText,
+              showConfirmButton: false,
+              timer: 2800
+            });
+          }
         } else {
           Swal.fire({
             icon: 'error',
