@@ -257,6 +257,10 @@
     // สามารถใส่ LIFF ID ตรงนี้ หรือส่งมาทาง URL parameter ?liffId=xxxx ก็ได้
     const DEFAULT_LIFF_ID = '2012486224-eFJTgFwr';
     const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx6yDgQvf3RvCVu8nHRN3yQM6IM5Be2JZpESNT6nJ3XddDsOlrMj_S7nIPCRUqmZBjFYw/exec';
+    const SPREADSHEET_ID = '1j2wb2cBiPK2IDfpNKJZBSUu3MDVwSEogAkRENvU-GJw';
+    const SOURCE_SHEET_NAME = 'การตอบแบบฟอร์ม 1';
+
+    let cachedEmployees = null;
 
     let userProfile = {
       userId: '',
@@ -356,63 +360,114 @@
       }
     }
 
-    // ฟังก์ชันเรียก Backend ผ่าน Web App API URL (doGet / doPost)
-    function callBackendCheckEmployee(empId) {
-      return new Promise((resolve, reject) => {
-        if (GAS_WEB_APP_URL) {
-          fetch(`${GAS_WEB_APP_URL}?action=checkEmployee&empId=${encodeURIComponent(empId)}`, {
-            method: 'GET',
-            redirect: 'follow'
-          })
-            .then(res => res.json())
-            .then(resolve)
-            .catch(err => {
-              if (typeof google !== 'undefined' && google.script && google.script.run) {
-                google.script.run
-                  .withSuccessHandler(resolve)
-                  .withFailureHandler(reject)
-                  .checkEmployeeById(empId);
-              } else {
-                reject(err);
-              }
-            });
-        } else if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run
-            .withSuccessHandler(resolve)
-            .withFailureHandler(reject)
-            .checkEmployeeById(empId);
-        } else {
-          reject(new Error('ไม่พบการเชื่อมต่อ Google Apps Script API'));
+    // ดึงข้อมูลพนักงานโดยตรงจาก Google Sheet (รวดเร็ว ไม่ติดสิทธิ์ Login ของ Web App)
+    async function fetchEmployeeFromGoogleSheetDirect(empId) {
+      const searchId = String(empId).trim();
+      const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SOURCE_SHEET_NAME)}`;
+      const response = await fetch(url);
+      const text = await response.text();
+
+      const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?/);
+      if (!jsonMatch || !jsonMatch[1]) {
+        throw new Error('ไม่สามารถอ่านโครงสร้างข้อมูลจาก Google Sheet ได้');
+      }
+
+      const gvizData = JSON.parse(jsonMatch[1]);
+      const cols = (gvizData.table && gvizData.table.cols) || [];
+      const rows = (gvizData.table && gvizData.table.rows) || [];
+
+      const labelC = (cols[2] && cols[2].label) ? String(cols[2].label) : '';
+      const labelD = (cols[3] && cols[3].label) ? String(cols[3].label) : '';
+      const isColCName = labelC.indexOf('ชื่อ') !== -1 && labelD.indexOf('แผนก') !== -1;
+
+      for (let i = rows.length - 1; i >= 0; i--) {
+        const c = rows[i].c || [];
+        const cellB = c[1] ? (c[1].f !== undefined ? String(c[1].f) : String(c[1].v ?? '')) : '';
+        const rowEmpId = cellB.replace(/\.0$/, '').trim();
+
+        if (rowEmpId === searchId) {
+          const valC = c[2] && c[2].v != null ? String(c[2].v).trim() : '';
+          const valD = c[3] && c[3].v != null ? String(c[3].v).trim() : '';
+          const valE = c[4] && c[4].v != null ? String(c[4].v).trim() : '';
+
+          return {
+            status: 'success',
+            data: {
+              empId: rowEmpId,
+              empName: isColCName ? valC : valD,
+              department: isColCName ? valD : valC,
+              branch: valE
+            },
+            alreadyRegistered: false
+          };
         }
-      });
+      }
+
+      return {
+        status: 'not_found',
+        message: 'ไม่พบรหัสพนักงานนี้ในรายชื่อตั้งต้น'
+      };
+    }
+
+    // ฟังก์ชันตรวจสอบข้อมูลพนักงาน (ดึงจาก Google Sheet โดยตรง และรองรับ google.script.run / GAS Web App)
+    async function callBackendCheckEmployee(empId) {
+      // 1. หากเปิดบน Google Apps Script HtmlService โดยตรง
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        try {
+          return await new Promise((resolve, reject) => {
+            google.script.run
+              .withSuccessHandler(resolve)
+              .withFailureHandler(reject)
+              .checkEmployeeById(empId);
+          });
+        } catch (e) {
+          console.warn('google.script.run failed, falling back to direct sheet query:', e);
+        }
+      }
+
+      // 2. ดึงข้อมูลจาก Google Sheet โดยตรง (เร็วและแสดงผลได้ทันที)
+      try {
+        return await fetchEmployeeFromGoogleSheetDirect(empId);
+      } catch (sheetErr) {
+        console.warn('Direct sheet fetch failed, trying GAS_WEB_APP_URL:', sheetErr);
+      }
+
+      // 3. Fallback ไปยัง GAS_WEB_APP_URL
+      if (GAS_WEB_APP_URL) {
+        const res = await fetch(`${GAS_WEB_APP_URL}?action=checkEmployee&empId=${encodeURIComponent(empId)}`, {
+          method: 'GET',
+          redirect: 'follow'
+        });
+        return await res.json();
+      }
+
+      throw new Error('ไม่สามารถเชื่อมต่อฐานข้อมูลพนักงานได้');
     }
 
     function callBackendSaveRegistration(payload) {
       return new Promise((resolve, reject) => {
-        if (GAS_WEB_APP_URL) {
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(reject)
+            .saveRegistrationData(payload);
+        } else if (GAS_WEB_APP_URL) {
           fetch(GAS_WEB_APP_URL, {
             method: 'POST',
             redirect: 'follow',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify(payload)
           })
-            .then(res => res.json())
-            .then(resolve)
-            .catch(err => {
-              if (typeof google !== 'undefined' && google.script && google.script.run) {
-                google.script.run
-                  .withSuccessHandler(resolve)
-                  .withFailureHandler(reject)
-                  .saveRegistrationData(payload);
-              } else {
-                reject(err);
+            .then(async res => {
+              const text = await res.text();
+              try {
+                return JSON.parse(text);
+              } catch (parseErr) {
+                throw new Error('กรุณาตั้งค่าการ Deploy Web App ของ Google Apps Script ให้ Who has access เป็น "Anyone" (ทุกคน)');
               }
-            });
-        } else if (typeof google !== 'undefined' && google.script && google.script.run) {
-          google.script.run
-            .withSuccessHandler(resolve)
-            .withFailureHandler(reject)
-            .saveRegistrationData(payload);
+            })
+            .then(resolve)
+            .catch(reject);
         } else {
           reject(new Error('ไม่พบการเชื่อมต่อ Google Apps Script API'));
         }
