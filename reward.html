@@ -329,9 +329,9 @@
       try {
         // ดึงข้อมูลจาก Sheet "Register " (รองรับทั้งมีวรรคและไม่มีวรรค) และ Sheet gift (gid=195154721) โดยตรง (รวดเร็ว ~0.2 วินาที)
         const [regResSpace, regResNoSpace, rewardRes] = await Promise.allSettled([
-          fetchSheetGvizJson(`sheet=${encodeURIComponent('Register ')}`),
-          fetchSheetGvizJson(`sheet=${encodeURIComponent('Register')}`),
-          fetchSheetGvizJson(`gid=${REWARD_SHEET_GID}`)
+          fetchSheetGvizJson(`sheet=${encodeURIComponent('Register ')}&headers=1`),
+          fetchSheetGvizJson(`sheet=${encodeURIComponent('Register')}&headers=1`),
+          fetchSheetGvizJson(`gid=${REWARD_SHEET_GID}&headers=1`)
         ]);
 
         let uidMap = {};
