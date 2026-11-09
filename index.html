@@ -1,527 +1,576 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>CM Party 🎉 งานเลี้ยงสังสรรค์</title>
-  <!-- Tailwind CSS CDN -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>🎄 ลงทะเบียนเข้างานเลี้ยง - CM Party</title>
+
+  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Google Fonts Prompt -->
+
+  <!-- Google Fonts: Prompt -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-  <!-- Canvas Confetti -->
-  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- LINE LIFF SDK v2.31.2 -->
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/versions/2.31.2/sdk.js"></script>
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <style>
     body {
       font-family: 'Prompt', sans-serif;
+      background: radial-gradient(circle at top, #991b1b 0%, #450a0a 55%, #052e16 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
     }
-    .gradient-hero {
-      background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 50%, #db2777 100%);
+
+    /* เอฟเฟกต์หิมะตก */
+    .snowflake {
+      position: fixed;
+      top: -10px;
+      color: rgba(255, 255, 255, 0.85);
+      user-select: none;
+      z-index: 0;
+      pointer-events: none;
+      animation-name: snowfall;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
     }
+
+    @keyframes snowfall {
+      0% {
+        transform: translateY(-10vh) translateX(0) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(105vh) translateX(25px) rotate(360deg);
+        opacity: 0.2;
+      }
+    }
+
     .glass-card {
       background: rgba(255, 255, 255, 0.95);
-      backdrop-filter: blur(10px);
+      backdrop-filter: blur(12px);
+      border: 2px solid rgba(250, 204, 21, 0.65);
     }
-    @keyframes pulse-glow {
-      0%, 100% { transform: scale(1); box-shadow: 0 0 20px rgba(236, 72, 153, 0.4); }
-      50% { transform: scale(1.03); box-shadow: 0 0 35px rgba(236, 72, 153, 0.7); }
-    }
-    .animate-glow {
-      animation: pulse-glow 2s infinite ease-in-out;
+
+    .gold-gradient {
+      background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 50%, #d97706 100%);
     }
   </style>
 </head>
-<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col selection:bg-pink-500 selection:text-white">
+<body class="relative flex flex-col items-center justify-center p-4 py-8 text-gray-800">
 
-  <!-- Header -->
-  <header class="gradient-hero shadow-lg sticky top-0 z-50">
-    <div class="max-w-5xl mx-auto px-4 py-4 flex flex-wrap justify-between items-center gap-3">
-      <div class="flex items-center space-x-3">
-        <span class="text-3xl">🎊</span>
-        <div>
-          <h1 class="text-xl md:text-2xl font-bold tracking-tight text-white flex items-center gap-2">
-            CM Party 2026
-            <span class="text-xs bg-pink-500/80 px-2 py-0.5 rounded-full uppercase tracking-wider font-semibold">Staff Night</span>
-          </h1>
-          <p class="text-xs text-indigo-100">เฉลิมฉลองค่ำคืนแห่งความสุขและความสนุกสนาน</p>
+  <!-- Snowflakes Container -->
+  <div id="snow-container" aria-hidden="true"></div>
+
+  <!-- Decorative Christmas Lights Top Bar -->
+  <div class="fixed top-0 left-0 right-0 h-2 bg-gradient-to-r from-red-600 via-yellow-400 to-green-600 z-20 shadow-md"></div>
+
+  <!-- Main Card -->
+  <main class="relative z-10 w-full max-w-md glass-card rounded-3xl shadow-2xl overflow-hidden transition-all duration-300">
+
+    <!-- Christmas Banner Header -->
+    <div class="relative bg-gradient-to-br from-red-700 via-red-800 to-green-900 pt-7 pb-14 px-6 text-center text-white overflow-hidden">
+      <!-- Decorative Corner Ornaments -->
+      <div class="absolute -top-6 -left-6 w-24 h-24 bg-yellow-400/15 rounded-full blur-xl"></div>
+      <div class="absolute -bottom-8 -right-8 w-28 h-28 bg-green-400/20 rounded-full blur-xl"></div>
+
+      <!-- Festive Badge -->
+      <div class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/15 backdrop-blur-sm border border-yellow-300/40 text-yellow-200 text-xs font-medium mb-3 shadow-sm">
+        <span>🎅</span>
+        <span>MERRY CHRISTMAS & HAPPY NEW YEAR</span>
+        <span>🎄</span>
+      </div>
+
+      <!-- Company Logo -->
+      <div class="flex justify-center my-2">
+        <div class="bg-white/95 p-2.5 rounded-2xl shadow-lg border-2 border-yellow-400/80">
+          <img
+            src="https://lh5.googleusercontent.com/d/1rzj7RdJ76nk5OccBPZ-kj-qxDp_Rg_"
+            alt="Company Logo"
+            class="h-16 w-auto object-contain mx-auto"
+            onerror="this.outerHTML='<div class=\'h-14 px-4 flex items-center justify-center font-bold text-red-700 text-lg\'>🎄 CM PARTY</div>'"
+          />
         </div>
       </div>
-      
-      <!-- Nav Tabs -->
-      <nav class="flex space-x-1 bg-black/20 p-1 rounded-xl text-sm font-medium">
-        <button onclick="switchTab('register')" id="tab-register" class="nav-btn px-3 py-1.5 rounded-lg transition bg-white text-indigo-700 shadow font-semibold">
-          ลงทะเบียน
-        </button>
-        <button onclick="switchTab('lucky')" id="tab-lucky" class="nav-btn px-3 py-1.5 rounded-lg transition text-white hover:bg-white/10">
-          จับรางวัล 🎁
-        </button>
-        <button onclick="switchTab('winners')" id="tab-winners" class="nav-btn px-3 py-1.5 rounded-lg transition text-white hover:bg-white/10">
-          ผู้โชคดี 🏆
-        </button>
-        <button onclick="switchTab('agenda')" id="tab-agenda" class="nav-btn px-3 py-1.5 rounded-lg transition text-white hover:bg-white/10">
-          กำหนดการ
-        </button>
-      </nav>
+
+      <h1 class="text-2xl font-bold tracking-wide text-white drop-shadow mt-2">
+        ระบบลงทะเบียนเข้างานเลี้ยง
+      </h1>
+      <p class="text-xs text-red-100/90 mt-1">
+        กรุณาตรวจสอบรหัสพนักงานเพื่อยืนยันการเข้างาน
+      </p>
     </div>
-  </header>
 
-  <!-- Main Content Container -->
-  <main class="flex-grow max-w-4xl mx-auto w-full p-4 md:p-6">
-
-    <!-- 1. TAB: ลงทะเบียน -->
-    <section id="section-register" class="tab-content">
-      <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 md:p-8 shadow-2xl">
-        <div class="text-center mb-6">
-          <span class="inline-block p-3 bg-indigo-500/20 text-indigo-400 rounded-2xl mb-2">
-            <i data-lucide="user-check" class="w-8 h-8"></i>
+    <!-- LINE User Profile Floating Card -->
+    <div class="relative px-6 -mt-9">
+      <div class="bg-white rounded-2xl shadow-md border border-amber-200 p-3.5 flex items-center gap-3.5">
+        <div class="relative shrink-0">
+          <img
+            id="lineProfileImg"
+            src="https://cdn-icons-png.flaticon.com/512/847/847969.png"
+            alt="LINE Profile"
+            class="w-14 h-14 rounded-full object-cover border-2 border-green-600 shadow-sm"
+          />
+          <span class="absolute -bottom-1 -right-1 bg-green-600 text-white text-[10px] px-1.5 py-0.5 rounded-full font-semibold shadow">
+            LINE
           </span>
-          <h2 class="text-2xl font-bold text-white">ลงทะเบียนเข้าร่วมงานปาร์ตี้</h2>
-          <p class="text-slate-400 text-sm mt-1">กรอกข้อมูลเพื่อยืนยันการเข้าร่วมและรับสิทธิ์ลุ้นรางวัลใหญ่!</p>
         </div>
-
-        <form id="regForm" onsubmit="handleRegister(event)" class="space-y-4 max-w-lg mx-auto">
-          <div>
-            <label class="block text-sm font-medium text-slate-300 mb-1">รหัสพนักงาน *</label>
-            <input type="text" id="empId" required placeholder="เช่น 66012" 
-                   class="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
-          </div>
-
-          <div>
-            <label class="block text-sm font-medium text-slate-300 mb-1">ชื่อ - นามสกุล *</label>
-            <input type="text" id="fullName" required placeholder="ชื่อ นามสกุล (พร้อมชื่อเล่น)" 
-                   class="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
-          </div>
-
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label class="block text-sm font-medium text-slate-300 mb-1">แผนก / ฝ่าย *</label>
-              <select id="department" required class="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
-                <option value="">-- เลือกแผนก --</option>
-                <option value="IT">IT Support & System</option>
-                <option value="Production">ฝ่ายผลิต (Production)</option>
-                <option value="QA/QC">QA / QC</option>
-                <option value="Warehouse">คลังสินค้า (Warehouse)</option>
-                <option value="HR">บุคคล (HR & Admin)</option>
-                <option value="Accounting">บัญชี & การเงิน</option>
-                <option value="Sales/Marketing">การตลาด & ขาย</option>
-                <option value="Management">ผู้บริหาร / อื่นๆ</option>
-              </select>
-            </div>
-            <div>
-              <label class="block text-sm font-medium text-slate-300 mb-1">เบอร์โทรศัพท์</label>
-              <input type="tel" id="phone" placeholder="08x-xxx-xxxx" 
-                     class="w-full px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-700 text-white placeholder-slate-500 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition">
-            </div>
-          </div>
-
-          <div class="pt-2">
-            <label class="flex items-center space-x-3 p-3 bg-slate-900/60 border border-slate-700 rounded-xl cursor-pointer hover:border-slate-600 transition">
-              <input type="checkbox" id="hasGift" class="w-5 h-5 text-indigo-600 rounded bg-slate-800 border-slate-600 focus:ring-indigo-500" checked>
-              <div>
-                <span class="text-sm font-medium text-slate-200">นำของขวัญมาจับสลากร่วมสนุก 🎁</span>
-                <p class="text-xs text-slate-400">มูลค่าตามที่กำหนด ไม่ต่ำกว่า 200 บาท</p>
-              </div>
-            </label>
-          </div>
-
-          <button type="submit" id="btnSubmit" 
-                  class="w-full mt-4 py-3 px-6 rounded-xl font-bold text-white gradient-hero shadow-lg hover:opacity-90 active:scale-95 transition flex items-center justify-center space-x-2">
-            <span>ยืนยันการลงทะเบียน</span>
-            <i data-lucide="arrow-right" class="w-5 h-5"></i>
-          </button>
-        </form>
-
-        <div id="regAlert" class="mt-4 hidden p-4 rounded-xl text-center text-sm font-medium"></div>
-      </div>
-    </section>
-
-    <!-- 2. TAB: สุ่มจับรางวัล (Lucky Draw) -->
-    <section id="section-lucky" class="tab-content hidden">
-      <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 md:p-8 shadow-2xl text-center">
-        <span class="inline-block p-3 bg-pink-500/20 text-pink-400 rounded-2xl mb-2">
-          <i data-lucide="gift" class="w-8 h-8"></i>
-        </span>
-        <h2 class="text-2xl font-bold text-white">ระบบสุ่มจับรางวัลผู้โชคดี (Lucky Draw)</h2>
-        <p class="text-slate-400 text-sm mt-1">สุ่มรายชื่อจากผู้ที่ลงทะเบียนเข้าร่วมงานแบบเรียลไทม์</p>
-
-        <!-- รางวัลที่จะสุ่ม -->
-        <div class="my-6 max-w-md mx-auto">
-          <label class="block text-xs uppercase tracking-wider font-semibold text-slate-400 mb-1">ชื่อของรางวัลที่กำลังสุ่ม</label>
-          <input type="text" id="prizeName" value="รางวัลพิเศษ ✨" 
-                 class="w-full text-center px-4 py-3 rounded-2xl bg-slate-900 border-2 border-pink-500/50 text-xl font-bold text-pink-400 focus:outline-none focus:border-pink-500 transition">
-        </div>
-
-        <!-- หน้าต่างสุ่มผู้โชคดี -->
-        <div class="my-8 p-8 bg-slate-900 border-2 border-dashed border-slate-700 rounded-3xl max-w-lg mx-auto relative overflow-hidden">
-          <div id="drawDisplay" class="py-6">
-            <p class="text-xs uppercase tracking-widest text-slate-500 font-semibold mb-2">รายชื่อผู้โชคดี</p>
-            <h3 id="displayWinnerName" class="text-3xl md:text-4xl font-extrabold text-slate-400">
-              กดปุ่มสุ่มรางวัลเพื่อเริ่มต้น
-            </h3>
-            <p id="displayWinnerDetail" class="text-slate-500 text-sm mt-2">-</p>
-          </div>
-        </div>
-
-        <!-- ปุ่มควบคุม -->
-        <div class="flex flex-wrap justify-center gap-4">
-          <button onclick="startLuckyDraw()" id="btnDraw" 
-                  class="animate-glow py-4 px-8 rounded-2xl font-bold text-lg text-white bg-gradient-to-r from-pink-500 to-rose-600 shadow-xl hover:opacity-95 active:scale-95 transition flex items-center space-x-2">
-            <i data-lucide="shuffle" class="w-6 h-6"></i>
-            <span>หมุนวงล้อสุ่มรางวัล!</span>
-          </button>
-          
-          <button onclick="loadAttendees()" class="py-3 px-5 rounded-2xl font-medium text-sm text-slate-300 bg-slate-700 hover:bg-slate-600 transition flex items-center space-x-2">
-            <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-            <span>รีเฟรชรายชื่อ</span>
-          </button>
-        </div>
-
-        <p id="attendeesCount" class="text-xs text-slate-400 mt-4">ผู้มีสิทธิ์ร่วมสนุก: 0 คน</p>
-      </div>
-    </section>
-
-    <!-- 3. TAB: ทำเนียบผู้โชคดี -->
-    <section id="section-winners" class="tab-content hidden">
-      <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 md:p-8 shadow-2xl">
-        <div class="flex justify-between items-center mb-6">
-          <div>
-            <h2 class="text-2xl font-bold text-white flex items-center gap-2">
-              <i data-lucide="trophy" class="w-6 h-6 text-yellow-400"></i>
-              ทำเนียบผู้ได้รับรางวัล
-            </h2>
-            <p class="text-slate-400 text-sm">ประวัติผู้โชคดีที่ได้รับรางวัลทั้งหมดในค่ำคืนนี้</p>
-          </div>
-          <button onclick="loadWinners()" class="p-2.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-xl transition" title="รีเฟรช">
-            <i data-lucide="rotate-cw" class="w-5 h-5"></i>
-          </button>
-        </div>
-
-        <div class="overflow-x-auto">
-          <table class="w-full text-left text-sm text-slate-300">
-            <thead class="bg-slate-900/80 text-xs uppercase text-slate-400 font-semibold border-b border-slate-700">
-              <tr>
-                <th class="px-4 py-3">ลำดับ</th>
-                <th class="px-4 py-3">รหัสพนักงาน</th>
-                <th class="px-4 py-3">ชื่อ - นามสกุล</th>
-                <th class="px-4 py-3">แผนก</th>
-                <th class="px-4 py-3 text-pink-400">ของรางวัล</th>
-              </tr>
-            </thead>
-            <tbody id="winnersTableBody" class="divide-y divide-slate-700/50">
-              <tr>
-                <td colspan="5" class="px-4 py-8 text-center text-slate-500">
-                  ยังไม่มีข้อมูลผู้โชคดี
-                </td>
-              </tr>
-            </tbody>
-          </table>
+        <div class="flex-1 min-w-0">
+          <p class="text-[11px] font-medium text-emerald-700 flex items-center gap-1">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            ข้อมูลผู้ลงทะเบียน
+          </p>
+          <h2 id="lineDisplayName" class="text-base font-bold text-gray-800 truncate">
+            กำลังโหลดโปรไฟล์ LINE...
+          </h2>
+          <p id="lineUidDisplay" class="text-[11px] text-gray-400 truncate">
+            UID: -
+          </p>
         </div>
       </div>
-    </section>
+    </div>
 
-    <!-- 4. TAB: กำหนดการงาน -->
-    <section id="section-agenda" class="tab-content hidden">
-      <div class="bg-slate-800 border border-slate-700 rounded-3xl p-6 md:p-8 shadow-2xl">
-        <div class="text-center mb-8">
-          <span class="inline-block p-3 bg-purple-500/20 text-purple-400 rounded-2xl mb-2">
-            <i data-lucide="calendar" class="w-8 h-8"></i>
+    <!-- Form Content -->
+    <div class="p-6 space-y-5">
+
+      <!-- Step 1: Employee ID Input -->
+      <div>
+        <label for="empIdInput" class="block text-sm font-semibold text-gray-700 mb-1.5">
+          🎁 รหัสพนักงาน <span class="text-red-600">*</span>
+        </label>
+        <div class="flex gap-2">
+          <input
+            type="text"
+            id="empIdInput"
+            placeholder="กรอกรหัสพนักงาน เช่น 672002"
+            class="flex-1 px-4 py-3 rounded-xl border border-gray-300 focus:border-red-600 focus:ring-2 focus:ring-red-500/20 outline-none text-base font-medium transition-all"
+          />
+          <button
+            type="button"
+            id="btnCheckEmp"
+            onclick="handleCheckEmployee()"
+            class="px-4 py-3 rounded-xl bg-gradient-to-r from-green-700 to-emerald-600 hover:from-green-800 hover:to-emerald-700 text-white font-semibold text-sm shadow-md hover:shadow-lg active:scale-95 transition-all flex items-center gap-1.5 shrink-0"
+          >
+            <span>🔍</span>
+            <span>ตรวจสอบ</span>
+          </button>
+        </div>
+        <p id="empStatusHint" class="text-xs text-gray-500 mt-1.5">
+          พิมพ์รหัสพนักงานแล้วกดปุ่ม "ตรวจสอบ" เพื่อดึงข้อมูลอัตโนมัติ
+        </p>
+      </div>
+
+      <!-- Step 2: Employee Details Preview -->
+      <div class="bg-gradient-to-br from-red-50/70 via-amber-50/40 to-green-50/70 rounded-2xl p-4 border border-red-200/80 space-y-3">
+        <div class="flex items-center justify-between border-b border-red-200/60 pb-2">
+          <span class="text-xs font-bold text-red-800 uppercase tracking-wider flex items-center gap-1">
+            🦌 ข้อมูลพนักงานจากระบบ
           </span>
-          <h2 class="text-2xl font-bold text-white">กำหนดการงานปาร์ตี้</h2>
-          <p class="text-slate-400 text-sm">เวลาและกิจกรรมสุดพิเศษตลอดทั้งงาน</p>
+          <span id="badgeVerified" class="hidden text-[11px] font-semibold px-2.5 py-0.5 rounded-full bg-green-100 text-green-800 border border-green-300">
+            ✓ พบข้อมูลแล้ว
+          </span>
         </div>
 
-        <div class="space-y-6 max-w-lg mx-auto relative before:absolute before:inset-0 before:left-5 before:w-0.5 before:bg-slate-700">
-          
-          <div class="relative flex items-start space-x-4">
-            <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-white text-xs shrink-0 shadow-lg ring-4 ring-slate-800">
-              17:30
-            </div>
-            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-700 flex-grow">
-              <h4 class="font-bold text-white">เปิดลงทะเบียน & รับของที่ระลึก</h4>
-              <p class="text-xs text-slate-400 mt-1">ตรวจรายชื่อ รับสายรัดข้อมือ และส่งของขวัญร่วมจับสลาก</p>
-            </div>
+        <!-- ชื่อพนักงาน (D2:D) -->
+        <div>
+          <label class="block text-xs font-medium text-gray-500 mb-1">ชื่อ - นามสกุล (D2:D)</label>
+          <input
+            type="text"
+            id="empName"
+            readonly
+            placeholder="- รอการตรวจสอบรหัสพนักงาน -"
+            class="w-full px-3.5 py-2.5 rounded-xl bg-white/90 border border-gray-200 text-gray-800 font-semibold text-sm focus:outline-none"
+          />
+        </div>
+
+        <!-- แผนก (C2:C) และ สาขา (E2:E) -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">แผนก (C2:C)</label>
+            <input
+              type="text"
+              id="empDept"
+              readonly
+              placeholder="-"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-white/90 border border-gray-200 text-gray-700 font-medium text-sm focus:outline-none"
+            />
           </div>
 
-          <div class="relative flex items-start space-x-4">
-            <div class="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center font-bold text-white text-xs shrink-0 shadow-lg ring-4 ring-slate-800">
-              18:30
-            </div>
-            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-700 flex-grow">
-              <h4 class="font-bold text-white">พิธีเปิด & รับประทานอาหารร่วมกัน</h4>
-              <p class="text-xs text-slate-400 mt-1">ประธานกล่าวเปิดงาน เริ่มเปิดไลน์บุฟเฟต์สุดอร่อย ดนตรีสด</p>
-            </div>
+          <div>
+            <label class="block text-xs font-medium text-gray-500 mb-1">สาขา (E2:E)</label>
+            <input
+              type="text"
+              id="empBranch"
+              readonly
+              placeholder="-"
+              class="w-full px-3.5 py-2.5 rounded-xl bg-white/90 border border-gray-200 text-gray-700 font-medium text-sm focus:outline-none"
+            />
           </div>
-
-          <div class="relative flex items-start space-x-4">
-            <div class="w-10 h-10 rounded-full bg-pink-600 flex items-center justify-center font-bold text-white text-xs shrink-0 shadow-lg ring-4 ring-slate-800">
-              19:45
-            </div>
-            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-700 flex-grow">
-              <h4 class="font-bold text-white">การแสดงพิเศษ & จับรางวัลรอบที่ 1 🎁</h4>
-              <p class="text-xs text-slate-400 mt-1">โชว์สุดเซอร์ไพรส์จากตัวแทนแต่ละแผนก และลุ้นรางวัลยอดฮิต</p>
-            </div>
-          </div>
-
-          <div class="relative flex items-start space-x-4">
-            <div class="w-10 h-10 rounded-full bg-pink-600 flex items-center justify-center font-bold text-white text-xs shrink-0 shadow-lg ring-4 ring-slate-800">
-              21:00
-            </div>
-            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-700 flex-grow">
-              <h4 class="font-bold text-white">สุ่มรางวัลใหญ่ (Grand Lucky Draw) 🏆</h4>
-              <p class="text-xs text-slate-400 mt-1">ไฮไลท์ของค่ำคืน ลุ้นทองคำ สมาร์ทโฟน และเครื่องใช้ไฟฟ้า</p>
-            </div>
-          </div>
-
-          <div class="relative flex items-start space-x-4">
-            <div class="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center font-bold text-white text-xs shrink-0 shadow-lg ring-4 ring-slate-800">
-              22:00
-            </div>
-            <div class="bg-slate-900 p-4 rounded-2xl border border-slate-700 flex-grow">
-              <h4 class="font-bold text-white">ถ่ายภาพหมู่ & ปิดงาน</h4>
-              <p class="text-xs text-slate-400 mt-1">เดินทางกลับบ้านโดยสวัสดิภาพ</p>
-            </div>
-          </div>
-
         </div>
       </div>
-    </section>
 
+      <!-- Hidden UID field -->
+      <input type="hidden" id="lineUid" value="" />
+
+      <!-- Submit Button -->
+      <button
+        type="button"
+        id="btnSubmitRegister"
+        onclick="handleSubmitRegistration()"
+        disabled
+        class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-red-600 via-red-700 to-amber-600 hover:from-red-700 hover:to-amber-700 disabled:from-gray-300 disabled:via-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold text-base shadow-lg hover:shadow-xl active:scale-98 transition-all flex items-center justify-center gap-2"
+      >
+        <span>🎄</span>
+        <span>ยืนยันการลงทะเบียนเข้างาน</span>
+      </button>
+    </div>
+
+    <!-- Footer -->
+    <div class="bg-gray-50 px-6 py-3 text-center border-t border-gray-100">
+      <p class="text-[11px] text-gray-400">
+        ❄️ CM Frozenfood Christmas & New Year Party Registration ❄️
+      </p>
+    </div>
   </main>
 
-  <!-- Footer -->
-  <footer class="border-t border-slate-800 py-4 text-center text-xs text-slate-500">
-    <p>© 2026 CM Party • จัดทำโดยทีมงาน IT & Staff Committee</p>
-  </footer>
-
-  <!-- Scripts -->
   <script>
-    // Initialize Lucide Icons
-    lucide.createIcons();
+    // ==========================================
+    // ตั้งค่า LIFF ID และ URL ของ Google Apps Script Web App
+    // ==========================================
+    const LIFF_ID = 'ใส่_LIFF_ID_ของคุณที่นี่'; // เช่น '2000000000-xxxxxxxx'
+    // Web App URL (API Endpoint) สำหรับตรวจสอบและบันทึกข้อมูลการลงทะเบียน
+    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx6yDgQvf3RvCVu8nHRN3yQM6IM5Be2JZpESNT6nJ3XddDsOlrMj_S7nIPCRUqmZBjFYw/exec';
 
-    // Data Cache
-    let attendeesList = [
-      { empId: '66001', name: 'สมชาย ใจดี', department: 'IT' },
-      { empId: '66002', name: 'วิภา มีสุข', department: 'HR' },
-      { empId: '66003', name: 'เอกชัย ชัยชนะ', department: 'Production' },
-      { empId: '66004', name: 'นภัสสร รุ่งเรือง', department: 'Accounting' }
-    ];
-    let winnersList = [];
+    let userProfile = {
+      userId: '',
+      displayName: 'ผู้ใช้งาน LINE',
+      pictureUrl: 'https://cdn-icons-png.flaticon.com/512/847/847969.png'
+    };
 
-    // Switch Tabs
-    function switchTab(tabId) {
-      document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
-      document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.remove('bg-white', 'text-indigo-700', 'font-semibold', 'shadow');
-        btn.classList.add('text-white', 'hover:bg-white/10');
-      });
+    let verifiedEmployee = null;
+    let debounceTimer = null;
 
-      const selectedSection = document.getElementById('section-' + tabId);
-      const selectedTabBtn = document.getElementById('tab-' + tabId);
+    // สร้างเอฟเฟกต์หิมะตกธีมคริสต์มาส
+    function createSnowflakes() {
+      const container = document.getElementById('snow-container');
+      const symbols = ['❄', '❅', '❆', '✦'];
+      const count = 24;
 
-      if (selectedSection && selectedTabBtn) {
-        selectedSection.classList.remove('hidden');
-        selectedTabBtn.classList.remove('text-white', 'hover:bg-white/10');
-        selectedTabBtn.classList.add('bg-white', 'text-indigo-700', 'font-semibold', 'shadow');
+      for (let i = 0; i < count; i++) {
+        const flake = document.createElement('div');
+        flake.className = 'snowflake';
+        flake.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+        flake.style.left = Math.random() * 100 + 'vw';
+        flake.style.fontSize = (Math.random() * 12 + 10) + 'px';
+        flake.style.animationDuration = (Math.random() * 6 + 6) + 's';
+        flake.style.animationDelay = (Math.random() * 5) + 's';
+        container.appendChild(flake);
       }
-
-      if (tabId === 'lucky') loadAttendees();
-      if (tabId === 'winners') loadWinners();
     }
 
-    // Handle Registration
-    function handleRegister(e) {
-      e.preventDefault();
-      const btn = document.getElementById('btnSubmit');
-      const alertBox = document.getElementById('regAlert');
+    // เริ่มต้นระบบ LIFF
+    async function initializeLiff() {
+      try {
+        if (!LIFF_ID || LIFF_ID === 'ใส่_LIFF_ID_ของคุณที่นี่') {
+          console.warn('ยังไม่ได้ระบุ LIFF_ID ระบบจะทำงานในโหมดทดสอบ');
+          document.getElementById('lineDisplayName').innerText = 'โหมดทดสอบ (ยังไม่ได้ตั้งค่า LIFF ID)';
+          document.getElementById('lineUidDisplay').innerText = 'UID: TEST_USER';
+          document.getElementById('lineUid').value = 'TEST_USER';
+          userProfile.userId = 'TEST_USER';
+          return;
+        }
 
-      const formData = {
-        empId: document.getElementById('empId').value.trim(),
-        fullName: document.getElementById('fullName').value.trim(),
-        department: document.getElementById('department').value,
-        phone: document.getElementById('phone').value.trim(),
-        hasGift: document.getElementById('hasGift').checked,
-        attendance: 'เข้าร่วม'
+        await liff.init({ liffId: LIFF_ID });
+
+        if (!liff.isLoggedIn()) {
+          liff.login();
+          return;
+        }
+
+        const profile = await liff.getProfile();
+        userProfile = {
+          userId: profile.userId || '',
+          displayName: profile.displayName || 'ผู้ใช้งาน LINE',
+          pictureUrl: profile.pictureUrl || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'
+        };
+
+        document.getElementById('lineProfileImg').src = userProfile.pictureUrl;
+        document.getElementById('lineDisplayName').innerText = userProfile.displayName;
+        document.getElementById('lineUidDisplay').innerText = 'UID: ' + userProfile.userId;
+        document.getElementById('lineUid').value = userProfile.userId;
+      } catch (err) {
+        console.error('LIFF Init Error:', err);
+        document.getElementById('lineDisplayName').innerText = 'ผู้ใช้งานทั่วไป';
+      }
+    }
+
+    // ฟังก์ชันเรียก Backend ผ่าน Web App API URL (doGet / doPost)
+    function callBackendCheckEmployee(empId) {
+      return new Promise((resolve, reject) => {
+        if (GAS_WEB_APP_URL) {
+          fetch(`${GAS_WEB_APP_URL}?action=checkEmployee&empId=${encodeURIComponent(empId)}`, {
+            method: 'GET',
+            redirect: 'follow'
+          })
+            .then(res => res.json())
+            .then(resolve)
+            .catch(err => {
+              if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                  .withSuccessHandler(resolve)
+                  .withFailureHandler(reject)
+                  .checkEmployeeById(empId);
+              } else {
+                reject(err);
+              }
+            });
+        } else if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(reject)
+            .checkEmployeeById(empId);
+        } else {
+          reject(new Error('ไม่พบการเชื่อมต่อ Google Apps Script API'));
+        }
+      });
+    }
+
+    function callBackendSaveRegistration(payload) {
+      return new Promise((resolve, reject) => {
+        if (GAS_WEB_APP_URL) {
+          fetch(GAS_WEB_APP_URL, {
+            method: 'POST',
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
+          })
+            .then(res => res.json())
+            .then(resolve)
+            .catch(err => {
+              if (typeof google !== 'undefined' && google.script && google.script.run) {
+                google.script.run
+                  .withSuccessHandler(resolve)
+                  .withFailureHandler(reject)
+                  .saveRegistrationData(payload);
+              } else {
+                reject(err);
+              }
+            });
+        } else if (typeof google !== 'undefined' && google.script && google.script.run) {
+          google.script.run
+            .withSuccessHandler(resolve)
+            .withFailureHandler(reject)
+            .saveRegistrationData(payload);
+        } else {
+          reject(new Error('ไม่พบการเชื่อมต่อ Google Apps Script API'));
+        }
+      });
+    }
+
+    // ตรวจสอบรหัสพนักงาน
+    async function handleCheckEmployee() {
+      const empIdInput = document.getElementById('empIdInput');
+      const empId = empIdInput.value.trim();
+      const hintEl = document.getElementById('empStatusHint');
+      const btnCheck = document.getElementById('btnCheckEmp');
+      const btnSubmit = document.getElementById('btnSubmitRegister');
+      const badge = document.getElementById('badgeVerified');
+
+      if (!empId) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'กรุณากรอกรหัสพนักงาน',
+          text: 'โปรดระบุรหัสพนักงานก่อนกดตรวจสอบ',
+          confirmButtonColor: '#b91c1c'
+        });
+        return;
+      }
+
+      btnCheck.disabled = true;
+      btnCheck.innerHTML = '<span>⏳</span><span>กำลังค้นหา...</span>';
+      hintEl.className = 'text-xs text-amber-600 mt-1.5 font-medium';
+      hintEl.innerText = 'กำลังค้นหาข้อมูลจากระบบ...';
+
+      try {
+        const res = await callBackendCheckEmployee(empId);
+
+        if (res && res.status === 'success' && res.data) {
+          verifiedEmployee = res.data;
+          document.getElementById('empName').value = res.data.empName || '-';
+          document.getElementById('empDept').value = res.data.department || '-';
+          document.getElementById('empBranch').value = res.data.branch || '-';
+          badge.classList.remove('hidden');
+
+          if (res.alreadyRegistered) {
+            hintEl.className = 'text-xs text-amber-700 mt-1.5 font-semibold';
+            hintEl.innerText = `⚠️ รหัสนี้ลงทะเบียนแล้วเมื่อ ${res.registeredAt || 'ก่อนหน้านี้'}`;
+            btnSubmit.disabled = true;
+            Swal.fire({
+              icon: 'info',
+              title: 'ลงทะเบียนแล้ว',
+              text: `คุณ ${res.data.empName} ได้ลงทะเบียนเข้างานไปแล้ว`,
+              confirmButtonColor: '#15803d'
+            });
+          } else {
+            hintEl.className = 'text-xs text-green-700 mt-1.5 font-semibold';
+            hintEl.innerText = '✅ พบข้อมูลพนักงานแล้ว สามารถกดยืนยันการลงทะเบียนได้เลย';
+            btnSubmit.disabled = false;
+          }
+        } else {
+          resetEmployeePreview();
+          hintEl.className = 'text-xs text-red-600 mt-1.5 font-medium';
+          hintEl.innerText = '❌ ' + (res && res.message ? res.message : 'ไม่พบรหัสพนักงานนี้ในระบบ');
+          Swal.fire({
+            icon: 'error',
+            title: 'ไม่พบรหัสพนักงาน',
+            text: res && res.message ? res.message : 'กรุณาตรวจสอบรหัสพนักงานอีกครั้ง',
+            confirmButtonColor: '#b91c1c'
+          });
+        }
+      } catch (error) {
+        resetEmployeePreview();
+        hintEl.className = 'text-xs text-red-600 mt-1.5';
+        hintEl.innerText = 'เกิดข้อผิดพลาดในการเชื่อมต่อ: ' + error.message;
+      } finally {
+        btnCheck.disabled = false;
+        btnCheck.innerHTML = '<span>🔍</span><span>ตรวจสอบ</span>';
+      }
+    }
+
+    function resetEmployeePreview() {
+      verifiedEmployee = null;
+      document.getElementById('empName').value = '';
+      document.getElementById('empDept').value = '';
+      document.getElementById('empBranch').value = '';
+      document.getElementById('badgeVerified').classList.add('hidden');
+      document.getElementById('btnSubmitRegister').disabled = true;
+    }
+
+    // บันทึกการลงทะเบียนและส่งข้อความเข้าห้องแชทด้วย liff.sendMessages()
+    async function handleSubmitRegistration() {
+      if (!verifiedEmployee) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'กรุณาตรวจสอบรหัสพนักงาน',
+          text: 'โปรดกดตรวจสอบรหัสพนักงานให้ถูกต้องก่อนลงทะเบียน',
+          confirmButtonColor: '#b91c1c'
+        });
+        return;
+      }
+
+      const btnSubmit = document.getElementById('btnSubmitRegister');
+      btnSubmit.disabled = true;
+      btnSubmit.innerHTML = '<span>⏳</span><span>กำลังบันทึกข้อมูล...</span>';
+
+      const payload = {
+        empId: verifiedEmployee.empId,
+        empName: verifiedEmployee.empName,
+        department: verifiedEmployee.department,
+        branch: verifiedEmployee.branch,
+        uid: userProfile.userId || document.getElementById('lineUid').value,
+        displayName: userProfile.displayName,
+        pictureUrl: userProfile.pictureUrl
       };
 
-      btn.disabled = true;
-      btn.innerHTML = `<span class="animate-spin inline-block mr-2">⏳</span> กำลังบันทึก...`;
-      alertBox.classList.add('hidden');
+      try {
+        const result = await callBackendSaveRegistration(payload);
 
-      // Call Google Apps Script Backend (with local fallback)
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(res => {
-            btn.disabled = false;
-            btn.innerHTML = `<span>ยืนยันการลงทะเบียน</span> <i data-lucide="arrow-right" class="w-5 h-5"></i>`;
-            lucide.createIcons();
+        if (result && result.status === 'success') {
+          // ส่งข้อความยืนยันเข้าห้องแชท LINE ด้วย liff.sendMessages()
+          await sendRegistrationMessageToChat(result.data || payload);
 
-            alertBox.classList.remove('hidden');
-            if (res.success) {
-              alertBox.className = 'mt-4 p-4 rounded-xl text-center text-sm font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
-              alertBox.innerText = '🎉 ' + res.message;
-              document.getElementById('regForm').reset();
-              confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } });
-            } else {
-              alertBox.className = 'mt-4 p-4 rounded-xl text-center text-sm font-medium bg-rose-500/20 text-rose-300 border border-rose-500/40';
-              alertBox.innerText = '⚠️ ' + res.message;
-            }
-          })
-          .withFailureHandler(err => {
-            btn.disabled = false;
-            btn.innerHTML = `<span>ยืนยันการลงทะเบียน</span>`;
-            alertBox.classList.remove('hidden');
-            alertBox.className = 'mt-4 p-4 rounded-xl text-center text-sm font-medium bg-rose-500/20 text-rose-300 border border-rose-500/40';
-            alertBox.innerText = 'เกิดข้อผิดพลาด: ' + err.message;
-          })
-          .apiRegister(formData);
-      } else {
-        // Local preview simulation
-        setTimeout(() => {
-          btn.disabled = false;
-          btn.innerHTML = `<span>ยืนยันการลงทะเบียน</span> <i data-lucide="arrow-right" class="w-5 h-5"></i>`;
-          lucide.createIcons();
-          alertBox.classList.remove('hidden');
-          alertBox.className = 'mt-4 p-4 rounded-xl text-center text-sm font-medium bg-emerald-500/20 text-emerald-300 border border-emerald-500/40';
-          alertBox.innerText = '🎉 ลงทะเบียนสำเร็จเรียบร้อยแล้ว (โหมดพรีวิว)';
-          attendeesList.push({ empId: formData.empId, name: formData.fullName, department: formData.department });
-          document.getElementById('regForm').reset();
-          confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } });
-        }, 600);
-      }
-    }
-
-    // Load Attendees for Lucky Draw
-    function loadAttendees() {
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(res => {
-            if (res.success && res.data.length > 0) {
-              attendeesList = res.data;
-            }
-            updateAttendeeCount();
-          })
-          .apiGetAttendees();
-      } else {
-        updateAttendeeCount();
-      }
-    }
-
-    function updateAttendeeCount() {
-      const el = document.getElementById('attendeesCount');
-      if (el) el.innerText = `ผู้มีสิทธิ์ร่วมสนุก: ${attendeesList.length} คน`;
-    }
-
-    // Start Lucky Draw Animation
-    let isDrawing = false;
-    function startLuckyDraw() {
-      if (isDrawing) return;
-      if (attendeesList.length === 0) {
-        alert('ยังไม่มีรายชื่อผู้มีสิทธิ์ลุ้นรางวัล');
-        return;
-      }
-
-      isDrawing = true;
-      const btn = document.getElementById('btnDraw');
-      const nameEl = document.getElementById('displayWinnerName');
-      const detailEl = document.getElementById('displayWinnerDetail');
-      const prize = document.getElementById('prizeName').value || 'ของขวัญพิเศษ';
-
-      btn.disabled = true;
-      btn.classList.remove('animate-glow');
-      btn.innerText = 'กำลังสุ่ม... 🎲';
-
-      let count = 0;
-      const speed = 70;
-      const totalSteps = 30;
-
-      const interval = setInterval(() => {
-        const rand = attendeesList[Math.floor(Math.random() * attendeesList.length)];
-        nameEl.innerText = rand.name;
-        nameEl.className = 'text-3xl md:text-4xl font-extrabold text-pink-400';
-        detailEl.innerText = `รหัส: ${rand.empId} • แผนก: ${rand.department}`;
-        count++;
-
-        if (count >= totalSteps) {
-          clearInterval(interval);
-          isDrawing = false;
-          btn.disabled = false;
-          btn.classList.add('animate-glow');
-          btn.innerHTML = `<i data-lucide="shuffle" class="w-6 h-6 mr-2"></i> หมุนวงล้อสุ่มรางวัล!`;
-          lucide.createIcons();
-
-          // Pick Final Winner
-          const winnerIndex = Math.floor(Math.random() * attendeesList.length);
-          const winner = attendeesList.splice(winnerIndex, 1)[0]; // Remove winner so they don't win twice
-
-          nameEl.innerText = '🎊 ' + winner.name + ' 🎊';
-          nameEl.className = 'text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-400 to-rose-400 scale-105 transition transform';
-          detailEl.innerText = `รหัส: ${winner.empId} • แผนก: ${winner.department} | ได้รับ: ${prize}`;
-
-          // Confetti Celebration
-          confetti({
-            particleCount: 150,
-            spread: 100,
-            origin: { y: 0.6 }
+          await Swal.fire({
+            icon: 'success',
+            title: '🎄 ลงทะเบียนสำเร็จ!',
+            html: `
+              <div class="text-left text-sm space-y-1 bg-green-50 p-3 rounded-xl border border-green-200 mt-2">
+                <p><b>รหัสพนักงาน:</b> ${payload.empId}</p>
+                <p><b>ชื่อ-สกุล:</b> ${payload.empName}</p>
+                <p><b>แผนก:</b> ${payload.department}</p>
+                <p><b>สาขา:</b> ${payload.branch}</p>
+              </div>
+            `,
+            confirmButtonText: 'ตกลง',
+            confirmButtonColor: '#15803d'
           });
 
-          // Save Winner to backend
-          const record = {
-            empId: winner.empId,
-            name: winner.name,
-            department: winner.department,
-            prize: prize
-          };
-          winnersList.unshift(record);
-          updateAttendeeCount();
-
-          if (typeof google !== 'undefined' && google.script && google.script.run) {
-            google.script.run.apiSaveWinner(record);
+          if (typeof liff !== 'undefined' && liff.isInClient()) {
+            liff.closeWindow();
           }
+        } else {
+          Swal.fire({
+            icon: 'warning',
+            title: 'ไม่สามารถลงทะเบียนได้',
+            text: (result && result.message) ? result.message : 'เกิดข้อผิดพลาดในการบันทึกข้อมูล',
+            confirmButtonColor: '#b91c1c'
+          });
+          btnSubmit.disabled = false;
         }
-      }, speed);
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'เกิดข้อผิดพลาด',
+          text: err.message,
+          confirmButtonColor: '#b91c1c'
+        });
+        btnSubmit.disabled = false;
+      } finally {
+        btnSubmit.innerHTML = '<span>🎄</span><span>ยืนยันการลงทะเบียนเข้างาน</span>';
+      }
     }
 
-    // Load Winners Table
-    function loadWinners() {
-      const tbody = document.getElementById('winnersTableBody');
-
-      if (typeof google !== 'undefined' && google.script && google.script.run) {
-        google.script.run
-          .withSuccessHandler(res => {
-            if (res.success) {
-              renderWinnersTable(res.data);
+    // ส่งข้อมูลการลงทะเบียนเข้าแชท LINE ผ่าน liff.sendMessages()
+    async function sendRegistrationMessageToChat(data) {
+      try {
+        if (typeof liff !== 'undefined' && liff.isInClient()) {
+          await liff.sendMessages([
+            {
+              type: 'text',
+              text:
+                `🎄 ยืนยันการลงทะเบียนเข้างานเลี้ยงสำเร็จ!\n` +
+                `━━━━━━━━━━━━━━\n` +
+                `👤 ชื่อ-สกุล: ${data.empName}\n` +
+                `🆔 รหัสพนักงาน: ${data.empId}\n` +
+                `🏢 แผนก: ${data.department}\n` +
+                `📍 สาขา: ${data.branch}\n` +
+                `🕒 เวลา: ${data.timestamp || '-'}`
             }
-          })
-          .apiGetWinners();
-      } else {
-        renderWinnersTable(winnersList);
+          ]);
+        }
+      } catch (e) {
+        console.error('Error sending LIFF message:', e);
       }
     }
 
-    function renderWinnersTable(list) {
-      const tbody = document.getElementById('winnersTableBody');
-      if (!list || list.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-slate-500">ยังไม่มีรายชื่อผู้ได้รับรางวัล</td></tr>`;
-        return;
-      }
+    // รองรับการกด Enter หรือพิมพ์รหัสพนักงานแล้วค้นหาอัตโนมัติ
+    document.addEventListener('DOMContentLoaded', () => {
+      createSnowflakes();
+      initializeLiff();
 
-      tbody.innerHTML = list.map((item, idx) => `
-        <tr class="hover:bg-slate-700/30 transition">
-          <td class="px-4 py-3 font-semibold text-slate-400">#${idx + 1}</td>
-          <td class="px-4 py-3 font-mono text-xs">${item.empId}</td>
-          <td class="px-4 py-3 font-medium text-white">${item.name}</td>
-          <td class="px-4 py-3 text-slate-400">${item.department}</td>
-          <td class="px-4 py-3 font-bold text-pink-400">${item.prize}</td>
-        </tr>
-      `).join('');
-    }
+      const empInput = document.getElementById('empIdInput');
+      empInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          handleCheckEmployee();
+        }
+      });
 
-    // Init count on start
-    updateAttendeeCount();
+      empInput.addEventListener('input', () => {
+        resetEmployeePreview();
+        clearTimeout(debounceTimer);
+        const val = empInput.value.trim();
+        if (val.length >= 5) {
+          debounceTimer = setTimeout(() => {
+            handleCheckEmployee();
+          }, 600);
+        }
+      });
+    });
   </script>
 </body>
 </html>
