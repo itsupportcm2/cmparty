@@ -599,7 +599,11 @@
         const result = await callBackendSaveRegistration(payload);
 
         if (result && result.status === 'success') {
-          await sendRegistrationMessageToChat(result.data || payload);
+          await sendRegistrationMessageToChat({
+            ...payload,
+            ...(result.data || {}),
+            timestamp: result.timestamp || (result.data && result.data.timestamp) || new Date().toLocaleString('th-TH')
+          });
 
           await Swal.fire({
             icon: 'success',
@@ -641,26 +645,306 @@
       }
     }
 
-    // ส่งข้อมูลการลงทะเบียนเข้าแชท LINE ผ่าน liff.sendMessages()
+    // ส่งข้อมูลการลงทะเบียนเข้าแชท LINE ผ่าน liff.sendMessages() ในรูปแบบ Flex Message สไตล์บัตรเข้างาน (Christmas VIP Ticket)
     async function sendRegistrationMessageToChat(data) {
       try {
         if (typeof liff !== 'undefined' && liff.isInClient()) {
-          await liff.sendMessages([
-            {
-              type: 'text',
-              text:
-                `ยืนยันการลงทะเบียนเข้างานเลี้ยงสำเร็จ\n` +
-                `--------------------\n` +
-                `ชื่อ-สกุล: ${data.empName}\n` +
-                `รหัสพนักงาน: ${data.empId}\n` +
-                `แผนก: ${data.department}\n` +
-                `สาขา: ${data.branch}\n` +
-                `เวลา: ${data.timestamp || '-'}`
+          const profilePic = (data.pictureUrl && data.pictureUrl.startsWith('https://'))
+            ? data.pictureUrl
+            : (userProfile.pictureUrl && userProfile.pictureUrl.startsWith('https://')
+                ? userProfile.pictureUrl
+                : 'https://cdn-icons-png.flaticon.com/512/847/847969.png');
+
+          const lineName = data.displayName || userProfile.displayName || 'ผู้เข้าร่วมงาน';
+          const empName = data.empName || '-';
+          const empId = String(data.empId || '-');
+          const department = data.department || '-';
+          const branch = data.branch || '-';
+          const timestamp = data.timestamp || new Date().toLocaleString('th-TH');
+
+          const ticketFlexMessage = {
+            type: 'flex',
+            altText: `บัตรเข้างาน CM Party - ${empName} (รหัส ${empId})`,
+            contents: {
+              type: 'bubble',
+              size: 'mega',
+              header: {
+                type: 'box',
+                layout: 'vertical',
+                backgroundColor: '#991B1B',
+                paddingAll: '20px',
+                contents: [
+                  {
+                    type: 'box',
+                    layout: 'horizontal',
+                    alignItems: 'center',
+                    contents: [
+                      {
+                        type: 'box',
+                        layout: 'vertical',
+                        backgroundColor: '#FBBF24',
+                        cornerRadius: '20px',
+                        paddingStart: '10px',
+                        paddingEnd: '10px',
+                        paddingTop: '4px',
+                        paddingBottom: '4px',
+                        flex: 0,
+                        contents: [
+                          {
+                            type: 'text',
+                            text: 'VIP PASS',
+                            color: '#78350F',
+                            size: 'xxs',
+                            weight: 'bold'
+                          }
+                        ]
+                      },
+                      {
+                        type: 'text',
+                        text: 'CHRISTMAS & NEW YEAR',
+                        color: '#FDE68A',
+                        size: 'xxs',
+                        weight: 'bold',
+                        align: 'end'
+                      }
+                    ]
+                  },
+                  {
+                    type: 'text',
+                    text: 'CM PARTY TICKET',
+                    color: '#FFFFFF',
+                    size: 'xl',
+                    weight: 'bold',
+                    margin: 'md'
+                  },
+                  {
+                    type: 'text',
+                    text: 'บัตรยืนยันการลงทะเบียนเข้างานเลี้ยง',
+                    color: '#FECACA',
+                    size: 'xs',
+                    margin: 'xs'
+                  }
+                ]
+              },
+              body: {
+                type: 'box',
+                layout: 'vertical',
+                backgroundColor: '#FFFFFF',
+                paddingAll: '20px',
+                spacing: 'lg',
+                contents: [
+                  // ส่วนแสดงรูปโปรไฟล์ LINE + ชื่อพนักงาน
+                  {
+                    type: 'box',
+                    layout: 'horizontal',
+                    spacing: 'md',
+                    alignItems: 'center',
+                    contents: [
+                      {
+                        type: 'box',
+                        layout: 'vertical',
+                        width: '68px',
+                        height: '68px',
+                        cornerRadius: '34px',
+                        borderWidth: '3px',
+                        borderColor: '#15803D',
+                        flex: 0,
+                        contents: [
+                          {
+                            type: 'image',
+                            url: profilePic,
+                            size: 'full',
+                            aspectMode: 'cover',
+                            aspectRatio: '1:1'
+                          }
+                        ]
+                      },
+                      {
+                        type: 'box',
+                        layout: 'vertical',
+                        spacing: 'xs',
+                        contents: [
+                          {
+                            type: 'box',
+                            layout: 'horizontal',
+                            contents: [
+                              {
+                                type: 'box',
+                                layout: 'vertical',
+                                backgroundColor: '#DCFCE7',
+                                cornerRadius: '6px',
+                                paddingStart: '8px',
+                                paddingEnd: '8px',
+                                paddingTop: '2px',
+                                paddingBottom: '2px',
+                                flex: 0,
+                                contents: [
+                                  {
+                                    type: 'text',
+                                    text: 'VERIFIED',
+                                    color: '#15803D',
+                                    size: 'xxs',
+                                    weight: 'bold'
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            type: 'text',
+                            text: empName,
+                            weight: 'bold',
+                            size: 'lg',
+                            color: '#111827',
+                            wrap: true
+                          },
+                          {
+                            type: 'text',
+                            text: 'LINE: ' + lineName,
+                            size: 'xs',
+                            color: '#6B7280',
+                            wrap: true
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  // เส้นคั่นรอยปรุตั๋ว
+                  {
+                    type: 'separator',
+                    color: '#E5E7EB'
+                  },
+                  // รายละเอียดพนักงาน (กรอบการ์ดสีครีมทองอ่อน)
+                  {
+                    type: 'box',
+                    layout: 'vertical',
+                    backgroundColor: '#FEFCE8',
+                    cornerRadius: '12px',
+                    paddingAll: '14px',
+                    spacing: 'sm',
+                    borderWidth: '1px',
+                    borderColor: '#FDE68A',
+                    contents: [
+                      {
+                        type: 'box',
+                        layout: 'baseline',
+                        spacing: 'sm',
+                        contents: [
+                          {
+                            type: 'text',
+                            text: 'รหัสพนักงาน',
+                            color: '#92400E',
+                            size: 'xs',
+                            flex: 4
+                          },
+                          {
+                            type: 'text',
+                            text: empId,
+                            color: '#B91C1C',
+                            size: 'sm',
+                            weight: 'bold',
+                            flex: 6,
+                            wrap: true
+                          }
+                        ]
+                      },
+                      {
+                        type: 'box',
+                        layout: 'baseline',
+                        spacing: 'sm',
+                        contents: [
+                          {
+                            type: 'text',
+                            text: 'แผนก',
+                            color: '#92400E',
+                            size: 'xs',
+                            flex: 4
+                          },
+                          {
+                            type: 'text',
+                            text: department,
+                            color: '#1F2937',
+                            size: 'xs',
+                            weight: 'bold',
+                            flex: 6,
+                            wrap: true
+                          }
+                        ]
+                      },
+                      {
+                        type: 'box',
+                        layout: 'baseline',
+                        spacing: 'sm',
+                        contents: [
+                          {
+                            type: 'text',
+                            text: 'สาขา',
+                            color: '#92400E',
+                            size: 'xs',
+                            flex: 4
+                          },
+                          {
+                            type: 'text',
+                            text: branch,
+                            color: '#15803D',
+                            size: 'xs',
+                            weight: 'bold',
+                            flex: 6,
+                            wrap: true
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              footer: {
+                type: 'box',
+                layout: 'vertical',
+                backgroundColor: '#14532D',
+                paddingAll: '14px',
+                spacing: 'xs',
+                contents: [
+                  {
+                    type: 'box',
+                    layout: 'horizontal',
+                    alignItems: 'center',
+                    contents: [
+                      {
+                        type: 'text',
+                        text: 'STATUS: REGISTERED',
+                        color: '#86EFAC',
+                        size: 'xxs',
+                        weight: 'bold',
+                        flex: 1
+                      },
+                      {
+                        type: 'text',
+                        text: timestamp,
+                        color: '#DCFCE7',
+                        size: 'xxs',
+                        align: 'end',
+                        flex: 1
+                      }
+                    ]
+                  },
+                  {
+                    type: 'text',
+                    text: 'กรุณาแสดงบัตรนี้ที่จุดลงทะเบียนหน้างาน',
+                    color: '#FEF08A',
+                    size: 'xxs',
+                    align: 'center',
+                    margin: 'xs'
+                  }
+                ]
+              }
             }
-          ]);
+          };
+
+          await liff.sendMessages([ticketFlexMessage]);
         }
       } catch (e) {
-        console.error('Error sending LIFF message:', e);
+        console.error('Error sending LIFF Flex message:', e);
       }
     }
 
