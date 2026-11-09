@@ -145,7 +145,8 @@
         </label>
         <div class="relative">
           <input
-            type="text"
+            type="tel"
+            inputmode="numeric"
             id="empIdInput"
             autocomplete="off"
             placeholder="พิมพ์รหัสพนักงาน เช่น 672002"
@@ -256,7 +257,8 @@
     // ==========================================
     // สามารถใส่ LIFF ID ตรงนี้ หรือส่งมาทาง URL parameter ?liffId=xxxx ก็ได้
     const DEFAULT_LIFF_ID = '2012486224-eFJTgFwr';
-    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx6yDgQvf3RvCVu8nHRN3yQM6IM5Be2JZpESNT6nJ3XddDsOlrMj_S7nIPCRUqmZBjFYw/exec';
+    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzXGB3ckVANtHFesKySN341DrmH-FQHWbPg1zGcS9MBTpYWVWtHe7SDlu7cvoXauNld2A/exec';
+    const BACKUP_GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx6yDgQvf3RvCVu8nHRN3yQM6IM5Be2JZpESNT6nJ3XddDsOlrMj_S7nIPCRUqmZBjFYw/exec';
     const SPREADSHEET_ID = '1j2wb2cBiPK2IDfpNKJZBSUu3MDVwSEogAkRENvU-GJw';
     const SOURCE_SHEET_NAME = 'การตอบแบบฟอร์ม 1';
 
@@ -444,34 +446,63 @@
       throw new Error('ไม่สามารถเชื่อมต่อฐานข้อมูลพนักงานได้');
     }
 
-    function callBackendSaveRegistration(payload) {
-      return new Promise((resolve, reject) => {
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
+    async function callBackendSaveRegistration(payload) {
+      // 1. หากเปิดผ่าน Google Apps Script HtmlService โดยตรง
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        return await new Promise((resolve, reject) => {
           google.script.run
             .withSuccessHandler(resolve)
             .withFailureHandler(reject)
             .saveRegistrationData(payload);
-        } else if (GAS_WEB_APP_URL) {
-          fetch(GAS_WEB_APP_URL, {
+        });
+      }
+
+      // 2. ส่งข้อมูลผ่าน Web App URL (POST) พร้อมระบบสำรองผ่าน GET parameter
+      const urlsToTry = [GAS_WEB_APP_URL, BACKUP_GAS_WEB_APP_URL].filter(Boolean);
+      let lastError = null;
+
+      for (const apiUrl of urlsToTry) {
+        try {
+          const res = await fetch(apiUrl, {
             method: 'POST',
             redirect: 'follow',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify(payload)
-          })
-            .then(async res => {
-              const text = await res.text();
-              try {
-                return JSON.parse(text);
-              } catch (parseErr) {
-                throw new Error('กรุณาตั้งค่าการ Deploy Web App ของ Google Apps Script ให้ Who has access เป็น "Anyone" (ทุกคน)');
-              }
-            })
-            .then(resolve)
-            .catch(reject);
-        } else {
-          reject(new Error('ไม่พบการเชื่อมต่อ Google Apps Script API'));
+          });
+          const text = await res.text();
+          const json = JSON.parse(text);
+          if (json && json.status) {
+            return json;
+          }
+        } catch (postErr) {
+          lastError = postErr;
+          try {
+            const params = new URLSearchParams({
+              action: 'saveRegistration',
+              empId: payload.empId || '',
+              empName: payload.empName || '',
+              department: payload.department || '',
+              branch: payload.branch || '',
+              uid: payload.uid || '',
+              displayName: payload.displayName || '',
+              pictureUrl: payload.pictureUrl || ''
+            });
+            const getRes = await fetch(`${apiUrl}?${params.toString()}`, {
+              method: 'GET',
+              redirect: 'follow'
+            });
+            const getText = await getRes.text();
+            const getJson = JSON.parse(getText);
+            if (getJson && getJson.status) {
+              return getJson;
+            }
+          } catch (getErr) {
+            lastError = getErr;
+          }
         }
-      });
+      }
+
+      throw new Error(lastError ? lastError.message : 'ไม่สามารถเชื่อมต่อ Web App API เพื่อบันทึกข้อมูลได้');
     }
 
     // ตรวจสอบรหัสพนักงานอัตโนมัติขณะพิมพ์
