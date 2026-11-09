@@ -244,7 +244,7 @@
     // ==========================================
     const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx6yDgQvf3RvCVu8nHRN3yQM6IM5Be2JZpESNT6nJ3XddDsOlrMj_S7nIPCRUqmZBjFYw/exec';
     const SPREADSHEET_ID = '1j2wb2cBiPK2IDfpNKJZBSUu3MDVwSEogAkRENvU-GJw';
-    const SOURCE_SHEET_NAME = 'การตอบแบบฟอร์ม 1';
+    const REGISTER_SHEET_NAME = 'Register';
     const REWARD_SHEET_GID = '195154721';
 
     let rewardsList = [];
@@ -252,57 +252,51 @@
     let currentFilter = 'all';
     let currentMatchedEmployee = null;
 
-    // โหลดข้อมูลทั้งหมด (รายการรางวัล + พนักงานทั้งหมด + UID จากหน้า Register)
+    // โหลดข้อมูลทั้งหมด (ดึงรายชื่อพนักงาน + UID จาก Sheet "Register" และรายการรางวัลจาก gid=195154721)
     async function loadAllData(showToast = false) {
       const refreshIcon = document.getElementById('refreshIcon');
       if (refreshIcon) refreshIcon.classList.add('fa-spin');
 
       try {
-        // 1. ดึงข้อมูลแบบรวดเร็วจาก Google Visualization API คู่กับ GAS API
-        const [empRes, regRes, rewardRes] = await Promise.allSettled([
-          fetchSheetGvizJson(`sheet=${encodeURIComponent(SOURCE_SHEET_NAME)}`),
-          fetchSheetGvizJson(`sheet=Register`),
+        // ดึงข้อมูลจาก Sheet "Register" และ Sheet รางวัล (gid=195154721)
+        const [regRes, rewardRes] = await Promise.allSettled([
+          fetchSheetGvizJson(`sheet=${encodeURIComponent(REGISTER_SHEET_NAME)}`),
           fetchSheetGvizJson(`gid=${REWARD_SHEET_GID}`)
         ]);
 
         const uidMap = {};
         if (regRes.status === 'fulfilled' && regRes.value) {
+          const cols = (regRes.value.table && regRes.value.table.cols) || [];
           const regRows = (regRes.value.table && regRes.value.table.rows) || [];
-          for (let i = 0; i < regRows.length; i++) {
-            const c = regRows[i].c || [];
-            const empId = cleanCell(c[1]);
-            const uid = cleanCell(c[5]);
-            const pic = cleanCell(c[7]);
-            if (empId) {
-              uidMap[empId] = { uid, pictureUrl: pic };
-            }
-          }
-        }
-
-        if (empRes.status === 'fulfilled' && empRes.value) {
-          const cols = (empRes.value.table && empRes.value.table.cols) || [];
-          const rows = (empRes.value.table && empRes.value.table.rows) || [];
           const labelC = (cols[2] && cols[2].label) ? String(cols[2].label) : '';
           const labelD = (cols[3] && cols[3].label) ? String(cols[3].label) : '';
           const isColCName = labelC.indexOf('ชื่อ') !== -1 && labelD.indexOf('แผนก') !== -1;
 
           const newEmpMap = {};
-          for (let i = 0; i < rows.length; i++) {
-            const c = rows[i].c || [];
+          for (let i = 0; i < regRows.length; i++) {
+            const c = regRows[i].c || [];
             const empId = cleanCell(c[1]);
             if (!empId || empId === 'รหัสพนักงาน') continue;
+
             const valC = cleanCell(c[2]);
             const valD = cleanCell(c[3]);
-            const valE = cleanCell(c[4]);
-            const regInfo = uidMap[empId] || {};
+            const branch = cleanCell(c[4]);
+            const uid = cleanCell(c[5]);
+            const displayName = cleanCell(c[6]);
+            const pic = cleanCell(c[7]);
 
+            const empName = isColCName ? valC : valD;
+            const department = isColCName ? valD : valC;
+
+            uidMap[empId] = { uid, pictureUrl: pic };
             newEmpMap[empId] = {
               empId,
-              empName: isColCName ? valC : valD,
-              department: isColCName ? valD : valC,
-              branch: valE,
-              uid: regInfo.uid || '',
-              pictureUrl: regInfo.pictureUrl || ''
+              empName,
+              department,
+              branch,
+              uid,
+              displayName,
+              pictureUrl: pic
             };
           }
           employeesMap = newEmpMap;
@@ -533,12 +527,12 @@
       } else {
         currentMatchedEmployee = null;
         matchIcon.classList.add('hidden');
-        nameEl.innerText = 'ไม่พบรหัสพนักงานนี้';
+        nameEl.innerText = 'ไม่พบรหัสพนักงานนี้ในหน้า Register';
         deptEl.innerText = '-';
         branchEl.innerText = '-';
         previewBox.className = 'mt-3 p-3 rounded-2xl bg-red-50/60 border border-red-200 flex flex-wrap items-center justify-between gap-2 text-xs';
         uidBadge.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 font-medium';
-        uidBadge.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i><span>ไม่พบรหัสในระบบตั้งต้น</span>';
+        uidBadge.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i><span>ยังไม่ได้ลงทะเบียนเข้างาน (ไม่พบใน Sheet Register)</span>';
       }
 
       validateSaveButton();
