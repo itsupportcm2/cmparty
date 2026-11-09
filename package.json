@@ -1,0 +1,13 @@
+{
+  "name": "cmparty",
+  "version": "1.0.0",
+  "description": "CM Party - Google Apps Script Web App",
+  "scripts": {
+    "push": "clasp push",
+    "pull": "clasp pull",
+    "deploy": "clasp deploy"
+  },
+  "devDependencies": {
+    "@google/clasp": "^3.4.1"
+  }
+}
