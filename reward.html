@@ -226,6 +226,7 @@
             <tr class="bg-gray-100 text-gray-600 text-xs uppercase border-y border-gray-200">
               <th class="py-3 px-4 w-12 text-center">#</th>
               <th class="py-3 px-4">ชื่อรางวัล</th>
+              <th class="py-3 px-4 text-center w-28">จำนวนชิ้น</th>
               <th class="py-3 px-4">ผู้ได้รับรางวัล</th>
               <th class="py-3 px-4 hidden sm:table-cell">แผนก / สาขา</th>
               <th class="py-3 px-4 text-center w-28">จัดการ</th>
@@ -233,7 +234,7 @@
           </thead>
           <tbody id="rewardsTableBody" class="divide-y divide-gray-100 text-sm">
             <tr>
-              <td colspan="5" class="py-10 text-center text-gray-400">
+              <td colspan="6" class="py-10 text-center text-gray-400">
                 <i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังโหลดข้อมูลรางวัล...
               </td>
             </tr>
@@ -258,13 +259,17 @@
     let currentFilter = 'all';
     let currentMatchedEmployee = null;
 
-    // ตรวจสอบว่าข้อมูล Gviz ที่ได้มาจาก Sheet "Register" จริงหรือไม่ (ต้องมีคอลัมน์ LINE UID หรือมีอย่างน้อย 6 คอลัมน์ ไม่ใช่แผ่นงานแรก)
+    // ตรวจสอบว่าข้อมูล Gviz ที่ได้มาจาก Sheet "Register" จริงหรือไม่ (คอลัมน์ F ต้องเป็น LINE UID ไม่ใช่แผ่นงานแบบฟอร์มแรก)
     function isValidRegisterGvizTable(gvizObj) {
       if (!gvizObj || !gvizObj.table) return false;
       const cols = gvizObj.table.cols || [];
       const rows = gvizObj.table.rows || [];
-      if (cols.length >= 6) return true;
-      if (rows.length > 0 && rows[0].c && rows[0].c.length >= 6) return true;
+      const colFLabel = (cols[5] && cols[5].label) ? String(cols[5].label).toUpperCase() : '';
+      if (colFLabel.indexOf('UID') !== -1 || colFLabel.indexOf('LINE') !== -1) return true;
+      if (rows.length > 0 && rows[0].c) {
+        const cellF = cleanCell(rows[0].c[5]).toUpperCase();
+        if (cellF.indexOf('UID') !== -1 || cellF.indexOf('U') === 0) return true;
+      }
       return false;
     }
 
@@ -317,57 +322,48 @@
       return { newEmpMap, uidMap };
     }
 
-    // โหลดข้อมูลทั้งหมด (ดึงรายชื่อผู้ลงทะเบียน + UID จาก Sheet "Register" เท่านั้น และรายการรางวัลจาก gid=195154721)
+    // โหลดข้อมูลทั้งหมดอย่างรวดเร็ว (ดึงรายชื่อผู้ลงทะเบียน + UID จาก Sheet "Register " เท่านั้น และรายการรางวัลจาก Sheet gift gid=195154721)
     async function loadAllData(showToast = false) {
       const refreshIcon = document.getElementById('refreshIcon');
       if (refreshIcon) refreshIcon.classList.add('fa-spin');
 
       try {
-        // 1. เรียกข้อมูลจาก GAS API (getRewardInitData ซึ่งดึงจาก Sheet "Register" โดยตรงผ่าน getSheetSafely) ควบคู่กับ Gviz
-        const [apiRes, regRes1, regRes2, rewardRes] = await Promise.allSettled([
-          callGasApi({ action: 'getRewardInitData' }),
-          fetchSheetGvizJson(`sheet=${encodeURIComponent(REGISTER_SHEET_NAME)}`),
-          fetchSheetGvizJson(`sheet=${encodeURIComponent(REGISTER_SHEET_NAME + ' ')}`),
+        // ดึงข้อมูลจาก Sheet "Register " (รองรับทั้งมีวรรคและไม่มีวรรค) และ Sheet gift (gid=195154721) โดยตรง (รวดเร็ว ~0.2 วินาที)
+        const [regResSpace, regResNoSpace, rewardRes] = await Promise.allSettled([
+          fetchSheetGvizJson(`sheet=${encodeURIComponent('Register ')}`),
+          fetchSheetGvizJson(`sheet=${encodeURIComponent('Register')}`),
           fetchSheetGvizJson(`gid=${REWARD_SHEET_GID}`)
         ]);
 
         let uidMap = {};
-        let loadedEmployeesFromApi = false;
+        let validRegGviz = null;
 
-        // หาก GAS API ตอบกลับรายชื่อผู้ลงทะเบียนจาก Sheet Register สำเร็จ ให้ใช้เป็นหลัก
-        if (apiRes.status === 'fulfilled' && apiRes.value && apiRes.value.status === 'success') {
-          if (apiRes.value.employees && Object.keys(apiRes.value.employees).length > 0) {
-            employeesMap = apiRes.value.employees;
+        if (regResSpace.status === 'fulfilled' && isValidRegisterGvizTable(regResSpace.value)) {
+          validRegGviz = regResSpace.value;
+        } else if (regResNoSpace.status === 'fulfilled' && isValidRegisterGvizTable(regResNoSpace.value)) {
+          validRegGviz = regResNoSpace.value;
+        }
+
+        if (validRegGviz) {
+          const parsed = parseRegisterGvizToMap(validRegGviz);
+          employeesMap = parsed.newEmpMap;
+          uidMap = parsed.uidMap;
+        } else {
+          // Fallback เรียกผ่าน GAS API กรณีอ่าน Gviz ไม่ได้
+          const apiData = await callGasApi({ action: 'getRewardInitData' });
+          if (apiData && apiData.status === 'success' && apiData.employees) {
+            employeesMap = apiData.employees;
             Object.keys(employeesMap).forEach(id => {
               uidMap[id] = {
                 uid: employeesMap[id].uid || '',
                 pictureUrl: employeesMap[id].pictureUrl || ''
               };
             });
-            loadedEmployeesFromApi = true;
-          }
-          if (Array.isArray(apiRes.value.rewards) && apiRes.value.rewards.length > 0) {
-            rewardsList = apiRes.value.rewards;
           }
         }
 
-        // หากยังไม่ได้รายชื่อจาก API ให้ใช้ Gviz ของ Sheet "Register" (ตรวจสอบว่าเป็นแท็บ Register จริง ไม่ใช่แท็บแรก)
-        if (!loadedEmployeesFromApi) {
-          let validRegGviz = null;
-          if (regRes1.status === 'fulfilled' && isValidRegisterGvizTable(regRes1.value)) {
-            validRegGviz = regRes1.value;
-          } else if (regRes2.status === 'fulfilled' && isValidRegisterGvizTable(regRes2.value)) {
-            validRegGviz = regRes2.value;
-          }
-
-          if (validRegGviz) {
-            const parsed = parseRegisterGvizToMap(validRegGviz);
-            employeesMap = parsed.newEmpMap;
-            uidMap = parsed.uidMap;
-          }
-        }
-
-        // อัปเดตรายการรางวัลจาก Sheet รางวัล (gid=195154721)
+        // อัปเดตรายการรางวัลจาก Sheet gift (gid=195154721)
+        // โครงสร้างคอลัมน์ใหม่: A(0)=ชื่อรางวัล, B(1)=จำนวนชิ้น, C(2)=รหัสพนักงาน, D(3)=ชื่อ, E(4)=แผนก, F(5)=สาขา, G(6)=uid
         if (rewardRes.status === 'fulfilled' && rewardRes.value) {
           const table = rewardRes.value.table || {};
           const rows = table.rows || [];
@@ -377,21 +373,24 @@
           for (let i = 0; i < rows.length; i++) {
             const c = rows[i].c || [];
             const rName = cleanCell(c[0]);
-            const rEmpId = cleanCell(c[1]);
+            const rawQty = cleanCell(c[1]);
             // ข้ามแถวหัวตารางแถวแรก
-            if (i === 0 && rName === 'ชื่อรางวัล') continue;
+            if (i === 0 && (rName === 'ชื่อรางวัล' || rawQty === 'จำนวนชิ้น')) continue;
 
+            const rQty = rawQty !== '' && !isNaN(Number(rawQty)) ? parseInt(rawQty, 10) : 0;
+            const rEmpId = cleanCell(c[2]);
             const rowIndex = i + 1 + parsedHeaders;
             const regEmp = rEmpId ? employeesMap[rEmpId] : null;
-            const rEmpName = cleanCell(c[2]) || (regEmp ? regEmp.empName : '');
-            const rDept = cleanCell(c[3]) || (regEmp ? regEmp.department : '');
-            const rBranch = cleanCell(c[4]) || (regEmp ? regEmp.branch : '');
-            const rUid = cleanCell(c[5]) || (uidMap[rEmpId] ? uidMap[rEmpId].uid : '');
+            const rEmpName = cleanCell(c[3]) || (regEmp ? regEmp.empName : '');
+            const rDept = cleanCell(c[4]) || (regEmp ? regEmp.department : '');
+            const rBranch = cleanCell(c[5]) || (regEmp ? regEmp.branch : '');
+            const rUid = cleanCell(c[6]) || (uidMap[rEmpId] ? uidMap[rEmpId].uid : '');
 
             if (rName || rEmpId) {
               parsedRewards.push({
                 rowIndex,
                 rewardName: rName,
+                quantity: Math.max(0, rQty),
                 empId: rEmpId,
                 empName: rEmpName,
                 department: rDept,
@@ -474,18 +473,18 @@
       }
     }
 
-    // อัปเดตตัวเลขสรุป, รายชื่อผู้ลงทะเบียนจาก Sheet Register และ Dropdown เลือกรางวัล
+    // อัปเดตตัวเลขสรุป, รายชื่อผู้ลงทะเบียนจาก Sheet Register และ Dropdown เลือกรางวัล (แสดงเฉพาะรางวัลที่มี จำนวนชิ้น > 0)
     function updateStatsAndDropdown() {
       const registeredCount = Object.keys(employeesMap).length;
-      const total = rewardsList.length;
-      const assigned = rewardsList.filter(r => r.empId && r.empId.trim() !== '').length;
-      const remaining = total - assigned;
+      const totalItems = rewardsList.length;
+      const assignedCount = rewardsList.filter(r => r.empId && r.empId.trim() !== '').length;
+      const remainingPieces = rewardsList.reduce((sum, r) => sum + (Math.max(0, Number(r.quantity) || 0)), 0);
 
       const statRegEl = document.getElementById('statRegistered');
       if (statRegEl) statRegEl.innerText = registeredCount;
-      document.getElementById('statTotal').innerText = total;
-      document.getElementById('statAssigned').innerText = assigned;
-      document.getElementById('statRemaining').innerText = remaining;
+      document.getElementById('statTotal').innerText = totalItems;
+      document.getElementById('statAssigned').innerText = assignedCount;
+      document.getElementById('statRemaining').innerText = remainingPieces;
 
       // อัปเดต Datalist รายชื่อผู้ลงทะเบียนจาก Sheet Register
       const datalist = document.getElementById('registeredEmployeesDatalist');
@@ -504,56 +503,38 @@
         return;
       }
 
-      // เรียงให้รางวัลที่ยังไม่ได้แจกขึ้นก่อน เพื่อความสะดวกในการคีย์
-      const unassignedList = rewardsList.filter(r => !r.empId);
-      const assignedList = rewardsList.filter(r => r.empId);
+      // กรองเฉพาะรางวัลที่ จำนวนชิ้น > 0 เท่านั้น (ถ้า = 0 ไม่ต้องแสดงให้เลือกอีก)
+      const availableList = rewardsList.filter(r => (Number(r.quantity) || 0) > 0);
 
-      if (unassignedList.length > 0) {
-        const optGroup1 = document.createElement('optgroup');
-        optGroup1.label = `🎁 รางวัลที่ยังไม่ได้แจก (${unassignedList.length})`;
-        unassignedList.forEach(item => {
-          const opt = document.createElement('option');
-          opt.value = item.rowIndex;
-          opt.textContent = item.rewardName;
-          optGroup1.appendChild(opt);
-        });
-        select.appendChild(optGroup1);
+      if (availableList.length === 0) {
+        select.innerHTML = '<option value="">-- รางวัลแจกครบหมดแล้ว (จำนวนชิ้น = 0 ทั้งหมด) --</option>';
+        validateSaveButton();
+        return;
       }
 
-      if (assignedList.length > 0) {
-        const optGroup2 = document.createElement('optgroup');
-        optGroup2.label = `✅ แจกแล้ว - คลิกเพื่อแก้ไข (${assignedList.length})`;
-        assignedList.forEach(item => {
-          const opt = document.createElement('option');
-          opt.value = item.rowIndex;
-          opt.textContent = `${item.rewardName} (${item.empId} - ${item.empName})`;
-          optGroup2.appendChild(opt);
-        });
-        select.appendChild(optGroup2);
-      }
+      const optGroup1 = document.createElement('optgroup');
+      optGroup1.label = `🎁 รางวัลที่พร้อมแจก (${availableList.length} รายการ | คงเหลือรวม ${remainingPieces} ชิ้น)`;
+      availableList.forEach(item => {
+        const opt = document.createElement('option');
+        opt.value = item.rowIndex;
+        opt.textContent = `${item.rewardName} (คงเหลือ ${item.quantity} ชิ้น)`;
+        optGroup1.appendChild(opt);
+      });
+      select.appendChild(optGroup1);
 
-      // คงค่าที่เลือกไว้ หรือเลือกรางวัลแรกที่ยังไม่ได้แจกโดยอัตโนมัติ
-      if (previousVal && rewardsList.some(r => String(r.rowIndex) === String(previousVal))) {
+      // คงค่าที่เลือกไว้หากรางวัลนั้นยังมีจำนวนชิ้น > 0 มิฉะนั้นเลือกรางวัลแรกที่ยังมีของอยู่
+      if (previousVal && availableList.some(r => String(r.rowIndex) === String(previousVal))) {
         select.value = previousVal;
-      } else if (unassignedList.length > 0) {
-        select.value = unassignedList[0].rowIndex;
-      } else if (rewardsList.length > 0) {
-        select.value = rewardsList[0].rowIndex;
+      } else {
+        select.value = availableList[0].rowIndex;
       }
+      validateSaveButton();
     }
 
     // เมื่อเปลี่ยนรางวัลใน Dropdown
     function handleSelectRewardDropdown() {
-      const rowIndex = parseInt(document.getElementById('rewardSelect').value, 10);
-      const item = rewardsList.find(r => r.rowIndex === rowIndex);
       const empInput = document.getElementById('empIdInput');
-
-      if (item && item.empId) {
-        empInput.value = item.empId;
-        lookupEmployeeInstant(item.empId);
-      } else {
-        empInput.focus();
-      }
+      empInput.focus();
       validateSaveButton();
     }
 
@@ -614,17 +595,33 @@
 
     function validateSaveButton() {
       const rewardRow = document.getElementById('rewardSelect').value;
+      const rewardObj = rewardsList.find(r => String(r.rowIndex) === String(rewardRow));
+      const hasStock = rewardObj && (Number(rewardObj.quantity) || 0) > 0;
       const btn = document.getElementById('btnSaveReward');
-      btn.disabled = !(rewardRow && currentMatchedEmployee);
+      btn.disabled = !(rewardRow && hasStock && currentMatchedEmployee);
     }
 
-    // บันทึกผู้ได้รับรางวัลอย่างรวดเร็ว + ส่ง LINE Flex Message
+    // บันทึกผู้ได้รับรางวัลอย่างรวดเร็ว + หักจำนวนชิ้นทีละ 1 + ส่ง LINE Flex Message
     async function handleQuickSave() {
       const select = document.getElementById('rewardSelect');
       const rowIndex = parseInt(select.value, 10);
       const rewardObj = rewardsList.find(r => r.rowIndex === rowIndex);
 
       if (!rewardObj || !currentMatchedEmployee) return;
+
+      const currentQty = Math.max(0, Number(rewardObj.quantity) || 0);
+      if (currentQty <= 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'รางวัลนี้หมดแล้ว',
+          text: `"${rewardObj.rewardName}" มีจำนวนคงเหลือ 0 ชิ้น ไม่สามารถเลือกได้อีก`,
+          confirmButtonColor: '#b91c1c'
+        });
+        updateStatsAndDropdown();
+        return;
+      }
+
+      const nextQty = Math.max(0, currentQty - 1);
 
       const btn = document.getElementById('btnSaveReward');
       btn.disabled = true;
@@ -634,6 +631,8 @@
         action: 'saveReward',
         rowIndex: rowIndex,
         rewardName: rewardObj.rewardName,
+        quantity: nextQty,
+        decrementQty: true,
         empId: currentMatchedEmployee.empId,
         empName: currentMatchedEmployee.empName,
         department: currentMatchedEmployee.department,
@@ -645,11 +644,16 @@
       try {
         const res = await callGasApi(payload);
         if (res && res.status === 'success') {
-          // อัปเดตข้อมูลในตารางทันทีโดยไม่ต้องรอโหลดใหม่
+          // อัปเดตข้อมูลในตารางและหักจำนวนชิ้นลง 1 ทันทีโดยไม่ต้องรอโหลดใหม่
           const idx = rewardsList.findIndex(r => r.rowIndex === rowIndex);
+          const updatedQty = (res.data && res.data.quantity !== undefined)
+            ? Math.max(0, Number(res.data.quantity))
+            : nextQty;
+
           if (idx !== -1) {
             rewardsList[idx] = {
               ...rewardsList[idx],
+              quantity: updatedQty,
               empId: payload.empId,
               empName: payload.empName,
               department: payload.department,
@@ -686,7 +690,7 @@
               toast: true,
               position: 'top-end',
               icon: 'success',
-              title: `บันทึก "${rewardObj.rewardName}" ให้คุณ ${payload.empName} สำเร็จ!`,
+              title: `บันทึก "${rewardObj.rewardName}" ให้คุณ ${payload.empName} สำเร็จ! (คงเหลือ ${updatedQty} ชิ้น)`,
               text: res.lineSent ? 'ส่ง Flex Message แจ้งเตือนทาง LINE แล้ว' : statusText,
               showConfirmButton: false,
               timer: 2800
@@ -713,27 +717,38 @@
       }
     }
 
-    // เลือกรายการจากตารางขึ้นมาแก้ไขด้านบนทันที
+    // คลิกเลือกรางวัลจากตารางด้านล่างเพื่อนำขึ้นไปคีย์รหัสพนักงานด้านบน
     function selectRowForEdit(rowIndex) {
+      const item = rewardsList.find(r => r.rowIndex === rowIndex);
+      if (!item) return;
+
+      if ((Number(item.quantity) || 0) <= 0) {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'warning',
+          title: `รางวัล "${item.rewardName}" หมดแล้ว (คงเหลือ 0 ชิ้น)`,
+          showConfirmButton: false,
+          timer: 2000
+        });
+        return;
+      }
+
       const select = document.getElementById('rewardSelect');
       select.value = rowIndex;
-      const item = rewardsList.find(r => r.rowIndex === rowIndex);
       const empInput = document.getElementById('empIdInput');
-
-      if (item) {
-        empInput.value = item.empId || '';
-        lookupEmployeeInstant(item.empId || '');
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-        setTimeout(() => empInput.focus(), 200);
-      }
+      empInput.value = '';
+      lookupEmployeeInstant('');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      setTimeout(() => empInput.focus(), 200);
     }
 
-    // ล้างข้อมูลผู้รับรางวัลในแถวนั้น (Delete / Clear Winner)
+    // ล้างข้อมูลผู้รับรางวัลในแถวนั้น และคืนจำนวนชิ้น +1 (Delete / Clear Winner)
     async function handleClearWinner(rowIndex, rewardName, empName) {
       const confirm = await Swal.fire({
         icon: 'warning',
         title: 'ล้างรายชื่อผู้รับรางวัล?',
-        html: `ต้องการลบชื่อ <b>${empName}</b> ออกจากรางวัล<br><b>"${rewardName}"</b> ใช่หรือไม่?`,
+        html: `ต้องการลบชื่อ <b>${empName}</b> ออกจากรางวัล<br><b>"${rewardName}"</b> และคืนจำนวนชิ้น (+1) ใช่หรือไม่?`,
         showCancelButton: true,
         confirmButtonText: 'ใช่, ล้างข้อมูล',
         cancelButtonText: 'ยกเลิก',
@@ -752,6 +767,10 @@
         if (res && res.status === 'success') {
           const idx = rewardsList.findIndex(r => r.rowIndex === rowIndex);
           if (idx !== -1) {
+            const restoredQty = (res.data && res.data.quantity !== undefined)
+              ? Number(res.data.quantity)
+              : (Number(rewardsList[idx].quantity) || 0) + 1;
+            rewardsList[idx].quantity = restoredQty;
             rewardsList[idx].empId = '';
             rewardsList[idx].empName = '';
             rewardsList[idx].department = '';
@@ -765,7 +784,7 @@
             toast: true,
             position: 'top-end',
             icon: 'success',
-            title: 'ล้างข้อมูลผู้รับรางวัลเรียบร้อยแล้ว',
+            title: 'ล้างข้อมูลผู้รับรางวัลและคืนจำนวนชิ้นเรียบร้อยแล้ว',
             showConfirmButton: false,
             timer: 1800
           });
@@ -775,36 +794,59 @@
       }
     }
 
-    // เพิ่มชื่อรางวัลใหม่ (Create Prize Row)
+    // เพิ่มชื่อรางวัลใหม่พร้อมระบุจำนวนชิ้น (Create Prize Row)
     async function openNewPrizeModal() {
-      const { value: prizeName } = await Swal.fire({
+      const { value: formValues } = await Swal.fire({
         title: 'เพิ่มรายการรางวัลใหม่',
-        input: 'text',
-        inputLabel: 'ระบุชื่อรางวัลที่ต้องการเพิ่มลงในตาราง',
-        inputPlaceholder: 'เช่น ทองคำ 1 สลึง / พัดลมตั้งพื้น 16 นิ้ว',
+        html: `
+          <div class="text-left space-y-3 mt-2">
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">ชื่อรางวัล</label>
+              <input id="swalPrizeName" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm" placeholder="เช่น ทองคำ 1 สลึง / พัดลมตั้งพื้น 16 นิ้ว">
+            </div>
+            <div>
+              <label class="block text-xs font-bold text-gray-700 mb-1">จำนวนชิ้น</label>
+              <input id="swalPrizeQty" type="number" min="1" value="1" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm">
+            </div>
+          </div>
+        `,
+        focusConfirm: false,
         showCancelButton: true,
         confirmButtonText: 'เพิ่มรางวัล',
         cancelButtonText: 'ยกเลิก',
         confirmButtonColor: '#15803d',
-        inputValidator: (value) => {
-          if (!value || !value.trim()) {
-            return 'กรุณาระบุชื่อรางวัล';
+        preConfirm: () => {
+          const name = document.getElementById('swalPrizeName').value.trim();
+          const qty = parseInt(document.getElementById('swalPrizeQty').value, 10);
+          if (!name) {
+            Swal.showValidationMessage('กรุณาระบุชื่อรางวัล');
+            return false;
           }
+          if (isNaN(qty) || qty < 1) {
+            Swal.showValidationMessage('กรุณาระบุจำนวนชิ้นอย่างน้อย 1 ชิ้น');
+            return false;
+          }
+          return { name, qty };
         }
       });
 
-      if (!prizeName) return;
+      if (!formValues) return;
 
       try {
         const res = await callGasApi({
           action: 'saveReward',
           rowIndex: 0,
-          rewardName: prizeName.trim(),
+          rewardName: formValues.name,
+          quantity: formValues.qty,
+          decrementQty: false,
           empId: ''
         });
 
         if (res && res.status === 'success' && res.data) {
-          rewardsList.push(res.data);
+          rewardsList.push({
+            ...res.data,
+            quantity: res.data.quantity !== undefined ? Number(res.data.quantity) : formValues.qty
+          });
           updateStatsAndDropdown();
           document.getElementById('rewardSelect').value = res.data.rowIndex;
           renderRewardsTable();
@@ -855,9 +897,10 @@
       const keyword = (document.getElementById('searchInput').value || '').trim().toLowerCase();
 
       const filtered = rewardsList.filter(item => {
+        const qty = Math.max(0, Number(item.quantity) || 0);
         const hasWinner = Boolean(item.empId && item.empId.trim() !== '');
-        if (currentFilter === 'unassigned' && hasWinner) return false;
-        if (currentFilter === 'assigned' && !hasWinner) return false;
+        if (currentFilter === 'unassigned' && qty <= 0) return false;
+        if (currentFilter === 'assigned' && !hasWinner && qty > 0) return false;
 
         if (keyword) {
           const text = `${item.rewardName} ${item.empId} ${item.empName} ${item.department} ${item.branch}`.toLowerCase();
@@ -869,7 +912,7 @@
       if (filtered.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="5" class="py-10 text-center text-gray-400">
+            <td colspan="6" class="py-10 text-center text-gray-400">
               <i class="fa-solid fa-box-open mr-1.5"></i>ไม่พบรายการรางวัลตามเงื่อนไขที่เลือก
             </td>
           </tr>
@@ -878,20 +921,33 @@
       }
 
       tbody.innerHTML = filtered.map((item, idx) => {
+        const qty = Math.max(0, Number(item.quantity) || 0);
+        const isOut = qty <= 0;
         const hasWinner = Boolean(item.empId && item.empId.trim() !== '');
         const hasUid = Boolean(item.uid && item.uid.trim() !== '');
 
         return `
-          <tr class="hover:bg-amber-50/40 transition ${hasWinner ? 'bg-green-50/20' : ''}">
+          <tr class="hover:bg-amber-50/40 transition ${isOut ? 'bg-gray-100/70 opacity-75' : (hasWinner ? 'bg-green-50/20' : '')}">
             <td class="py-3 px-4 text-center text-xs font-semibold text-gray-400">${idx + 1}</td>
             <td class="py-3 px-4">
-              <div class="font-bold text-gray-800 flex items-center gap-2">
-                <i class="fa-solid fa-gift ${hasWinner ? 'text-green-600' : 'text-red-600'}"></i>
+              <div class="font-bold ${isOut ? 'text-gray-400 line-through' : 'text-gray-800'} flex items-center gap-2">
+                <i class="fa-solid fa-gift ${isOut ? 'text-gray-400' : (hasWinner ? 'text-green-600' : 'text-red-600')}"></i>
                 <span>${escapeHtml(item.rewardName)}</span>
               </div>
               <div class="sm:hidden text-xs text-gray-500 mt-0.5">
                 ${hasWinner ? `${escapeHtml(item.department)} (${escapeHtml(item.branch)})` : ''}
               </div>
+            </td>
+            <td class="py-3 px-4 text-center">
+              ${isOut ? `
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-gray-200 text-gray-500">
+                  หมด (0)
+                </span>
+              ` : `
+                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                  ${qty} ชิ้น
+                </span>
+              `}
             </td>
             <td class="py-3 px-4">
               ${hasWinner ? `
@@ -914,21 +970,25 @@
             </td>
             <td class="py-3 px-4 text-center">
               <div class="inline-flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onclick="selectRowForEdit(${item.rowIndex})"
-                  class="px-2.5 py-1.5 rounded-lg ${hasWinner ? 'bg-amber-100 text-amber-800 hover:bg-amber-200' : 'bg-green-600 text-white hover:bg-green-700'} text-xs font-semibold transition flex items-center gap-1"
-                  title="${hasWinner ? 'แก้ไขผู้รับรางวัล' : 'เลือกรางวัลนี้เพื่อคีย์รหัสพนักงาน'}"
-                >
-                  <i class="fa-solid ${hasWinner ? 'fa-pen' : 'fa-hand-pointer'}"></i>
-                  <span>${hasWinner ? 'แก้ไข' : 'เลือก'}</span>
-                </button>
+                ${!isOut ? `
+                  <button
+                    type="button"
+                    onclick="selectRowForEdit(${item.rowIndex})"
+                    class="px-2.5 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 text-xs font-semibold transition flex items-center gap-1"
+                    title="คลิกเลือกรางวัลนี้เพื่อคีย์รหัสพนักงาน"
+                  >
+                    <i class="fa-solid fa-hand-pointer"></i>
+                    <span>เลือก</span>
+                  </button>
+                ` : `
+                  <span class="text-[11px] text-gray-400 font-semibold px-2">ครบแล้ว</span>
+                `}
                 ${hasWinner ? `
                   <button
                     type="button"
                     onclick="handleClearWinner(${item.rowIndex}, '${escapeJs(item.rewardName)}', '${escapeJs(item.empName)}')"
                     class="p-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 text-xs transition"
-                    title="ล้างผู้รับรางวัล"
+                    title="ล้างผู้รับรางวัลและคืนจำนวนชิ้น (+1)"
                   >
                     <i class="fa-solid fa-trash-can"></i>
                   </button>
