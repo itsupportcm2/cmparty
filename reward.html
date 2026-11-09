@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>ระบบบันทึกข้อมูลรางวัล - CM Party</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Google Fonts: Prompt -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: radial-gradient(circle at top, #7f1d1d 0%, #450a0a 50%, #052e16 100%);
+      min-height: 100vh;
+    }
+
+    .glass-panel {
+      background: rgba(255, 255, 255, 0.97);
+      backdrop-filter: blur(12px);
+      border: 2px solid rgba(250, 204, 21, 0.6);
+    }
+  </style>
+</head>
+<body class="p-3 sm:p-6 text-gray-800">
+
+  <!-- Top Christmas Accent Bar -->
+  <div class="fixed top-0 left-0 right-0 h-2 bg-gradient-to-r from-red-600 via-yellow-400 to-green-600 z-30 shadow"></div>
+
+  <div class="max-w-5xl mx-auto space-y-5 pt-2 pb-10">
+
+    <!-- Header Card -->
+    <header class="glass-panel rounded-3xl shadow-xl overflow-hidden">
+      <div class="bg-gradient-to-r from-red-800 via-red-700 to-green-900 px-6 py-5 text-white flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-4">
+          <div class="bg-white p-2 rounded-2xl shadow border-2 border-yellow-400 shrink-0">
+            <img
+              src="https://lh5.googleusercontent.com/d/1rzj7RdJ76nk5OccBPZ-kj-qxDp_Rg_"
+              alt="Logo"
+              class="h-12 w-auto object-contain"
+              onerror="this.outerHTML='<i class=\'fa-solid fa-gift text-red-700 text-2xl px-2\'></i>'"
+            />
+          </div>
+          <div>
+            <div class="inline-flex items-center gap-1.5 text-yellow-300 text-xs font-semibold tracking-wider uppercase">
+              <i class="fa-solid fa-trophy"></i>
+              <span>CM PARTY LUCKY DRAW</span>
+            </div>
+            <h1 class="text-xl sm:text-2xl font-bold">ระบบบันทึกและจัดการผู้ได้รับรางวัล</h1>
+          </div>
+        </div>
+
+        <!-- Summary Counters -->
+        <div class="flex items-center gap-2.5 text-xs sm:text-sm">
+          <div class="bg-white/15 backdrop-blur px-3.5 py-2 rounded-xl border border-white/20 text-center">
+            <span class="block text-[11px] text-red-100">รางวัลทั้งหมด</span>
+            <span id="statTotal" class="font-bold text-lg text-white">0</span>
+          </div>
+          <div class="bg-green-500/25 backdrop-blur px-3.5 py-2 rounded-xl border border-green-300/30 text-center">
+            <span class="block text-[11px] text-green-100">แจกแล้ว</span>
+            <span id="statAssigned" class="font-bold text-lg text-green-300">0</span>
+          </div>
+          <div class="bg-amber-500/25 backdrop-blur px-3.5 py-2 rounded-xl border border-amber-300/30 text-center">
+            <span class="block text-[11px] text-amber-100">คงเหลือ</span>
+            <span id="statRemaining" class="font-bold text-lg text-yellow-300">0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Entry Form (คีย์ด่วน กระทัดรัด) -->
+      <div class="p-5 sm:p-6 bg-gradient-to-b from-amber-50/50 to-white border-b border-gray-200">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-sm font-bold text-red-800 uppercase tracking-wide flex items-center gap-2">
+            <i class="fa-solid fa-bolt text-amber-500"></i>
+            <span id="formModeTitle">คีย์ผู้ได้รับรางวัลด่วน (เลือกของรางวัล + พิมพ์รหัสพนักงาน)</span>
+          </h2>
+          <button
+            type="button"
+            onclick="openNewPrizeModal()"
+            class="text-xs font-semibold text-green-700 hover:text-green-800 bg-green-50 hover:bg-green-100 border border-green-300 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5"
+          >
+            <i class="fa-solid fa-plus"></i>
+            <span>เพิ่มชื่อรางวัลใหม่</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+          <!-- 1. เลือกรางวัล -->
+          <div class="md:col-span-5">
+            <label class="block text-xs font-semibold text-gray-600 mb-1">
+              <i class="fa-solid fa-gift text-red-600 mr-1"></i>รายการรางวัล (คลิกเลือกจากตารางด้านล่างได้)
+            </label>
+            <select
+              id="rewardSelect"
+              onchange="handleSelectRewardDropdown()"
+              class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:border-red-600 focus:ring-2 focus:ring-red-500/20 outline-none text-sm font-semibold bg-white"
+            >
+              <option value="">-- กำลังโหลดรายการรางวัล... --</option>
+            </select>
+          </div>
+
+          <!-- 2. กรอกรหัสพนักงาน (type="tel") -->
+          <div class="md:col-span-3">
+            <label class="block text-xs font-semibold text-gray-600 mb-1">
+              <i class="fa-solid fa-id-card text-red-600 mr-1"></i>รหัสพนักงาน
+            </label>
+            <div class="relative">
+              <input
+                type="tel"
+                inputmode="numeric"
+                id="empIdInput"
+                autocomplete="off"
+                placeholder="พิมพ์รหัส เช่น 672002"
+                class="w-full pl-3.5 pr-9 py-2.5 rounded-xl border border-gray-300 focus:border-red-600 focus:ring-2 focus:ring-red-500/20 outline-none text-sm font-bold text-red-700"
+              />
+              <span id="empMatchIcon" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-green-600">
+                <i class="fa-solid fa-circle-check"></i>
+              </span>
+            </div>
+          </div>
+
+          <!-- 3. ปุ่มบันทึก & ส่งแจ้งเตือน LINE -->
+          <div class="md:col-span-4 flex gap-2 md:pt-5">
+            <button
+              type="button"
+              id="btnSaveReward"
+              onclick="handleQuickSave()"
+              disabled
+              class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-700 hover:to-amber-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold text-sm shadow-md hover:shadow-lg active:scale-95 transition flex items-center justify-center gap-2"
+            >
+              <i class="fa-solid fa-paper-plane"></i>
+              <span>บันทึก & แจ้งเตือน LINE</span>
+            </button>
+            <button
+              type="button"
+              onclick="resetQuickForm()"
+              title="ล้างช่องกรอก"
+              class="py-2.5 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold text-sm transition"
+            >
+              <i class="fa-solid fa-rotate-left"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- แถบแสดงข้อมูลพนักงานที่ดึงมาอัตโนมัติ (0ms) -->
+        <div id="empPreviewBox" class="mt-3 p-3 rounded-2xl bg-white border border-gray-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+          <div class="flex flex-wrap items-center gap-x-5 gap-y-1">
+            <div>
+              <span class="text-gray-400">ชื่อ-สกุล:</span>
+              <span id="previewName" class="font-bold text-gray-800 ml-1">-</span>
+            </div>
+            <div>
+              <span class="text-gray-400">แผนก:</span>
+              <span id="previewDept" class="font-semibold text-gray-700 ml-1">-</span>
+            </div>
+            <div>
+              <span class="text-gray-400">สาขา:</span>
+              <span id="previewBranch" class="font-semibold text-green-700 ml-1">-</span>
+            </div>
+          </div>
+          <div id="previewUidBadge" class="text-[11px] px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">
+            <i class="fa-brands fa-line mr-1"></i><span>รอตรวจสอบรหัสพนักงาน</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Filter & Search Bar -->
+      <div class="p-4 sm:px-6 bg-gray-50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        <!-- Filter Tabs -->
+        <div class="inline-flex rounded-xl bg-gray-200/80 p-1 text-xs font-semibold">
+          <button type="button" onclick="setFilter('all')" id="tabAll" class="px-3.5 py-1.5 rounded-lg bg-white text-gray-800 shadow-sm transition">
+            ทั้งหมด
+          </button>
+          <button type="button" onclick="setFilter('unassigned')" id="tabUnassigned" class="px-3.5 py-1.5 rounded-lg text-gray-600 hover:text-gray-800 transition">
+            ยังไม่แจก
+          </button>
+          <button type="button" onclick="setFilter('assigned')" id="tabAssigned" class="px-3.5 py-1.5 rounded-lg text-gray-600 hover:text-gray-800 transition">
+            แจกแล้ว
+          </button>
+        </div>
+
+        <!-- Search Box + Refresh -->
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1 sm:w-64">
+            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <input
+              type="text"
+              id="searchInput"
+              oninput="renderRewardsTable()"
+              placeholder="ค้นหาชื่อรางวัล / รหัส / ชื่อพนักงาน..."
+              class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-gray-300 text-xs focus:border-red-600 outline-none bg-white"
+            />
+          </div>
+          <button
+            type="button"
+            onclick="loadAllData(true)"
+            class="px-3 py-1.5 rounded-xl bg-white border border-gray-300 hover:bg-gray-100 text-xs font-semibold text-gray-700 flex items-center gap-1.5 shadow-sm transition"
+          >
+            <i id="refreshIcon" class="fa-solid fa-arrows-rotate"></i>
+            <span>รีเฟรช</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Rewards CRUD Table -->
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gray-100 text-gray-600 text-xs uppercase border-y border-gray-200">
+              <th class="py-3 px-4 w-12 text-center">#</th>
+              <th class="py-3 px-4">ชื่อรางวัล</th>
+              <th class="py-3 px-4">ผู้ได้รับรางวัล</th>
+              <th class="py-3 px-4 hidden sm:table-cell">แผนก / สาขา</th>
+              <th class="py-3 px-4 text-center w-28">จัดการ</th>
+            </tr>
+          </thead>
+          <tbody id="rewardsTableBody" class="divide-y divide-gray-100 text-sm">
+            <tr>
+              <td colspan="5" class="py-10 text-center text-gray-400">
+                <i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังโหลดข้อมูลรางวัล...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </header>
+
+  </div>
+
+  <script>
+    // ==========================================
+    // ตั้งค่าการเชื่อมต่อ Google Apps Script (exec เดียวกันกับ register.js)
+    // ==========================================
+    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx6yDgQvf3RvCVu8nHRN3yQM6IM5Be2JZpESNT6nJ3XddDsOlrMj_S7nIPCRUqmZBjFYw/exec';
+    const SPREADSHEET_ID = '1j2wb2cBiPK2IDfpNKJZBSUu3MDVwSEogAkRENvU-GJw';
+    const SOURCE_SHEET_NAME = 'การตอบแบบฟอร์ม 1';
+    const REWARD_SHEET_GID = '195154721';
+
+    let rewardsList = [];
+    let employeesMap = {}; // { empId: { empId, empName, department, branch, uid, pictureUrl } }
+    let currentFilter = 'all';
+    let currentMatchedEmployee = null;
+
+    // โหลดข้อมูลทั้งหมด (รายการรางวัล + พนักงานทั้งหมด + UID จากหน้า Register)
+    async function loadAllData(showToast = false) {
+      const refreshIcon = document.getElementById('refreshIcon');
+      if (refreshIcon) refreshIcon.classList.add('fa-spin');
+
+      try {
+        // 1. ดึงข้อมูลแบบรวดเร็วจาก Google Visualization API คู่กับ GAS API
+        const [empRes, regRes, rewardRes] = await Promise.allSettled([
+          fetchSheetGvizJson(`sheet=${encodeURIComponent(SOURCE_SHEET_NAME)}`),
+          fetchSheetGvizJson(`sheet=Register`),
+          fetchSheetGvizJson(`gid=${REWARD_SHEET_GID}`)
+        ]);
+
+        const uidMap = {};
+        if (regRes.status === 'fulfilled' && regRes.value) {
+          const regRows = (regRes.value.table && regRes.value.table.rows) || [];
+          for (let i = 0; i < regRows.length; i++) {
+            const c = regRows[i].c || [];
+            const empId = cleanCell(c[1]);
+            const uid = cleanCell(c[5]);
+            const pic = cleanCell(c[7]);
+            if (empId) {
+              uidMap[empId] = { uid, pictureUrl: pic };
+            }
+          }
+        }
+
+        if (empRes.status === 'fulfilled' && empRes.value) {
+          const cols = (empRes.value.table && empRes.value.table.cols) || [];
+          const rows = (empRes.value.table && empRes.value.table.rows) || [];
+          const labelC = (cols[2] && cols[2].label) ? String(cols[2].label) : '';
+          const labelD = (cols[3] && cols[3].label) ? String(cols[3].label) : '';
+          const isColCName = labelC.indexOf('ชื่อ') !== -1 && labelD.indexOf('แผนก') !== -1;
+
+          const newEmpMap = {};
+          for (let i = 0; i < rows.length; i++) {
+            const c = rows[i].c || [];
+            const empId = cleanCell(c[1]);
+            if (!empId || empId === 'รหัสพนักงาน') continue;
+            const valC = cleanCell(c[2]);
+            const valD = cleanCell(c[3]);
+            const valE = cleanCell(c[4]);
+            const regInfo = uidMap[empId] || {};
+
+            newEmpMap[empId] = {
+              empId,
+              empName: isColCName ? valC : valD,
+              department: isColCName ? valD : valC,
+              branch: valE,
+              uid: regInfo.uid || '',
+              pictureUrl: regInfo.pictureUrl || ''
+            };
+          }
+          employeesMap = newEmpMap;
+        }
+
+        if (rewardRes.status === 'fulfilled' && rewardRes.value) {
+          const rows = (rewardRes.value.table && rewardRes.value.table.rows) || [];
+          const parsedRewards = [];
+          for (let i = 0; i < rows.length; i++) {
+            const c = rows[i].c || [];
+            const rName = cleanCell(c[0]);
+            const rEmpId = cleanCell(c[1]);
+            // ข้ามแถวหัวตารางแถวแรก
+            if (i === 0 && rName === 'ชื่อรางวัล') continue;
+
+            const rowIndex = i + 1; // เนื่องจาก parsedNumHeaders: 0 แถวที่ 0 คือ Row 1
+            const rEmpName = cleanCell(c[2]);
+            const rDept = cleanCell(c[3]);
+            const rBranch = cleanCell(c[4]);
+            const rUid = cleanCell(c[5]) || (uidMap[rEmpId] ? uidMap[rEmpId].uid : '');
+
+            if (rName || rEmpId) {
+              parsedRewards.push({
+                rowIndex,
+                rewardName: rName,
+                empId: rEmpId,
+                empName: rEmpName,
+                department: rDept,
+                branch: rBranch,
+                uid: rUid
+              });
+            }
+          }
+          rewardsList = parsedRewards;
+        } else {
+          // Fallback เรียกผ่าน GAS API
+          const apiData = await callGasApi({ action: 'getRewardInitData' });
+          if (apiData && apiData.status === 'success') {
+            rewardsList = apiData.rewards || [];
+            employeesMap = apiData.employees || {};
+          }
+        }
+
+        updateStatsAndDropdown();
+        renderRewardsTable();
+
+        if (showToast) {
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'อัปเดตข้อมูลล่าสุดแล้ว',
+            showConfirmButton: false,
+            timer: 1500
+          });
+        }
+      } catch (err) {
+        console.error('Error loading data:', err);
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+      }
+    }
+
+    function cleanCell(cell) {
+      if (!cell) return '';
+      const raw = cell.f !== undefined && cell.f !== null ? String(cell.f) : String(cell.v ?? '');
+      return raw.replace(/\.0$/, '').trim();
+    }
+
+    async function fetchSheetGvizJson(queryParam) {
+      const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&${queryParam}&_t=${Date.now()}`;
+      const res = await fetch(url);
+      const text = await res.text();
+      const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?/);
+      if (!match || !match[1]) throw new Error('Invalid gviz response');
+      return JSON.parse(match[1]);
+    }
+
+    // เรียกใช้งาน GAS API (รองรับทั้ง google.script.run, POST และ GET fallback)
+    async function callGasApi(payload) {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        return await new Promise((resolve, reject) => {
+          const runner = google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
+          if (payload.action === 'getRewardInitData') runner.getRewardInitData();
+          else if (payload.action === 'saveReward') runner.saveRewardRecord(payload);
+          else if (payload.action === 'deleteReward') runner.deleteRewardRecord(payload);
+          else runner.checkEmployeeById(payload.empId);
+        });
+      }
+
+      try {
+        const res = await fetch(GAS_WEB_APP_URL, {
+          method: 'POST',
+          redirect: 'follow',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+        const text = await res.text();
+        return JSON.parse(text);
+      } catch (postErr) {
+        const params = new URLSearchParams();
+        Object.keys(payload).forEach(k => {
+          if (payload[k] !== undefined && payload[k] !== null) {
+            params.append(k, String(payload[k]));
+          }
+        });
+        const getRes = await fetch(`${GAS_WEB_APP_URL}?${params.toString()}`, {
+          method: 'GET',
+          redirect: 'follow'
+        });
+        return await getRes.json();
+      }
+    }
+
+    // อัปเดตตัวเลขสรุปและ Dropdown เลือกรางวัล
+    function updateStatsAndDropdown() {
+      const total = rewardsList.length;
+      const assigned = rewardsList.filter(r => r.empId && r.empId.trim() !== '').length;
+      const remaining = total - assigned;
+
+      document.getElementById('statTotal').innerText = total;
+      document.getElementById('statAssigned').innerText = assigned;
+      document.getElementById('statRemaining').innerText = remaining;
+
+      const select = document.getElementById('rewardSelect');
+      const previousVal = select.value;
+      select.innerHTML = '';
+
+      if (rewardsList.length === 0) {
+        select.innerHTML = '<option value="">-- ไม่มีรายการรางวัล --</option>';
+        return;
+      }
+
+      // เรียงให้รางวัลที่ยังไม่ได้แจกขึ้นก่อน เพื่อความสะดวกในการคีย์
+      const unassignedList = rewardsList.filter(r => !r.empId);
+      const assignedList = rewardsList.filter(r => r.empId);
+
+      if (unassignedList.length > 0) {
+        const optGroup1 = document.createElement('optgroup');
+        optGroup1.label = `🎁 รางวัลที่ยังไม่ได้แจก (${unassignedList.length})`;
+        unassignedList.forEach(item => {
+          const opt = document.createElement('option');
+          opt.value = item.rowIndex;
+          opt.textContent = item.rewardName;
+          optGroup1.appendChild(opt);
+        });
+        select.appendChild(optGroup1);
+      }
+
+      if (assignedList.length > 0) {
+        const optGroup2 = document.createElement('optgroup');
+        optGroup2.label = `✅ แจกแล้ว - คลิกเพื่อแก้ไข (${assignedList.length})`;
+        assignedList.forEach(item => {
+          const opt = document.createElement('option');
+          opt.value = item.rowIndex;
+          opt.textContent = `${item.rewardName} (${item.empId} - ${item.empName})`;
+          optGroup2.appendChild(opt);
+        });
+        select.appendChild(optGroup2);
+      }
+
+      // คงค่าที่เลือกไว้ หรือเลือกรางวัลแรกที่ยังไม่ได้แจกโดยอัตโนมัติ
+      if (previousVal && rewardsList.some(r => String(r.rowIndex) === String(previousVal))) {
+        select.value = previousVal;
+      } else if (unassignedList.length > 0) {
+        select.value = unassignedList[0].rowIndex;
+      } else if (rewardsList.length > 0) {
+        select.value = rewardsList[0].rowIndex;
+      }
+    }
+
+    // เมื่อเปลี่ยนรางวัลใน Dropdown
+    function handleSelectRewardDropdown() {
+      const rowIndex = parseInt(document.getElementById('rewardSelect').value, 10);
+      const item = rewardsList.find(r => r.rowIndex === rowIndex);
+      const empInput = document.getElementById('empIdInput');
+
+      if (item && item.empId) {
+        empInput.value = item.empId;
+        lookupEmployeeInstant(item.empId);
+      } else {
+        empInput.focus();
+      }
+      validateSaveButton();
+    }
+
+    // ค้นหาข้อมูลพนักงานทันทีที่พิมพ์ (0ms จากหน่วยความจำ + Fallback API)
+    async function lookupEmployeeInstant(empId) {
+      const cleanId = String(empId || '').trim();
+      const matchIcon = document.getElementById('empMatchIcon');
+      const nameEl = document.getElementById('previewName');
+      const deptEl = document.getElementById('previewDept');
+      const branchEl = document.getElementById('previewBranch');
+      const uidBadge = document.getElementById('previewUidBadge');
+      const previewBox = document.getElementById('empPreviewBox');
+
+      if (!cleanId) {
+        currentMatchedEmployee = null;
+        matchIcon.classList.add('hidden');
+        nameEl.innerText = '-';
+        deptEl.innerText = '-';
+        branchEl.innerText = '-';
+        previewBox.className = 'mt-3 p-3 rounded-2xl bg-white border border-gray-200 flex flex-wrap items-center justify-between gap-2 text-xs';
+        uidBadge.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium';
+        uidBadge.innerHTML = '<i class="fa-brands fa-line mr-1"></i><span>รอตรวจสอบรหัสพนักงาน</span>';
+        validateSaveButton();
+        return;
+      }
+
+      // ค้นหาจาก Map ในหน่วยความจำทันที
+      let emp = employeesMap[cleanId];
+
+      if (emp) {
+        currentMatchedEmployee = emp;
+        matchIcon.classList.remove('hidden');
+        nameEl.innerText = emp.empName || '-';
+        deptEl.innerText = emp.department || '-';
+        branchEl.innerText = emp.branch || '-';
+        previewBox.className = 'mt-3 p-3 rounded-2xl bg-green-50/70 border border-green-300 flex flex-wrap items-center justify-between gap-2 text-xs';
+
+        if (emp.uid) {
+          uidBadge.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-green-100 text-green-800 border border-green-300 font-semibold';
+          uidBadge.innerHTML = '<i class="fa-brands fa-line mr-1"></i><span>พร้อมส่งแจ้งเตือน LINE</span>';
+        } else {
+          uidBadge.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-300 font-medium';
+          uidBadge.innerHTML = '<i class="fa-solid fa-circle-info mr-1"></i><span>ยังไม่พบ LINE UID (บันทึกได้ปกติ)</span>';
+        }
+      } else {
+        currentMatchedEmployee = null;
+        matchIcon.classList.add('hidden');
+        nameEl.innerText = 'ไม่พบรหัสพนักงานนี้';
+        deptEl.innerText = '-';
+        branchEl.innerText = '-';
+        previewBox.className = 'mt-3 p-3 rounded-2xl bg-red-50/60 border border-red-200 flex flex-wrap items-center justify-between gap-2 text-xs';
+        uidBadge.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-red-100 text-red-700 font-medium';
+        uidBadge.innerHTML = '<i class="fa-solid fa-circle-xmark mr-1"></i><span>ไม่พบรหัสในระบบตั้งต้น</span>';
+      }
+
+      validateSaveButton();
+    }
+
+    function validateSaveButton() {
+      const rewardRow = document.getElementById('rewardSelect').value;
+      const btn = document.getElementById('btnSaveReward');
+      btn.disabled = !(rewardRow && currentMatchedEmployee);
+    }
+
+    // บันทึกผู้ได้รับรางวัลอย่างรวดเร็ว + ส่ง LINE Flex Message
+    async function handleQuickSave() {
+      const select = document.getElementById('rewardSelect');
+      const rowIndex = parseInt(select.value, 10);
+      const rewardObj = rewardsList.find(r => r.rowIndex === rowIndex);
+
+      if (!rewardObj || !currentMatchedEmployee) return;
+
+      const btn = document.getElementById('btnSaveReward');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>กำลังบันทึก...</span>';
+
+      const payload = {
+        action: 'saveReward',
+        rowIndex: rowIndex,
+        rewardName: rewardObj.rewardName,
+        empId: currentMatchedEmployee.empId,
+        empName: currentMatchedEmployee.empName,
+        department: currentMatchedEmployee.department,
+        branch: currentMatchedEmployee.branch,
+        uid: currentMatchedEmployee.uid || '',
+        pictureUrl: currentMatchedEmployee.pictureUrl || ''
+      };
+
+      try {
+        const res = await callGasApi(payload);
+        if (res && res.status === 'success') {
+          // อัปเดตข้อมูลในตารางทันทีโดยไม่ต้องรอโหลดใหม่
+          const idx = rewardsList.findIndex(r => r.rowIndex === rowIndex);
+          if (idx !== -1) {
+            rewardsList[idx] = {
+              ...rewardsList[idx],
+              empId: payload.empId,
+              empName: payload.empName,
+              department: payload.department,
+              branch: payload.branch,
+              uid: (res.data && res.data.uid) ? res.data.uid : payload.uid
+            };
+          }
+
+          resetQuickForm();
+          updateStatsAndDropdown();
+          renderRewardsTable();
+
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: `บันทึก "${rewardObj.rewardName}" ให้คุณ ${payload.empName} สำเร็จ!`,
+            text: res.lineSent ? 'ส่ง Flex Message แจ้งเตือนทาง LINE แล้ว' : (res.lineMessageStatus || ''),
+            showConfirmButton: false,
+            timer: 2800
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'บันทึกไม่สำเร็จ',
+            text: (res && res.message) ? res.message : 'เกิดข้อผิดพลาดในการบันทึก',
+            confirmButtonColor: '#b91c1c'
+          });
+        }
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'เกิดข้อผิดพลาด',
+          text: err.message,
+          confirmButtonColor: '#b91c1c'
+        });
+      } finally {
+        btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i><span>บันทึก & แจ้งเตือน LINE</span>';
+        validateSaveButton();
+      }
+    }
+
+    // เลือกรายการจากตารางขึ้นมาแก้ไขด้านบนทันที
+    function selectRowForEdit(rowIndex) {
+      const select = document.getElementById('rewardSelect');
+      select.value = rowIndex;
+      const item = rewardsList.find(r => r.rowIndex === rowIndex);
+      const empInput = document.getElementById('empIdInput');
+
+      if (item) {
+        empInput.value = item.empId || '';
+        lookupEmployeeInstant(item.empId || '');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setTimeout(() => empInput.focus(), 200);
+      }
+    }
+
+    // ล้างข้อมูลผู้รับรางวัลในแถวนั้น (Delete / Clear Winner)
+    async function handleClearWinner(rowIndex, rewardName, empName) {
+      const confirm = await Swal.fire({
+        icon: 'warning',
+        title: 'ล้างรายชื่อผู้รับรางวัล?',
+        html: `ต้องการลบชื่อ <b>${empName}</b> ออกจากรางวัล<br><b>"${rewardName}"</b> ใช่หรือไม่?`,
+        showCancelButton: true,
+        confirmButtonText: 'ใช่, ล้างข้อมูล',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#b91c1c'
+      });
+
+      if (!confirm.isConfirmed) return;
+
+      try {
+        const res = await callGasApi({
+          action: 'deleteReward',
+          rowIndex: rowIndex,
+          mode: 'clear'
+        });
+
+        if (res && res.status === 'success') {
+          const idx = rewardsList.findIndex(r => r.rowIndex === rowIndex);
+          if (idx !== -1) {
+            rewardsList[idx].empId = '';
+            rewardsList[idx].empName = '';
+            rewardsList[idx].department = '';
+            rewardsList[idx].branch = '';
+            rewardsList[idx].uid = '';
+          }
+          updateStatsAndDropdown();
+          renderRewardsTable();
+
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'ล้างข้อมูลผู้รับรางวัลเรียบร้อยแล้ว',
+            showConfirmButton: false,
+            timer: 1800
+          });
+        }
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'ผิดพลาด', text: err.message });
+      }
+    }
+
+    // เพิ่มชื่อรางวัลใหม่ (Create Prize Row)
+    async function openNewPrizeModal() {
+      const { value: prizeName } = await Swal.fire({
+        title: 'เพิ่มรายการรางวัลใหม่',
+        input: 'text',
+        inputLabel: 'ระบุชื่อรางวัลที่ต้องการเพิ่มลงในตาราง',
+        inputPlaceholder: 'เช่น ทองคำ 1 สลึง / พัดลมตั้งพื้น 16 นิ้ว',
+        showCancelButton: true,
+        confirmButtonText: 'เพิ่มรางวัล',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#15803d',
+        inputValidator: (value) => {
+          if (!value || !value.trim()) {
+            return 'กรุณาระบุชื่อรางวัล';
+          }
+        }
+      });
+
+      if (!prizeName) return;
+
+      try {
+        const res = await callGasApi({
+          action: 'saveReward',
+          rowIndex: 0,
+          rewardName: prizeName.trim(),
+          empId: ''
+        });
+
+        if (res && res.status === 'success' && res.data) {
+          rewardsList.push(res.data);
+          updateStatsAndDropdown();
+          document.getElementById('rewardSelect').value = res.data.rowIndex;
+          renderRewardsTable();
+
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'เพิ่มรางวัลใหม่สำเร็จ',
+            showConfirmButton: false,
+            timer: 1800
+          });
+        }
+      } catch (err) {
+        Swal.fire({ icon: 'error', title: 'ไม่สามารถเพิ่มรางวัลได้', text: err.message });
+      }
+    }
+
+    function resetQuickForm() {
+      const empInput = document.getElementById('empIdInput');
+      empInput.value = '';
+      lookupEmployeeInstant('');
+      empInput.focus();
+    }
+
+    function setFilter(filterType) {
+      currentFilter = filterType;
+      const tabs = {
+        all: document.getElementById('tabAll'),
+        unassigned: document.getElementById('tabUnassigned'),
+        assigned: document.getElementById('tabAssigned')
+      };
+
+      Object.keys(tabs).forEach(k => {
+        if (k === filterType) {
+          tabs[k].className = 'px-3.5 py-1.5 rounded-lg bg-white text-gray-800 shadow-sm transition';
+        } else {
+          tabs[k].className = 'px-3.5 py-1.5 rounded-lg text-gray-600 hover:text-gray-800 transition';
+        }
+      });
+
+      renderRewardsTable();
+    }
+
+    // แสดงตารางรายการรางวัลทั้งหมด
+    function renderRewardsTable() {
+      const tbody = document.getElementById('rewardsTableBody');
+      const keyword = (document.getElementById('searchInput').value || '').trim().toLowerCase();
+
+      const filtered = rewardsList.filter(item => {
+        const hasWinner = Boolean(item.empId && item.empId.trim() !== '');
+        if (currentFilter === 'unassigned' && hasWinner) return false;
+        if (currentFilter === 'assigned' && !hasWinner) return false;
+
+        if (keyword) {
+          const text = `${item.rewardName} ${item.empId} ${item.empName} ${item.department} ${item.branch}`.toLowerCase();
+          return text.includes(keyword);
+        }
+        return true;
+      });
+
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="5" class="py-10 text-center text-gray-400">
+              <i class="fa-solid fa-box-open mr-1.5"></i>ไม่พบรายการรางวัลตามเงื่อนไขที่เลือก
+            </td>
+          </tr>
+        `;
+        return;
+      }
+
+      tbody.innerHTML = filtered.map((item, idx) => {
+        const hasWinner = Boolean(item.empId && item.empId.trim() !== '');
+        const hasUid = Boolean(item.uid && item.uid.trim() !== '');
+
+        return `
+          <tr class="hover:bg-amber-50/40 transition ${hasWinner ? 'bg-green-50/20' : ''}">
+            <td class="py-3 px-4 text-center text-xs font-semibold text-gray-400">${idx + 1}</td>
+            <td class="py-3 px-4">
+              <div class="font-bold text-gray-800 flex items-center gap-2">
+                <i class="fa-solid fa-gift ${hasWinner ? 'text-green-600' : 'text-red-600'}"></i>
+                <span>${escapeHtml(item.rewardName)}</span>
+              </div>
+              <div class="sm:hidden text-xs text-gray-500 mt-0.5">
+                ${hasWinner ? `${escapeHtml(item.department)} (${escapeHtml(item.branch)})` : ''}
+              </div>
+            </td>
+            <td class="py-3 px-4">
+              ${hasWinner ? `
+                <div class="flex items-center gap-2">
+                  <span class="px-2 py-0.5 rounded-md bg-red-100 text-red-800 font-bold text-xs">${escapeHtml(item.empId)}</span>
+                  <span class="font-bold text-gray-800">${escapeHtml(item.empName)}</span>
+                  ${hasUid ? `<i class="fa-brands fa-line text-green-600" title="มี LINE UID พร้อมแจ้งเตือน"></i>` : ''}
+                </div>
+              ` : `
+                <span class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
+                  <i class="fa-regular fa-clock"></i> รอการแจกรางวัล
+                </span>
+              `}
+            </td>
+            <td class="py-3 px-4 hidden sm:table-cell text-xs text-gray-600">
+              ${hasWinner ? `
+                <div class="font-medium text-gray-700">${escapeHtml(item.department || '-')}</div>
+                <div class="text-green-700 font-semibold">${escapeHtml(item.branch || '-')}</div>
+              ` : '-'}
+            </td>
+            <td class="py-3 px-4 text-center">
+              <div class="inline-flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onclick="selectRowForEdit(${item.rowIndex})"
+                  class="px-2.5 py-1.5 rounded-lg ${hasWinner ? 'bg-amber-100 text-amber-800 hover:bg-amber-200' : 'bg-green-600 text-white hover:bg-green-700'} text-xs font-semibold transition flex items-center gap-1"
+                  title="${hasWinner ? 'แก้ไขผู้รับรางวัล' : 'เลือกรางวัลนี้เพื่อคีย์รหัสพนักงาน'}"
+                >
+                  <i class="fa-solid ${hasWinner ? 'fa-pen' : 'fa-hand-pointer'}"></i>
+                  <span>${hasWinner ? 'แก้ไข' : 'เลือก'}</span>
+                </button>
+                ${hasWinner ? `
+                  <button
+                    type="button"
+                    onclick="handleClearWinner(${item.rowIndex}, '${escapeJs(item.rewardName)}', '${escapeJs(item.empName)}')"
+                    class="p-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 text-xs transition"
+                    title="ล้างผู้รับรางวัล"
+                  >
+                    <i class="fa-solid fa-trash-can"></i>
+                  </button>
+                ` : ''}
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function escapeHtml(str) {
+      return String(str || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function escapeJs(str) {
+      return String(str || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      loadAllData();
+
+      const empInput = document.getElementById('empIdInput');
+      empInput.addEventListener('input', () => {
+        lookupEmployeeInstant(empInput.value);
+      });
+
+      // กด Enter ในช่องรหัสพนักงานเพื่อบันทึกทันที
+      empInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          const btn = document.getElementById('btnSaveReward');
+          if (!btn.disabled) {
+            handleQuickSave();
+          }
+        }
+      });
+    });
+  </script>
+</body>
+</html>
