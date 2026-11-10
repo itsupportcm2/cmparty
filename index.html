@@ -886,15 +886,35 @@
 
     // ดึงสถานะการเปิด/ปิดระบบจาก Backend
     async function fetchSystemStatus(uid) {
-      try {
-        const url = `${GAS_WEB_APP_URL}?action=getSystemStatus&uid=${encodeURIComponent(uid || '')}&t=${Date.now()}`;
-        const res = await fetch(url, { method: 'GET', redirect: 'follow' });
-        const data = await res.json();
-        return data;
-      } catch (e) {
-        console.warn('fetchSystemStatus error:', e);
-        return { status: 'success', systemStatus: 'OPEN', isOpen: true, isAdmin: (uid === ADMIN_UID) };
+      const urlsToTry = [GAS_WEB_APP_URL, BACKUP_GAS_WEB_APP_URL].filter(Boolean);
+      for (const apiUrl of urlsToTry) {
+        try {
+          const url = `${apiUrl}?action=getSystemStatus&uid=${encodeURIComponent(uid || '')}&t=${Date.now()}`;
+          const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+          const text = await res.text();
+          const data = JSON.parse(text);
+          if (data && (data.status === 'success' || data.isOpen !== undefined)) {
+            return data;
+          }
+        } catch (e) {
+          try {
+            const resPost = await fetch(apiUrl, {
+              method: 'POST',
+              redirect: 'follow',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({ action: 'getSystemStatus', uid: uid || '' })
+            });
+            const textPost = await resPost.text();
+            const dataPost = JSON.parse(textPost);
+            if (dataPost && (dataPost.status === 'success' || dataPost.isOpen !== undefined)) {
+              return dataPost;
+            }
+          } catch (postE) {
+            console.warn('fetchSystemStatus attempt failed for URL:', apiUrl, postE);
+          }
+        }
       }
+      return { status: 'success', systemStatus: 'OPEN', isOpen: true, isAdmin: (uid === ADMIN_UID) };
     }
 
     // แสดงแผงควบคุมระบบ (สำหรับแอดมิน UID = U1dcbd47c6981745c2f41c5691cde7ff3 เท่านั้น)
@@ -1047,9 +1067,11 @@
       });
 
       try {
-        const url = `${GAS_WEB_APP_URL}?action=setClosingDateTime&adminUid=${encodeURIComponent(userProfile.userId)}&closingDateTime=${encodeURIComponent(val)}`;
-        const res = await fetch(url, { method: 'GET', redirect: 'follow' });
-        const data = await res.json();
+        const data = await sendAdminAction({
+          action: 'setClosingDateTime',
+          adminUid: userProfile.userId,
+          closingDateTime: val
+        });
         Swal.close();
 
         if (data && data.status === 'success') {
@@ -1104,9 +1126,11 @@
       });
 
       try {
-        const url = `${GAS_WEB_APP_URL}?action=setClosingDateTime&adminUid=${encodeURIComponent(userProfile.userId)}&closingDateTime=`;
-        const res = await fetch(url, { method: 'GET', redirect: 'follow' });
-        const data = await res.json();
+        const data = await sendAdminAction({
+          action: 'setClosingDateTime',
+          adminUid: userProfile.userId,
+          closingDateTime: ''
+        });
         Swal.close();
 
         if (data && data.status === 'success') {
@@ -1137,7 +1161,7 @@
       }
     }
 
-    // แอดมินกดเปิด/ปิดระบบลงทะเบียน
+    // แอดมินกดเปิด/ปิดระบบลงทะเบียน (Manual Toggle)
     async function toggleRegistrationSystem(targetStatus) {
       if (!userProfile || userProfile.userId !== ADMIN_UID) {
         Swal.fire({
@@ -1173,9 +1197,11 @@
       });
 
       try {
-        const url = `${GAS_WEB_APP_URL}?action=toggleSystemStatus&adminUid=${encodeURIComponent(userProfile.userId)}&targetStatus=${encodeURIComponent(targetStatus)}`;
-        const res = await fetch(url, { method: 'GET', redirect: 'follow' });
-        const data = await res.json();
+        const data = await sendAdminAction({
+          action: 'toggleSystemStatus',
+          adminUid: userProfile.userId,
+          targetStatus: targetStatus
+        });
         Swal.close();
 
         if (data && data.status === 'success') {
@@ -1206,73 +1232,47 @@
       }
     }
 
-    // แอดมินกดเปิด/ปิดระบบลงทะเบียน
-    async function toggleRegistrationSystem(targetStatus) {
-      if (!userProfile || userProfile.userId !== ADMIN_UID) {
-        Swal.fire({
-          icon: 'error',
-          title: 'ไม่มีสิทธิ์',
-          text: 'ฟังก์ชันนี้อนุญาตเฉพาะแอดมินเท่านั้น',
-          confirmButtonColor: '#b91c1c'
-        });
-        return;
-      }
+    // ฟังก์ชันส่งคำสั่ง Admin ไปยัง Web App Backend (รองรับทั้ง POST และ GET ป้องกัน CORS issues)
+    async function sendAdminAction(payload) {
+      const urlsToTry = [GAS_WEB_APP_URL, BACKUP_GAS_WEB_APP_URL].filter(Boolean);
+      let lastErr = null;
 
-      const isClosing = targetStatus === 'CLOSED';
-      const result = await Swal.fire({
-        title: isClosing ? 'ยืนยันการ "ปิด" ระบบลงทะเบียน?' : 'ยืนยันการ "เปิด" ระบบลงทะเบียน?',
-        html: isClosing
-          ? '<p class="text-xs text-gray-600">เมื่อปิดระบบ ผู้ใช้งานทั่วไปที่เข้ามาจะเห็นหน้าแจ้งเตือนระบบปิด และไม่สามารถลงทะเบียนได้</p>'
-          : '<p class="text-xs text-gray-600">เมื่อเปิดระบบ ผู้ใช้งานทั่วไปจะสามารถเข้าลงทะเบียนได้ตามขั้นตอนปกติ</p>',
-        icon: isClosing ? 'warning' : 'question',
-        showCancelButton: true,
-        confirmButtonColor: isClosing ? '#DC2626' : '#16A34A',
-        cancelButtonColor: '#9CA3AF',
-        confirmButtonText: isClosing ? 'ยืนยันปิดระบบ' : 'ยืนยันเปิดระบบ',
-        cancelButtonText: 'ยกเลิก'
-      });
-
-      if (!result.isConfirmed) return;
-
-      Swal.fire({
-        title: 'กำลังอัปเดตสถานะระบบ...',
-        text: 'กรุณารอสักครู่',
-        allowOutsideClick: false,
-        didOpen: () => Swal.showLoading()
-      });
-
-      try {
-        const url = `${GAS_WEB_APP_URL}?action=toggleSystemStatus&adminUid=${encodeURIComponent(userProfile.userId)}&targetStatus=${encodeURIComponent(targetStatus)}`;
-        const res = await fetch(url, { method: 'GET', redirect: 'follow' });
-        const data = await res.json();
-        Swal.close();
-
-        if (data && data.status === 'success') {
-          await Swal.fire({
-            icon: 'success',
-            title: isClosing ? 'ปิดระบบลงทะเบียนสำเร็จ' : 'เปิดระบบลงทะเบียนสำเร็จ',
-            text: data.message || 'บันทึกสถานะเรียบร้อยแล้ว',
-            timer: 1600,
-            showConfirmButton: false
+      for (const apiUrl of urlsToTry) {
+        // 1. ลองส่งผ่าน POST (text/plain เลี่ยง CORS preflight)
+        try {
+          const res = await fetch(apiUrl, {
+            method: 'POST',
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify(payload)
           });
-          window.location.reload();
-        } else {
-          Swal.fire({
-            icon: 'error',
-            title: 'เกิดข้อผิดพลาด',
-            text: (data && data.message) || 'ไม่สามารถเปลี่ยนสถานะระบบได้',
-            confirmButtonColor: '#b91c1c'
-          });
+          const text = await res.text();
+          const json = JSON.parse(text);
+          if (json && (json.status === 'success' || json.status === 'error' || json.status === 'forbidden')) {
+            return json;
+          }
+        } catch (postErr) {
+          lastErr = postErr;
         }
-      } catch (err) {
-        Swal.close();
-        Swal.fire({
-          icon: 'error',
-          title: 'ข้อผิดพลาดเครือข่าย',
-          text: err.message,
-          confirmButtonColor: '#b91c1c'
-        });
+
+        // 2. ถ้า POST ไม่สำเร็จ ลองส่งผ่าน GET parameter
+        try {
+          const params = new URLSearchParams(payload);
+          const getRes = await fetch(`${apiUrl}?${params.toString()}&t=${Date.now()}`, {
+            method: 'GET',
+            redirect: 'follow'
+          });
+          const text = await getRes.text();
+          const json = JSON.parse(text);
+          if (json && (json.status === 'success' || json.status === 'error' || json.status === 'forbidden')) {
+            return json;
+          }
+        } catch (getErr) {
+          lastErr = getErr;
+        }
       }
+
+      throw lastErr || new Error('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
     }
 
     // ดึงข้อมูลพนักงานโดยตรงจาก Google Sheet (รวดเร็ว ไม่ติดสิทธิ์ Login ของ Web App)
