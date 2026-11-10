@@ -66,13 +66,26 @@ function checkEmployeeById(empId) {
       return { status: 'not_found', message: 'ไม่พบข้อมูลในระบบตั้งต้น' };
     }
 
-    // ดึงข้อมูลตั้งแต่แถวที่ 2 ถึงแถวสุดท้าย (คอลัมน์ A ถึง I)
+    // ดึงข้อมูลตั้งแต่แถวที่ 2 ถึงแถวสุดท้าย (คอลัมน์ A ถึง F หรือคอลัมน์ทั้งหมด)
     // Index 0 = A (ประทับเวลา)
     // Index 1 = B (รหัสพนักงาน)
-    // Index 2 = C (แผนก)
-    // Index 3 = D (ชื่อ-สกุล)
+    // Index 2 = C (ชื่อ-สกุล หรือ แผนก)
+    // Index 3 = D (แผนก หรือ ชื่อ-สกุล)
     // Index 4 = E (สาขา)
-    const data = sourceSheet.getRange(2, 1, lastRow - 1, Math.max(5, sourceSheet.getLastColumn())).getValues();
+    // Index 5 = F (ท่านสนใจร่วมงานหรือไม่?)
+    const maxCols = Math.max(6, sourceSheet.getLastColumn());
+    const data = sourceSheet.getRange(2, 1, lastRow - 1, maxCols).getValues();
+    const headers = sourceSheet.getRange(1, 1, 1, maxCols).getValues()[0];
+
+    // ค้นหาคอลัมน์ "ท่านสนใจร่วมงานหรือไม่?" โดยอัตโนมัติ (ปกติคือคอลัมน์ F / index 5)
+    let attendColIdx = 5;
+    for (let h = 0; h < headers.length; h++) {
+      const hText = String(headers[h] || '').trim();
+      if (hText.indexOf('สนใจร่วมงาน') !== -1 || hText.indexOf('ร่วมงานหรือไม่') !== -1) {
+        attendColIdx = h;
+        break;
+      }
+    }
 
     let foundEmployee = null;
     for (let i = data.length - 1; i >= 0; i--) {
@@ -84,8 +97,6 @@ function checkEmployeeById(empId) {
 
       if (rowEmpId === searchId) {
         // ตรวจสอบว่าคอลัมน์ C หรือ D เป็นแผนก/ชื่อ เพื่อให้แสดงผลได้ถูกต้องทั้ง 2 กรณี
-        // แต่ยึดตามโจทย์: ชื่อพนักงาน D2:D, แผนก C2:C, สาขา E2:E (พร้อมสลับอัตโนมัติหากหัวตารางสลับ)
-        const headers = sourceSheet.getRange(1, 1, 1, 5).getValues()[0];
         const headerC = String(headers[2] || '');
         const headerD = String(headers[3] || '');
 
@@ -98,11 +109,17 @@ function checkEmployeeById(empId) {
           department = rowColD;
         }
 
+        const rawAttend = String(row[attendColIdx] || '').trim();
+        // ถ้ามีคำว่า "ไม่" หรือไม่มีคำว่า "ไป" ให้ถือว่าไม่มาร่วมงาน
+        const isNotAttending = rawAttend.indexOf('ไม่') !== -1 || (rawAttend.indexOf('ไป') === -1 && rawAttend !== '');
+
         foundEmployee = {
           empId: rowEmpId,
           empName: empName,
           department: department,
-          branch: rowColE
+          branch: rowColE,
+          attendAnswer: rawAttend,
+          isNotAttending: isNotAttending
         };
         break;
       }
@@ -110,6 +127,15 @@ function checkEmployeeById(empId) {
 
     if (!foundEmployee) {
       return { status: 'not_found', message: 'ไม่พบรหัสพนักงานนี้ในรายชื่อตั้งต้น' };
+    }
+
+    // ตรวจสอบคอลัมน์ "ท่านสนใจร่วมงานหรือไม่?" หากตอบ "ไม่ไป" หรือไม่มาร่วมงาน ไม่อนุญาตให้ลงทะเบียน
+    if (foundEmployee.isNotAttending) {
+      return {
+        status: 'not_attending',
+        message: 'ท่านไม่ได้มาร่วมงานลงทะเบียนไม่ได้',
+        data: foundEmployee
+      };
     }
 
     // ตรวจสอบว่าลงทะเบียนไปแล้วหรือยังใน Sheet Register
@@ -209,6 +235,12 @@ function saveRegistrationData(payload) {
 
     if (!empId || !empName) {
       return { status: 'error', message: 'ข้อมูลพนักงานไม่ครบถ้วน กรุณาตรวจสอบรหัสพนักงานอีกครั้ง' };
+    }
+
+    // ตรวจสอบสถานะการเข้าร่วมงานจากแบบฟอร์มตั้งต้น (หากตอบ "ไม่ไป" หรือไม่มาร่วมงาน ไม่อนุญาตให้ลงทะเบียน)
+    const empCheck = checkEmployeeById(empId);
+    if (empCheck && empCheck.status === 'not_attending') {
+      return { status: 'error', message: 'ท่านไม่ได้มาร่วมงานลงทะเบียนไม่ได้' };
     }
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);

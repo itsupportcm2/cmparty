@@ -685,6 +685,16 @@
       const labelD = (cols[3] && cols[3].label) ? String(cols[3].label) : '';
       const isColCName = labelC.indexOf('ชื่อ') !== -1 && labelD.indexOf('แผนก') !== -1;
 
+      // ค้นหาคอลัมน์ "ท่านสนใจร่วมงานหรือไม่?" (ปกติคือคอลัมน์ F / index 5)
+      let attendColIdx = 5;
+      for (let cIdx = 0; cIdx < cols.length; cIdx++) {
+        const lbl = String(cols[cIdx]?.label || '');
+        if (lbl.indexOf('สนใจร่วมงาน') !== -1 || lbl.indexOf('ร่วมงานหรือไม่') !== -1) {
+          attendColIdx = cIdx;
+          break;
+        }
+      }
+
       for (let i = rows.length - 1; i >= 0; i--) {
         const c = rows[i].c || [];
         const cellB = c[1] ? (c[1].f !== undefined ? String(c[1].f) : String(c[1].v ?? '')) : '';
@@ -694,15 +704,30 @@
           const valC = c[2] && c[2].v != null ? String(c[2].v).trim() : '';
           const valD = c[3] && c[3].v != null ? String(c[3].v).trim() : '';
           const valE = c[4] && c[4].v != null ? String(c[4].v).trim() : '';
+          const valF = c[attendColIdx] && c[attendColIdx].v != null ? String(c[attendColIdx].v).trim() : '';
+
+          // ตรวจสอบว่าตอบ "ไป" หรือไม่ (ถ้าตอบ "ไม่ไป" หรือไม่มาร่วมงาน ให้บล็อกการลงทะเบียน)
+          const isNotAttending = valF.indexOf('ไม่') !== -1 || (valF.indexOf('ไป') === -1 && valF !== '');
+
+          const empData = {
+            empId: rowEmpId,
+            empName: isColCName ? valC : valD,
+            department: isColCName ? valD : valC,
+            branch: valE,
+            attendAnswer: valF
+          };
+
+          if (isNotAttending) {
+            return {
+              status: 'not_attending',
+              message: 'ท่านไม่ได้มาร่วมงานลงทะเบียนไม่ได้',
+              data: empData
+            };
+          }
 
           return {
             status: 'success',
-            data: {
-              empId: rowEmpId,
-              empName: isColCName ? valC : valD,
-              department: isColCName ? valD : valC,
-              branch: valE
-            },
+            data: empData,
             alreadyRegistered: false
           };
         }
@@ -831,6 +856,35 @@
 
         loadingIcon.classList.add('hidden');
 
+        // กรณีตอบ "ไม่ไป" หรือไม่มาร่วมงาน
+        if (res && res.status === 'not_attending') {
+          verifiedEmployee = null;
+          document.getElementById('empName').value = (res.data && res.data.empName) || '-';
+          document.getElementById('empDept').value = (res.data && res.data.department) || '-';
+          document.getElementById('empBranch').value = (res.data && res.data.branch) || '-';
+          badge.classList.add('hidden');
+          checkIcon.classList.add('hidden');
+          btnSubmit.disabled = true;
+
+          hintEl.className = 'text-xs text-red-600 mt-1.5 font-bold flex items-center gap-1.5';
+          hintEl.innerHTML = `<i class="fa-solid fa-circle-xmark text-red-600"></i><span>ท่านไม่ได้มาร่วมงานลงทะเบียนไม่ได้</span>`;
+
+          Swal.fire({
+            icon: 'error',
+            title: 'ท่านไม่ได้มาร่วมงานลงทะเบียนไม่ได้',
+            html: `
+              <div class="text-left text-xs space-y-1.5 bg-red-50 p-3.5 rounded-xl border border-red-200 text-gray-800 mt-2">
+                <p><b>พนักงาน:</b> ${(res.data && res.data.empName) || '-'} (รหัส: ${empId})</p>
+                <p><b>สถานะในแบบฟอร์ม:</b> <span class="text-red-700 font-bold">"${(res.data && res.data.attendAnswer) || 'ไม่ไป'}"</span></p>
+                <p class="text-red-600 pt-1 font-semibold">⚠️ ระบบเปิดให้เฉพาะผู้ที่ตอบ "ไป" ร่วมงานเท่านั้นในการลงทะเบียน</p>
+              </div>
+            `,
+            confirmButtonText: 'รับทราบ',
+            confirmButtonColor: '#b91c1c'
+          });
+          return;
+        }
+
         if (res && res.status === 'success' && res.data) {
           verifiedEmployee = res.data;
           document.getElementById('empName').value = res.data.empName || '-';
@@ -879,6 +933,16 @@
           icon: 'warning',
           title: 'ไม่พบข้อมูลพนักงาน',
           text: 'กรุณากรอกรหัสพนักงานให้ถูกต้องก่อนลงทะเบียน',
+          confirmButtonColor: '#b91c1c'
+        });
+        return;
+      }
+
+      if (verifiedEmployee.attendAnswer && (verifiedEmployee.attendAnswer.indexOf('ไม่') !== -1 || (verifiedEmployee.attendAnswer.indexOf('ไป') === -1 && verifiedEmployee.attendAnswer !== ''))) {
+        Swal.fire({
+          icon: 'error',
+          title: 'ท่านไม่ได้มาร่วมงานลงทะเบียนไม่ได้',
+          text: 'ระบบอนุญาตเฉพาะผู้ที่ตอบ "ไป" ในแบบฟอร์มเท่านั้น',
           confirmButtonColor: '#b91c1c'
         });
         return;
