@@ -456,19 +456,19 @@
           document.getElementById('lineUidDisplay').innerText = 'UID: ' + userProfile.userId;
           document.getElementById('lineUid').value = userProfile.userId;
 
-          // 1. ตรวจสอบสถานะการเป็นเพื่อนขั้นต้น
-          let isFriend = await checkFriendshipStatus(false);
-
-          // 2. หากยังไม่ได้เป็นเพื่อน และเปิดใช้งานใน LINE Client
-          // ให้เรียก liff.requestFriendship() ทันที เพื่อเปิดหน้าต่าง Subwindow ขอเพิ่มเพื่อนอัตโนมัติตาม LINE Tips
-          if (!isFriend && typeof liff !== 'undefined' && liff.isInClient() && typeof liff.requestFriendship === 'function') {
+          // 1. เรียก liff.requestFriendship() ตามเอกสารทางการ LINE Developers Tips
+          // https://developers.line.biz/en/tips/2026/05/21/line-request-friendship/
+          // การทำงานของ liff.requestFriendship():
+          // - ถ้ายังไม่เป็นเพื่อน: แสดง Subwindow ขอเพิ่มเพื่อน (Add as friend)
+          // - ถ้าบล็อกบอทอยู่: แสดง Subwindow ขอปลดบล็อก (Unblock)
+          // - ถ้าเป็นเพื่อนอยู่แล้ว: Subwindow จะเปิดและปิดเองอัตโนมัติ (auto close)
+          if (typeof liff !== 'undefined' && liff.isInClient() && typeof liff.requestFriendship === 'function') {
             try {
-              showMustAddFriendView();
+              console.log('LINE Tips: Calling liff.requestFriendship()...');
               await liff.requestFriendship();
-              // ตรวจสอบสถานะอีกครั้งหลังจาก Subwindow ปิดลง
-              isFriend = await checkFriendshipStatus(true);
+              console.log('LINE Tips: liff.requestFriendship() completed.');
             } catch (autoReqErr) {
-              console.warn('liff.requestFriendship auto prompt error/dismissed:', autoReqErr);
+              console.warn('liff.requestFriendship() error or dismissed:', autoReqErr);
             }
           }
 
@@ -476,7 +476,11 @@
           const loadingEl = document.getElementById('liffLoadingContainer');
           if (loadingEl) loadingEl.classList.add('hidden');
 
-          // 3. หากยังไม่ได้เป็นเพื่อน ไม่อนุญาตให้เข้าสู่ฟอร์มลงทะเบียน
+          // 2. ตรวจสอบสถานะการเป็นเพื่อนหลังจาก requestFriendship
+          const isFriend = await checkFriendshipStatus(true);
+          console.log('Final friendship status:', isFriend);
+
+          // 3. หากยังไม่ได้เป็นเพื่อน (เช่น กดยกเลิก หรือปิด Subwindow โดยไม่ได้เพิ่มเพื่อน)
           if (!isFriend) {
             showMustAddFriendView();
             return;
