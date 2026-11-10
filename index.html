@@ -508,6 +508,15 @@
     </div>
   </main>
 
+  <!-- Admin Settings Pop-up Modal (ซ่อนไว้เริ่มต้น จะแสดงเมื่อแอดมินกดปุ่มเท่านั้น) -->
+  <div
+    id="adminSettingsModal"
+    class="hidden fixed inset-0 z-40 bg-black/65 backdrop-blur-sm flex items-center justify-center p-4 transition-opacity"
+    onclick="if (event.target === this) closeAdminModal()"
+  >
+    <div id="adminModalContent" class="w-full max-w-md max-h-[90vh] overflow-y-auto rounded-3xl bg-white shadow-2xl border-2 border-yellow-400 p-5 text-left relative animate-[fadeIn_0.2s_ease-out]"></div>
+  </div>
+
   <script>
     // ==========================================
     // ตั้งค่า LIFF ID และ URL ของ Google Apps Script Web App
@@ -916,6 +925,33 @@
         document.getElementById('regInfoDept').innerText = regData.department || '-';
         document.getElementById('regInfoBranch').innerText = regData.branch || '-';
       }
+
+      // หากไม่ใช่แอดมิน ให้ Pop-up แจ้งว่า "ท่านได้ลงทะเบียนแล้ว" ค้างไว้ 3 วินาที แล้วปิดหน้าต่างอัตโนมัติ
+      const isAdmin = userProfile && userProfile.userId === ADMIN_UID;
+      if (!isAdmin) {
+        setTimeout(() => {
+          closeLiffWindow();
+        }, 3000);
+
+        Swal.fire({
+          icon: 'success',
+          title: 'ท่านได้ลงทะเบียนแล้ว',
+          html: regData && regData.empId
+            ? `<div class="text-xs text-gray-600 space-y-1 mt-1">
+                 <p>รหัสพนักงาน: <b class="text-red-700">${regData.empId}</b></p>
+                 <p>ชื่อ-สกุล: <b class="text-gray-800">${regData.empName || '-'}</b></p>
+                 <p class="text-gray-400 text-[11px] pt-2">ระบบจะปิดหน้าต่างอัตโนมัติใน 3 วินาที...</p>
+               </div>`
+            : '<p class="text-xs text-gray-500">ระบบจะปิดหน้าต่างอัตโนมัติใน 3 วินาที...</p>',
+          timer: 3000,
+          timerProgressBar: true,
+          showConfirmButton: false,
+          allowOutsideClick: false,
+          allowEscapeKey: false
+        }).then(() => {
+          closeLiffWindow();
+        });
+      }
     }
 
     // แสดงหน้า Christmas Countdown นับถอยหลังก่อนถึงเวลาเปิดระบบ
@@ -1038,6 +1074,7 @@
     // สำหรับแอดมินสลับดูหน้าตัวอย่าง (Countdown / ฟอร์มลงทะเบียน / ปิดระบบ)
     function adminSwitchPreview(mode) {
       if (!userProfile || userProfile.userId !== ADMIN_UID) return;
+      closeAdminModal();
       const cfg = window.currentSysConfig || {};
       if (mode === 'countdown') {
         showCountdownView(cfg.openingDateTime || new Date(Date.now() + 3600000).toISOString(), cfg.closingDateTime || '');
@@ -1059,6 +1096,18 @@
         updateClosingNoticeBanner(cfg.closingDateTime);
         document.getElementById('registrationFormContainer').classList.remove('hidden');
       }
+    }
+
+    // เปิด/ปิด Pop-up ตั้งค่าระบบของแอดมิน
+    function openAdminModal() {
+      if (!userProfile || userProfile.userId !== ADMIN_UID) return;
+      const modal = document.getElementById('adminSettingsModal');
+      if (modal) modal.classList.remove('hidden');
+    }
+
+    function closeAdminModal() {
+      const modal = document.getElementById('adminSettingsModal');
+      if (modal) modal.classList.add('hidden');
     }
 
     // อัปเดตแบนเนอร์แจ้งเตือนเวลาปิดในหน้าฟอร์มลงทะเบียน
@@ -1191,9 +1240,10 @@
       return { status: 'success', systemStatus: 'OPEN', isOpen: true, isAdmin: (uid === ADMIN_UID) };
     }
 
-    // แสดงแผงควบคุมระบบ (สำหรับแอดมิน UID = U1dcbd47c6981745c2f41c5691cde7ff3 เท่านั้น)
+    // แสดงปุ่มเปิดแผงควบคุมระบบแบบซ่อนไว้ และสร้างเนื้อหา Pop-up Modal (สำหรับแอดมิน UID = U1dcbd47c6981745c2f41c5691cde7ff3 เท่านั้น)
     function renderAdminControlPanel(sysConfig) {
       const panel = document.getElementById('adminControlPanel');
+      const modalContent = document.getElementById('adminModalContent');
       if (!panel) return;
 
       const isAdmin = userProfile && userProfile.userId === ADMIN_UID;
@@ -1214,180 +1264,208 @@
       const thaiClosingText = config.closingDateTime ? formatThaiDateTime(config.closingDateTime) : '';
 
       let statusBadgeHtml = '';
-      let panelThemeClass = '';
-      let headerBorderClass = '';
+      let buttonThemeClass = '';
       let crownBadgeClass = '';
 
       if (isWaitingOpen) {
-        panelThemeClass = 'border-amber-500 bg-amber-50/95';
-        headerBorderClass = 'border-amber-200';
+        buttonThemeClass = 'border-amber-400 bg-gradient-to-r from-amber-50 to-yellow-50 hover:from-amber-100 hover:to-yellow-100 text-amber-900';
         crownBadgeClass = 'bg-amber-700';
         statusBadgeHtml = `
           <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
             <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
-            <span>สถานะ: รอเวลาเปิด (Countdown)</span>
+            <span>รอเวลาเปิด (Countdown)</span>
           </span>
         `;
       } else if (isOpen) {
-        panelThemeClass = 'border-emerald-500 bg-emerald-50/95';
-        headerBorderClass = 'border-emerald-200';
+        buttonThemeClass = 'border-emerald-400 bg-gradient-to-r from-emerald-50 to-green-50 hover:from-emerald-100 hover:to-green-100 text-emerald-900';
         crownBadgeClass = 'bg-emerald-700';
         statusBadgeHtml = `
           <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
             <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span>สถานะ: เปิดรับลงทะเบียน</span>
+            <span>เปิดรับลงทะเบียน</span>
           </span>
         `;
       } else {
-        panelThemeClass = 'border-rose-500 bg-rose-50/95';
-        headerBorderClass = 'border-rose-200';
+        buttonThemeClass = 'border-rose-400 bg-gradient-to-r from-rose-50 to-red-50 hover:from-rose-100 hover:to-red-100 text-rose-900';
         crownBadgeClass = 'bg-rose-700';
         statusBadgeHtml = `
           <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
             <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-            <span>สถานะ: ปิดระบบ</span>
+            <span>ปิดระบบ</span>
           </span>
         `;
       }
 
-      panel.className = `mx-6 mt-4 p-4 rounded-2xl border-2 ${panelThemeClass} shadow-lg transition-all text-left`;
-
+      // ปุ่มเล็กสำหรับแอดมินบนหน้าจอหลัก กดแล้วจะ Pop-up เมนูตั้งค่าขึ้นมา
+      panel.className = 'mx-6 mt-3 transition-all';
       panel.innerHTML = `
-        <div class="flex items-center justify-between mb-3 pb-2 border-b ${headerBorderClass}">
+        <button
+          type="button"
+          onclick="openAdminModal()"
+          class="w-full py-2.5 px-3.5 rounded-2xl border ${buttonThemeClass} shadow-sm hover:shadow active:scale-[0.99] transition-all flex items-center justify-between cursor-pointer"
+        >
           <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${crownBadgeClass} text-white shadow-sm">
             <i class="fa-solid fa-crown text-yellow-300"></i>
-            <span>แผงควบคุมแอดมิน</span>
+            <span>ตั้งค่าระบบ (แอดมิน)</span>
           </span>
-          ${statusBadgeHtml}
-        </div>
-
-        <!-- กล่องตั้งค่าวันเวลา เปิด และ ปิด ระบบ -->
-        <div class="bg-white/95 p-3.5 rounded-xl border border-gray-200 mb-3 space-y-3 shadow-sm">
-          <div class="flex items-center justify-between border-b border-gray-100 pb-1.5">
-            <span class="text-xs font-bold text-gray-800 flex items-center gap-1.5">
-              <i class="fa-solid fa-calendar-days text-red-600"></i>
-              <span>ตั้งเวลาเปิด - ปิดระบบอัตโนมัติ</span>
+          <div class="flex items-center gap-2">
+            ${statusBadgeHtml}
+            <span class="w-7 h-7 rounded-full bg-white border border-gray-200 flex items-center justify-center text-gray-600 shadow-sm">
+              <i class="fa-solid fa-sliders text-xs"></i>
             </span>
-            ${(thaiOpeningText || thaiClosingText)
-              ? `<span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">ตั้งเวลาไว้แล้ว</span>`
-              : `<span class="text-[10px] text-gray-400">ไม่ได้ตั้งเวลา</span>`
-            }
           </div>
+        </button>
+      `;
 
-          <!-- 1. กำหนดวัน-เวลาเปิดระบบ (Countdown) -->
-          <div class="space-y-1">
-            <div class="flex items-center justify-between">
-              <label for="adminOpeningInput" class="text-[11px] font-bold text-emerald-800 flex items-center gap-1.5">
-                <i class="fa-solid fa-hourglass-start text-emerald-600"></i>
-                <span>1. วัน-เวลาเริ่มเปิดระบบ (แสดงหน้า Countdown ก่อนถึงเวลา):</span>
-              </label>
-              ${thaiOpeningText ? `
-                <button type="button" onclick="clearSingleSchedule('open')" class="text-[10px] text-red-600 hover:underline font-semibold cursor-pointer">
-                  ล้างเวลาเปิด
-                </button>
-              ` : ''}
+      // เนื้อหาข้างใน Pop-up Modal เมื่อแอดมินกดปุ่ม
+      if (modalContent) {
+        modalContent.innerHTML = `
+          <div class="flex items-center justify-between mb-3 pb-2.5 border-b border-gray-200">
+            <div class="flex items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${crownBadgeClass} text-white shadow-sm">
+                <i class="fa-solid fa-crown text-yellow-300"></i>
+                <span>แผงควบคุมแอดมิน</span>
+              </span>
+              ${statusBadgeHtml}
             </div>
-            <input
-              type="datetime-local"
-              id="adminOpeningInput"
-              value="${openingVal}"
-              class="w-full text-xs px-3 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-emerald-50/40 font-sans"
-            />
-            ${thaiOpeningText ? `<p class="text-[11px] text-emerald-700 font-medium"><i class="fa-solid fa-clock mr-1"></i>เปิดระบบ: <b>${thaiOpeningText}</b></p>` : ''}
-          </div>
-
-          <!-- 2. กำหนดวัน-เวลาปิดระบบ -->
-          <div class="space-y-1 pt-1 border-t border-gray-100">
-            <div class="flex items-center justify-between">
-              <label for="adminClosingInput" class="text-[11px] font-bold text-rose-800 flex items-center gap-1.5">
-                <i class="fa-solid fa-hourglass-end text-rose-600"></i>
-                <span>2. วัน-เวลาปิดรับลงทะเบียน:</span>
-              </label>
-              ${thaiClosingText ? `
-                <button type="button" onclick="clearSingleSchedule('close')" class="text-[10px] text-red-600 hover:underline font-semibold cursor-pointer">
-                  ล้างเวลาปิด
-                </button>
-              ` : ''}
-            </div>
-            <input
-              type="datetime-local"
-              id="adminClosingInput"
-              value="${closingVal}"
-              class="w-full text-xs px-3 py-2 border border-rose-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none bg-rose-50/40 font-sans"
-            />
-            ${thaiClosingText ? `<p class="text-[11px] text-rose-700 font-medium"><i class="fa-solid fa-clock mr-1"></i>ปิดระบบ: <b>${thaiClosingText}</b></p>` : ''}
-          </div>
-
-          <!-- ปุ่มบันทึกการตั้งค่าเวลา -->
-          <div class="flex gap-2 pt-1.5">
             <button
               type="button"
-              onclick="saveScheduleSettings()"
-              class="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 active:scale-95 text-white font-bold text-xs shadow transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              onclick="closeAdminModal()"
+              class="w-8 h-8 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-600 flex items-center justify-center transition cursor-pointer"
+              title="ปิดหน้าต่างตั้งค่า"
             >
-              <i class="fa-solid fa-floppy-disk"></i>
-              <span>บันทึกเวลา เปิด-ปิด</span>
+              <i class="fa-solid fa-xmark text-base"></i>
             </button>
-            ${(thaiOpeningText || thaiClosingText) ? `
+          </div>
+
+          <!-- กล่องตั้งค่าวันเวลา เปิด และ ปิด ระบบ -->
+          <div class="bg-gray-50 p-3.5 rounded-2xl border border-gray-200 mb-3 space-y-3 shadow-inner">
+            <div class="flex items-center justify-between border-b border-gray-200 pb-1.5">
+              <span class="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+                <i class="fa-solid fa-calendar-days text-red-600"></i>
+                <span>ตั้งเวลาเปิด - ปิดระบบอัตโนมัติ</span>
+              </span>
+              ${(thaiOpeningText || thaiClosingText)
+                ? `<span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">ตั้งเวลาไว้แล้ว</span>`
+                : `<span class="text-[10px] text-gray-400">ไม่ได้ตั้งเวลา</span>`
+              }
+            </div>
+
+            <!-- 1. กำหนดวัน-เวลาเปิดระบบ (Countdown) -->
+            <div class="space-y-1">
+              <div class="flex items-center justify-between">
+                <label for="adminOpeningInput" class="text-[11px] font-bold text-emerald-800 flex items-center gap-1.5">
+                  <i class="fa-solid fa-hourglass-start text-emerald-600"></i>
+                  <span>1. วัน-เวลาเริ่มเปิดระบบ (Countdown):</span>
+                </label>
+                ${thaiOpeningText ? `
+                  <button type="button" onclick="clearSingleSchedule('open')" class="text-[10px] text-red-600 hover:underline font-semibold cursor-pointer">
+                    ล้างเวลาเปิด
+                  </button>
+                ` : ''}
+              </div>
+              <input
+                type="datetime-local"
+                id="adminOpeningInput"
+                value="${openingVal}"
+                class="w-full text-xs px-3 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-white font-sans"
+              />
+              ${thaiOpeningText ? `<p class="text-[11px] text-emerald-700 font-medium"><i class="fa-solid fa-clock mr-1"></i>เปิดระบบ: <b>${thaiOpeningText}</b></p>` : ''}
+            </div>
+
+            <!-- 2. กำหนดวัน-เวลาปิดระบบ -->
+            <div class="space-y-1 pt-2 border-t border-gray-200">
+              <div class="flex items-center justify-between">
+                <label for="adminClosingInput" class="text-[11px] font-bold text-rose-800 flex items-center gap-1.5">
+                  <i class="fa-solid fa-hourglass-end text-rose-600"></i>
+                  <span>2. วัน-เวลาปิดรับลงทะเบียน:</span>
+                </label>
+                ${thaiClosingText ? `
+                  <button type="button" onclick="clearSingleSchedule('close')" class="text-[10px] text-red-600 hover:underline font-semibold cursor-pointer">
+                    ล้างเวลาปิด
+                  </button>
+                ` : ''}
+              </div>
+              <input
+                type="datetime-local"
+                id="adminClosingInput"
+                value="${closingVal}"
+                class="w-full text-xs px-3 py-2 border border-rose-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none bg-white font-sans"
+              />
+              ${thaiClosingText ? `<p class="text-[11px] text-rose-700 font-medium"><i class="fa-solid fa-clock mr-1"></i>ปิดระบบ: <b>${thaiClosingText}</b></p>` : ''}
+            </div>
+
+            <!-- ปุ่มบันทึกการตั้งค่าเวลา -->
+            <div class="flex gap-2 pt-1.5">
               <button
                 type="button"
-                onclick="clearClosingDateTimeSetting()"
-                class="py-2.5 px-3 rounded-xl bg-gray-200 hover:bg-gray-300 active:scale-95 text-gray-700 font-semibold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer"
-                title="ล้างเวลาเปิด-ปิดทั้งหมด (เปิดตลอด)"
+                onclick="saveScheduleSettings()"
+                class="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 active:scale-95 text-white font-bold text-xs shadow transition-all flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <i class="fa-solid fa-xmark"></i>
-                <span>ล้างเวลาทั้งหมด</span>
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>บันทึกเวลา เปิด-ปิด</span>
               </button>
-            ` : ''}
+              ${(thaiOpeningText || thaiClosingText) ? `
+                <button
+                  type="button"
+                  onclick="clearClosingDateTimeSetting()"
+                  class="py-2.5 px-3 rounded-xl bg-gray-200 hover:bg-gray-300 active:scale-95 text-gray-700 font-semibold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer"
+                  title="ล้างเวลาเปิด-ปิดทั้งหมด (เปิดตลอด)"
+                >
+                  <i class="fa-solid fa-xmark"></i>
+                  <span>ล้างเวลาทั้งหมด</span>
+                </button>
+              ` : ''}
+            </div>
           </div>
-        </div>
 
-        <!-- ปุ่มสลับดูหน้าจอสำหรับแอดมิน (Preview Mode) -->
-        <div class="bg-white/80 p-2.5 rounded-xl border border-gray-200 mb-3">
-          <p class="text-[10px] text-gray-500 font-semibold mb-1.5 flex items-center gap-1">
-            <i class="fa-solid fa-eye text-amber-600"></i>
-            <span>สลับดูหน้าจอตัวอย่าง (เฉพาะแอดมิน):</span>
-          </p>
-          <div class="grid grid-cols-3 gap-1.5">
-            <button type="button" onclick="adminSwitchPreview('countdown')" class="py-1.5 px-2 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-[10px] border border-amber-300 transition cursor-pointer flex items-center justify-center gap-1">
-              <i class="fa-solid fa-tree text-emerald-700"></i>
-              <span>หน้า Countdown</span>
-            </button>
-            <button type="button" onclick="adminSwitchPreview('form')" class="py-1.5 px-2 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold text-[10px] border border-emerald-300 transition cursor-pointer flex items-center justify-center gap-1">
-              <i class="fa-solid fa-pen-to-square"></i>
-              <span>หน้าฟอร์ม</span>
-            </button>
-            <button type="button" onclick="adminSwitchPreview('closed')" class="py-1.5 px-2 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-900 font-bold text-[10px] border border-rose-300 transition cursor-pointer flex items-center justify-center gap-1">
-              <i class="fa-solid fa-lock"></i>
-              <span>หน้าปิดระบบ</span>
-            </button>
+          <!-- ปุ่มสลับดูหน้าจอสำหรับแอดมิน (Preview Mode) -->
+          <div class="bg-amber-50/70 p-3 rounded-2xl border border-amber-200 mb-3">
+            <p class="text-[10px] text-amber-900 font-semibold mb-1.5 flex items-center gap-1">
+              <i class="fa-solid fa-eye text-amber-600"></i>
+              <span>สลับดูหน้าจอตัวอย่าง (เฉพาะแอดมิน):</span>
+            </p>
+            <div class="grid grid-cols-3 gap-1.5">
+              <button type="button" onclick="adminSwitchPreview('countdown')" class="py-2 px-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-[10px] border border-amber-300 transition cursor-pointer flex items-center justify-center gap-1">
+                <i class="fa-solid fa-tree text-emerald-700"></i>
+                <span>หน้า Countdown</span>
+              </button>
+              <button type="button" onclick="adminSwitchPreview('form')" class="py-2 px-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold text-[10px] border border-emerald-300 transition cursor-pointer flex items-center justify-center gap-1">
+                <i class="fa-solid fa-pen-to-square"></i>
+                <span>หน้าฟอร์ม</span>
+              </button>
+              <button type="button" onclick="adminSwitchPreview('closed')" class="py-2 px-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-900 font-bold text-[10px] border border-rose-300 transition cursor-pointer flex items-center justify-center gap-1">
+                <i class="fa-solid fa-lock"></i>
+                <span>หน้าปิดระบบ</span>
+              </button>
+            </div>
           </div>
-        </div>
 
-        <!-- ปุ่มเปิด/ปิดระบบแบบทันที (Manual Override) -->
-        <div class="pt-0.5">
-          <p class="text-[11px] text-gray-600 mb-1.5 font-medium">สวิตช์เปิด-ปิดทันที (Manual Override):</p>
-          ${isOpen ? `
-            <button
-              type="button"
-              onclick="toggleRegistrationSystem('CLOSED')"
-              class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white font-bold text-xs shadow hover:shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <i class="fa-solid fa-lock"></i>
-              <span>สั่ง "ปิด" ระบบทันที (Manual Close)</span>
-            </button>
-          ` : `
-            <button
-              type="button"
-              onclick="toggleRegistrationSystem('OPEN')"
-              class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white font-bold text-xs shadow hover:shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <i class="fa-solid fa-lock-open"></i>
-              <span>สั่ง "เปิด" ระบบทันที (Manual Open)</span>
-            </button>
-          `}
-        </div>
-      `;
+          <!-- ปุ่มเปิด/ปิดระบบแบบทันที (Manual Override) -->
+          <div class="pt-0.5">
+            <p class="text-[11px] text-gray-600 mb-1.5 font-medium">สวิตช์เปิด-ปิดทันที (Manual Override):</p>
+            ${isOpen ? `
+              <button
+                type="button"
+                onclick="toggleRegistrationSystem('CLOSED')"
+                class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-600 to-rose-700 hover:from-red-700 hover:to-rose-800 text-white font-bold text-xs shadow hover:shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <i class="fa-solid fa-lock"></i>
+                <span>สั่ง "ปิด" ระบบทันที (Manual Close)</span>
+              </button>
+            ` : `
+              <button
+                type="button"
+                onclick="toggleRegistrationSystem('OPEN')"
+                class="w-full py-2.5 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white font-bold text-xs shadow hover:shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <i class="fa-solid fa-lock-open"></i>
+                <span>สั่ง "เปิด" ระบบทันที (Manual Open)</span>
+              </button>
+            `}
+          </div>
+        `;
+      }
     }
 
     // แอดมินบันทึกวันเวลา เปิด และ ปิด ระบบ
