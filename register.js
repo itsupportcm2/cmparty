@@ -230,7 +230,7 @@ function checkEmployeeById(empId) {
       return { status: 'error', message: 'กรุณาระบุรหัสพนักงาน' };
     }
 
-    const searchId = String(empId).trim();
+    const searchId = String(empId).trim().replace(/\.0$/, '');
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sourceSheet = getSheetSafely(ss, SOURCE_SHEET_NAME);
 
@@ -267,7 +267,7 @@ function checkEmployeeById(empId) {
     let foundEmployee = null;
     for (let i = data.length - 1; i >= 0; i--) {
       const row = data[i];
-      const rowEmpId = String(row[1] || '').trim();
+      const rowEmpId = String(row[1] || '').trim().replace(/\.0$/, '');
       const rowColC = String(row[2] || '').trim(); // แผนก (หรือชื่อ-สกุล ตามโครงสร้างฟอร์ม)
       const rowColD = String(row[3] || '').trim(); // ชื่อ-สกุล (หรือแผนก)
       const rowColE = String(row[4] || '').trim(); // สาขา
@@ -323,7 +323,8 @@ function checkEmployeeById(empId) {
     if (regSheet && regSheet.getLastRow() >= 2) {
       const regData = regSheet.getRange(2, 1, regSheet.getLastRow() - 1, 2).getValues();
       for (let j = 0; j < regData.length; j++) {
-        if (String(regData[j][1] || '').trim() === searchId) {
+        const regEmpId = String(regData[j][1] || '').trim().replace(/\.0$/, '');
+        if (regEmpId === searchId) {
           alreadyRegistered = true;
           registeredAt = regData[j][0]
             ? Utilities.formatDate(new Date(regData[j][0]), 'Asia/Bangkok', 'dd/MM/yyyy HH:mm:ss')
@@ -337,7 +338,8 @@ function checkEmployeeById(empId) {
       status: 'success',
       data: foundEmployee,
       alreadyRegistered: alreadyRegistered,
-      registeredAt: registeredAt
+      registeredAt: registeredAt,
+      message: alreadyRegistered ? 'รหัสพนักงานนี้ได้ลงทะเบียนไปแล้ว' : ''
     };
   } catch (err) {
     console.error('Error in checkEmployeeById:', err);
@@ -402,7 +404,7 @@ function saveRegistrationData(payload) {
   try {
     lock.waitLock(10000);
 
-    const empId = String(payload.empId || '').trim();
+    const empId = String(payload.empId || '').trim().replace(/\.0$/, '');
     const empName = String(payload.empName || '').trim();
     const department = String(payload.department || '').trim();
     const branch = String(payload.branch || '').trim();
@@ -430,10 +432,16 @@ function saveRegistrationData(payload) {
       return { status: 'error', message: closeMsg };
     }
 
-    // ตรวจสอบสถานะการเข้าร่วมงานจากแบบฟอร์มตั้งต้น (หากตอบ "ไม่ไป" หรือไม่มาร่วมงาน ไม่อนุญาตให้ลงทะเบียน)
+    // ตรวจสอบสถานะการเข้าร่วมงานและตรวจสอบรหัสพนักงานซ้ำจากแบบฟอร์มตั้งต้น + Sheet Register
     const empCheck = checkEmployeeById(empId);
     if (empCheck && empCheck.status === 'not_attending') {
       return { status: 'error', message: 'ท่านไม่ได้มาร่วมงานลงทะเบียนไม่ได้' };
+    }
+    if (empCheck && empCheck.alreadyRegistered) {
+      return {
+        status: 'duplicate',
+        message: 'รหัสพนักงานนี้ได้ลงทะเบียนไปแล้ว'
+      };
     }
 
     // ตรวจสอบว่าผู้ใช้กดเพิ่มเพื่อนกับ LINE Official Account แล้วหรือไม่
@@ -473,21 +481,30 @@ function saveRegistrationData(payload) {
         .setFontColor('#ffffff');
       regSheet.setFrozenRows(1);
     } else if (lastRow >= 2) {
-      // ตรวจสอบการลงทะเบียนซ้ำด้วยรหัสพนักงาน หรือ LINE UID
+      // ตรวจสอบการลงทะเบียนซ้ำด้วยรหัสพนักงาน (เช็คก่อนเสมอ) และ LINE UID
       const existingData = regSheet.getRange(2, 2, lastRow - 1, 5).getValues(); // คอลัมน์ B ถึง F
       for (let i = 0; i < existingData.length; i++) {
-        const rowEmpId = String(existingData[i][0] || '').trim();
+        const rowEmpId = String(existingData[i][0] || '').trim().replace(/\.0$/, '');
+        if (rowEmpId && rowEmpId === empId) {
+          return {
+            status: 'duplicate',
+            message: 'รหัสพนักงานนี้ได้ลงทะเบียนไปแล้ว'
+          };
+        }
+      }
+      for (let i = 0; i < existingData.length; i++) {
         const rowUid = String(existingData[i][4] || '').trim();
         if (uid && rowUid === uid) {
           return {
             status: 'duplicate_uid',
-            message: 'คุณได้ลงทะเบียนเรียบร้อยแล้ว'
-          };
-        }
-        if (rowEmpId === empId) {
-          return {
-            status: 'duplicate',
-            message: `รหัสพนักงาน ${empId} (${empName}) ได้ลงทะเบียนเข้างานเรียบร้อยแล้ว`
+            message: 'ท่านได้ลงทะเบียนแล้ว',
+            data: {
+              empId: String(existingData[i][0] || '').trim().replace(/\.0$/, ''),
+              department: String(existingData[i][1] || '').trim(),
+              empName: String(existingData[i][2] || '').trim(),
+              branch: String(existingData[i][3] || '').trim(),
+              uid: rowUid
+            }
           };
         }
       }

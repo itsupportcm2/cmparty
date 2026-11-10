@@ -1897,11 +1897,50 @@
       throw lastErr || new Error('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
     }
 
-    // ดึงข้อมูลพนักงานโดยตรงจาก Google Sheet (รวดเร็ว ไม่ติดสิทธิ์ Login ของ Web App)
+    // ตรวจสอบว่ารหัสพนักงานนี้เคยลงทะเบียนใน Sheet Register ไปแล้วหรือยัง
+    async function checkIfEmpIdAlreadyRegisteredInSheet(empId) {
+      const searchId = String(empId || '').trim().replace(/\.0$/, '');
+      if (!searchId) return { alreadyRegistered: false, registeredAt: '' };
+
+      try {
+        const regUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=Register&t=${Date.now()}`;
+        const response = await fetch(regUrl, { cache: 'no-store' });
+        const text = await response.text();
+        const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?/);
+        if (jsonMatch && jsonMatch[1]) {
+          const gvizData = JSON.parse(jsonMatch[1]);
+          const rows = (gvizData.table && gvizData.table.rows) || [];
+          for (let i = rows.length - 1; i >= 0; i--) {
+            const c = rows[i].c || [];
+            const cellB = c[1] ? (c[1].f !== undefined ? String(c[1].f) : String(c[1].v ?? '')) : '';
+            const regEmpId = cellB.replace(/\.0$/, '').trim();
+            const rawValB = c[1] && c[1].v != null ? String(c[1].v).replace(/\.0$/, '').trim() : '';
+
+            if ((regEmpId && regEmpId === searchId) || (rawValB && rawValB === searchId)) {
+              const regTime = c[0] ? (c[0].f !== undefined ? String(c[0].f) : String(c[0].v ?? '')) : '';
+              return {
+                alreadyRegistered: true,
+                registeredAt: regTime
+              };
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('Error checking Register sheet for duplicate empId:', err);
+      }
+
+      return { alreadyRegistered: false, registeredAt: '' };
+    }
+
+    // ดึงข้อมูลพนักงานโดยตรงจาก Google Sheet พร้อมตรวจสอบรหัสพนักงานซ้ำใน Sheet Register
     async function fetchEmployeeFromGoogleSheetDirect(empId) {
-      const searchId = String(empId).trim();
-      const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SOURCE_SHEET_NAME)}`;
-      const response = await fetch(url);
+      const searchId = String(empId).trim().replace(/\.0$/, '');
+      const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SOURCE_SHEET_NAME)}&t=${Date.now()}`;
+
+      const [response, regCheck] = await Promise.all([
+        fetch(url, { cache: 'no-store' }),
+        checkIfEmpIdAlreadyRegisteredInSheet(searchId)
+      ]);
       const text = await response.text();
 
       const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?/);
@@ -1960,7 +1999,9 @@
           return {
             status: 'success',
             data: empData,
-            alreadyRegistered: false
+            alreadyRegistered: Boolean(regCheck && regCheck.alreadyRegistered),
+            registeredAt: (regCheck && regCheck.registeredAt) || '',
+            message: (regCheck && regCheck.alreadyRegistered) ? 'รหัสพนักงานนี้ได้ลงทะเบียนไปแล้ว' : ''
           };
         }
       }
@@ -1971,7 +2012,7 @@
       };
     }
 
-    // ฟังก์ชันตรวจสอบข้อมูลพนักงาน (ดึงจาก Google Sheet โดยตรง และรองรับ google.script.run / GAS Web App)
+    // ฟังก์ชันตรวจสอบข้อมูลพนักงาน (ดึงจาก Google Sheet โดยตรง และตรวจสอบซ้ำกับ GAS Web App)
     async function callBackendCheckEmployee(empId) {
       // 1. หากเปิดบน Google Apps Script HtmlService โดยตรง
       if (typeof google !== 'undefined' && google.script && google.script.run) {
@@ -1987,16 +2028,34 @@
         }
       }
 
-      // 2. ดึงข้อมูลจาก Google Sheet โดยตรง (เร็วและแสดงผลได้ทันที)
+      // 2. ดึงข้อมูลจาก Google Sheet โดยตรง (ตรวจสอบทั้งแผ่นงานต้นทางและแผ่นงาน Register)
       try {
-        return await fetchEmployeeFromGoogleSheetDirect(empId);
+        const directRes = await fetchEmployeeFromGoogleSheetDirect(empId);
+        // หากพบพนักงานและใน gviz ยังไม่ขึ้นว่าลงทะเบียนแล้ว ให้เช็คซ้ำกับ GAS Backend เพื่อกันความล่าช้าของ Cache
+        if (directRes && directRes.status === 'success' && !directRes.alreadyRegistered && GAS_WEB_APP_URL) {
+          try {
+            const apiRes = await fetch(`${GAS_WEB_APP_URL}?action=checkEmployee&empId=${encodeURIComponent(empId)}&t=${Date.now()}`, {
+              method: 'GET',
+              redirect: 'follow'
+            });
+            const apiJson = await apiRes.json();
+            if (apiJson && apiJson.alreadyRegistered) {
+              directRes.alreadyRegistered = true;
+              directRes.registeredAt = apiJson.registeredAt || directRes.registeredAt || '';
+              directRes.message = 'รหัสพนักงานนี้ได้ลงทะเบียนไปแล้ว';
+            }
+          } catch (apiCheckErr) {
+            console.warn('Secondary GAS duplicate check warning:', apiCheckErr);
+          }
+        }
+        return directRes;
       } catch (sheetErr) {
         console.warn('Direct sheet fetch failed, trying GAS_WEB_APP_URL:', sheetErr);
       }
 
       // 3. Fallback ไปยัง GAS_WEB_APP_URL
       if (GAS_WEB_APP_URL) {
-        const res = await fetch(`${GAS_WEB_APP_URL}?action=checkEmployee&empId=${encodeURIComponent(empId)}`, {
+        const res = await fetch(`${GAS_WEB_APP_URL}?action=checkEmployee&empId=${encodeURIComponent(empId)}&t=${Date.now()}`, {
           method: 'GET',
           redirect: 'follow'
         });
@@ -2118,18 +2177,38 @@
         }
 
         if (res && res.status === 'success' && res.data) {
-          verifiedEmployee = res.data;
           document.getElementById('empName').value = res.data.empName || '-';
           document.getElementById('empDept').value = res.data.department || '-';
           document.getElementById('empBranch').value = res.data.branch || '-';
-          badge.classList.remove('hidden');
-          checkIcon.classList.remove('hidden');
 
           if (res.alreadyRegistered) {
-            hintEl.className = 'text-xs text-amber-700 mt-1.5 font-semibold flex items-center gap-1.5';
-            hintEl.innerHTML = `<i class="fa-solid fa-triangle-exclamation"></i><span>รหัสนี้ลงทะเบียนแล้วเมื่อ ${res.registeredAt || 'ก่อนหน้านี้'}</span>`;
+            // บล็อกไม่ให้ลงทะเบียนซ้ำด้วยรหัสพนักงานคนอื่นเด็ดขาด
+            verifiedEmployee = null;
+            badge.classList.add('hidden');
+            checkIcon.classList.add('hidden');
             btnSubmit.disabled = true;
+
+            hintEl.className = 'text-xs text-red-600 mt-1.5 font-bold flex items-center gap-1.5';
+            hintEl.innerHTML = '<i class="fa-solid fa-circle-xmark text-red-600"></i><span>รหัสพนักงานนี้ได้ลงทะเบียนไปแล้ว</span>';
+
+            Swal.fire({
+              icon: 'error',
+              title: 'รหัสพนักงานนี้ได้ลงทะเบียนไปแล้ว',
+              html: `
+                <div class="text-left text-xs space-y-1.5 bg-red-50 p-3.5 rounded-xl border border-red-200 text-gray-800 mt-2">
+                  <p><b>รหัสพนักงาน:</b> ${res.data.empId || empId}</p>
+                  <p><b>ชื่อ-สกุล:</b> ${res.data.empName || '-'}</p>
+                  ${res.registeredAt ? `<p><b>เวลาที่ลงทะเบียน:</b> ${res.registeredAt}</p>` : ''}
+                  <p class="text-red-600 pt-1 font-semibold">⚠️ ไม่สามารถใช้รหัสพนักงานที่ลงทะเบียนไปแล้วซ้ำได้</p>
+                </div>
+              `,
+              confirmButtonText: 'รับทราบ',
+              confirmButtonColor: '#b91c1c'
+            });
           } else {
+            verifiedEmployee = res.data;
+            badge.classList.remove('hidden');
+            checkIcon.classList.remove('hidden');
             hintEl.className = 'text-xs text-green-700 mt-1.5 font-semibold flex items-center gap-1.5';
             hintEl.innerHTML = '<i class="fa-solid fa-circle-check"></i><span>พบข้อมูลพนักงานแล้ว สามารถกดยืนยันการลงทะเบียนได้เลย</span>';
             btnSubmit.disabled = false;
@@ -2216,8 +2295,35 @@
       }
 
       const btnSubmit = document.getElementById('btnSubmitRegister');
+      const hintEl = document.getElementById('empStatusHint');
       btnSubmit.disabled = true;
       btnSubmit.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>กำลังบันทึกข้อมูล...</span>';
+
+      // ตรวจสอบซ้ำอีกครั้งก่อนบันทึกว่ามีคนใช้รหัสพนักงานนี้ลงทะเบียนไปแล้วหรือยัง
+      try {
+        const dupCheck = await checkIfEmpIdAlreadyRegisteredInSheet(verifiedEmployee.empId);
+        if (dupCheck && dupCheck.alreadyRegistered) {
+          verifiedEmployee = null;
+          document.getElementById('badgeVerified').classList.add('hidden');
+          document.getElementById('empCheckIcon').classList.add('hidden');
+          btnSubmit.disabled = true;
+          btnSubmit.innerHTML = '<i class="fa-solid fa-gift"></i><span>ยืนยันการลงทะเบียนเข้างาน</span>';
+          if (hintEl) {
+            hintEl.className = 'text-xs text-red-600 mt-1.5 font-bold flex items-center gap-1.5';
+            hintEl.innerHTML = '<i class="fa-solid fa-circle-xmark text-red-600"></i><span>รหัสพนักงานนี้ได้ลงทะเบียนไปแล้ว</span>';
+          }
+          Swal.fire({
+            icon: 'error',
+            title: 'รหัสพนักงานนี้ได้ลงทะเบียนไปแล้ว',
+            text: 'ไม่สามารถใช้รหัสพนักงานที่ลงทะเบียนไปแล้วซ้ำได้',
+            confirmButtonText: 'รับทราบ',
+            confirmButtonColor: '#b91c1c'
+          });
+          return;
+        }
+      } catch (dupErr) {
+        console.warn('Pre-submit duplicate check warning:', dupErr);
+      }
 
       const payload = {
         empId: verifiedEmployee.empId,
@@ -2259,8 +2365,25 @@
           } else {
             showAlreadyRegisteredView(payload);
           }
-        } else if (result && (result.status === 'duplicate_uid' || result.status === 'duplicate')) {
-          showAlreadyRegisteredView(payload);
+        } else if (result && result.status === 'duplicate') {
+          // กรณีรหัสพนักงานซ้ำกับคนที่ลงทะเบียนไปแล้ว ให้แจ้งเตือนและบล็อกทันที
+          verifiedEmployee = null;
+          document.getElementById('badgeVerified').classList.add('hidden');
+          document.getElementById('empCheckIcon').classList.add('hidden');
+          btnSubmit.disabled = true;
+          if (hintEl) {
+            hintEl.className = 'text-xs text-red-600 mt-1.5 font-bold flex items-center gap-1.5';
+            hintEl.innerHTML = '<i class="fa-solid fa-circle-xmark text-red-600"></i><span>รหัสพนักงานนี้ได้ลงทะเบียนไปแล้ว</span>';
+          }
+          Swal.fire({
+            icon: 'error',
+            title: 'รหัสพนักงานนี้ได้ลงทะเบียนไปแล้ว',
+            text: 'ไม่สามารถใช้รหัสพนักงานที่ลงทะเบียนไปแล้วซ้ำได้ กรุณาตรวจสอบรหัสพนักงานอีกครั้ง',
+            confirmButtonText: 'รับทราบ',
+            confirmButtonColor: '#b91c1c'
+          });
+        } else if (result && result.status === 'duplicate_uid') {
+          showAlreadyRegisteredView(result.data || payload);
         } else {
           Swal.fire({
             icon: 'warning',
