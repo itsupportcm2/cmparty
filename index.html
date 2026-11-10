@@ -1243,6 +1243,49 @@
       }
     }
 
+    // ตรวจสอบว่าตาราง Gviz ที่ดึงมาเป็นแผ่นงาน Register จริงหรือไม่ (ป้องกันกรณีชื่อแผ่นงานมีเว้นวรรคแล้ว Gviz คืนแผ่นงานแรกกลับมาแทน)
+    function isValidRegisterGvizTable(gvizObj) {
+      if (!gvizObj || !gvizObj.table) return false;
+      const cols = gvizObj.table.cols || [];
+      const rows = gvizObj.table.rows || [];
+      const colFLabel = (cols[5] && cols[5].label) ? String(cols[5].label).toUpperCase() : '';
+      // แผ่นงานแรก (การตอบแบบฟอร์ม 1) คอลัมน์ F คือ "ท่านสนใจร่วมงานหรือไม่?" ต้องไม่นำมาคิดเป็นแผ่นงาน Register เด็ดขาด
+      if (colFLabel.indexOf('สนใจร่วมงาน') !== -1 || colFLabel.indexOf('ร่วมงานหรือไม่') !== -1) {
+        return false;
+      }
+      if (colFLabel.indexOf('UID') !== -1 || colFLabel.indexOf('LINE') !== -1) return true;
+      if (rows.length > 0 && rows[0].c && rows[0].c[5]) {
+        const cellF = String(rows[0].c[5].v ?? rows[0].c[5].f ?? '').trim().toUpperCase();
+        if (cellF.indexOf('UID') !== -1 || cellF.indexOf('U') === 0) return true;
+      }
+      return false;
+    }
+
+    // ดึงข้อมูลแถวทั้งหมดจากแผ่นงาน Register เท่านั้น (รองรับทั้งชื่อแผ่นงาน "Register " ที่มีเว้นวรรคท้าย และ "Register")
+    async function fetchRegisterSheetRows() {
+      const fetchGviz = async (sheetName) => {
+        const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent(sheetName)}&t=${Date.now()}`;
+        const res = await fetch(url, { cache: 'no-store' });
+        const text = await res.text();
+        const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?/);
+        if (!match || !match[1]) throw new Error('Invalid gviz response');
+        return JSON.parse(match[1]);
+      };
+
+      const [resWithSpace, resNoSpace] = await Promise.allSettled([
+        fetchGviz('Register '),
+        fetchGviz('Register')
+      ]);
+
+      if (resWithSpace.status === 'fulfilled' && isValidRegisterGvizTable(resWithSpace.value)) {
+        return resWithSpace.value.table.rows || [];
+      }
+      if (resNoSpace.status === 'fulfilled' && isValidRegisterGvizTable(resNoSpace.value)) {
+        return resNoSpace.value.table.rows || [];
+      }
+      return null;
+    }
+
     // ตรวจสอบว่า UID นี้เคยลงทะเบียนใน Sheet Register ไปแล้วหรือยัง
     async function checkIfUidAlreadyRegistered(uid) {
       try {
@@ -1250,13 +1293,8 @@
 
         // 1. เช็คผ่าน Google Sheet (Register) โดยตรงเพื่อความรวดเร็ว
         try {
-          const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=Register`;
-          const response = await fetch(url);
-          const text = await response.text();
-          const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?/);
-          if (jsonMatch && jsonMatch[1]) {
-            const gvizData = JSON.parse(jsonMatch[1]);
-            const rows = (gvizData.table && gvizData.table.rows) || [];
+          const rows = await fetchRegisterSheetRows();
+          if (rows) {
             for (let i = rows.length - 1; i >= 0; i--) {
               const c = rows[i].c || [];
               const rowUid = c[5] && c[5].v != null ? String(c[5].v).trim() : '';
@@ -1897,19 +1935,14 @@
       throw lastErr || new Error('ไม่สามารถเชื่อมต่อเซิร์ฟเวอร์ได้');
     }
 
-    // ตรวจสอบว่ารหัสพนักงานนี้เคยลงทะเบียนใน Sheet Register ไปแล้วหรือยัง
+    // ตรวจสอบว่ารหัสพนักงานนี้เคยลงทะเบียนใน Sheet Register ไปแล้วหรือยัง (เทียบข้อมูลจาก Sheet Register เท่านั้น)
     async function checkIfEmpIdAlreadyRegisteredInSheet(empId) {
       const searchId = String(empId || '').trim().replace(/\.0$/, '');
       if (!searchId) return { alreadyRegistered: false, registeredAt: '' };
 
       try {
-        const regUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=Register&t=${Date.now()}`;
-        const response = await fetch(regUrl, { cache: 'no-store' });
-        const text = await response.text();
-        const jsonMatch = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?/);
-        if (jsonMatch && jsonMatch[1]) {
-          const gvizData = JSON.parse(jsonMatch[1]);
-          const rows = (gvizData.table && gvizData.table.rows) || [];
+        const rows = await fetchRegisterSheetRows();
+        if (rows) {
           for (let i = rows.length - 1; i >= 0; i--) {
             const c = rows[i].c || [];
             const cellB = c[1] ? (c[1].f !== undefined ? String(c[1].f) : String(c[1].v ?? '')) : '';
@@ -1932,7 +1965,7 @@
       return { alreadyRegistered: false, registeredAt: '' };
     }
 
-    // ดึงข้อมูลพนักงานโดยตรงจาก Google Sheet พร้อมตรวจสอบรหัสพนักงานซ้ำใน Sheet Register
+    // ดึงข้อมูลพนักงานโดยตรงจาก Google Sheet พร้อมตรวจสอบรหัสพนักงานซ้ำใน Sheet Register เท่านั้น
     async function fetchEmployeeFromGoogleSheetDirect(empId) {
       const searchId = String(empId).trim().replace(/\.0$/, '');
       const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SOURCE_SHEET_NAME)}&t=${Date.now()}`;
@@ -2012,7 +2045,7 @@
       };
     }
 
-    // ฟังก์ชันตรวจสอบข้อมูลพนักงาน (ดึงจาก Google Sheet โดยตรง และตรวจสอบซ้ำกับ GAS Web App)
+    // ฟังก์ชันตรวจสอบข้อมูลพนักงาน (ดึงจาก Google Sheet โดยตรง และตรวจสอบซ้ำเฉพาะใน Sheet Register)
     async function callBackendCheckEmployee(empId) {
       // 1. หากเปิดบน Google Apps Script HtmlService โดยตรง
       if (typeof google !== 'undefined' && google.script && google.script.run) {
@@ -2028,27 +2061,9 @@
         }
       }
 
-      // 2. ดึงข้อมูลจาก Google Sheet โดยตรง (ตรวจสอบทั้งแผ่นงานต้นทางและแผ่นงาน Register)
+      // 2. ดึงข้อมูลจาก Google Sheet โดยตรง (เทียบข้อมูลลงทะเบียนซ้ำจากแผ่นงาน Register เท่านั้น)
       try {
-        const directRes = await fetchEmployeeFromGoogleSheetDirect(empId);
-        // หากพบพนักงานและใน gviz ยังไม่ขึ้นว่าลงทะเบียนแล้ว ให้เช็คซ้ำกับ GAS Backend เพื่อกันความล่าช้าของ Cache
-        if (directRes && directRes.status === 'success' && !directRes.alreadyRegistered && GAS_WEB_APP_URL) {
-          try {
-            const apiRes = await fetch(`${GAS_WEB_APP_URL}?action=checkEmployee&empId=${encodeURIComponent(empId)}&t=${Date.now()}`, {
-              method: 'GET',
-              redirect: 'follow'
-            });
-            const apiJson = await apiRes.json();
-            if (apiJson && apiJson.alreadyRegistered) {
-              directRes.alreadyRegistered = true;
-              directRes.registeredAt = apiJson.registeredAt || directRes.registeredAt || '';
-              directRes.message = 'รหัสพนักงานนี้ได้ลงทะเบียนไปแล้ว';
-            }
-          } catch (apiCheckErr) {
-            console.warn('Secondary GAS duplicate check warning:', apiCheckErr);
-          }
-        }
-        return directRes;
+        return await fetchEmployeeFromGoogleSheetDirect(empId);
       } catch (sheetErr) {
         console.warn('Direct sheet fetch failed, trying GAS_WEB_APP_URL:', sheetErr);
       }
