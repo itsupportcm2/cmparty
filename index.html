@@ -354,6 +354,114 @@
       </button>
     </div>
 
+    <!-- Christmas Countdown View (แสดงเมื่อยังไม่ถึงเวลาเปิดระบบลงทะเบียน) -->
+    <div id="countdownContainer" class="hidden p-6 text-center space-y-5 relative overflow-hidden">
+      <!-- พื้นหลังตกแต่งธีมคริสต์มาส -->
+      <div class="relative rounded-3xl bg-gradient-to-br from-red-800 via-red-900 to-emerald-950 p-6 text-white shadow-xl border-2 border-yellow-400/80 overflow-hidden">
+        <!-- แสงดาวและประกายไฟคริสต์มาส -->
+        <div class="absolute -top-8 -left-8 w-28 h-28 bg-yellow-400/20 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="absolute -bottom-8 -right-8 w-32 h-32 bg-emerald-400/20 rounded-full blur-2xl pointer-events-none"></div>
+        <div class="absolute top-3 left-4 text-yellow-300/70 text-sm animate-pulse"><i class="fa-solid fa-star"></i></div>
+        <div class="absolute top-5 right-5 text-yellow-200/80 text-xs animate-bounce"><i class="fa-solid fa-snowflake"></i></div>
+        <div class="absolute bottom-4 left-5 text-red-300/60 text-xs animate-pulse"><i class="fa-solid fa-candy-cane"></i></div>
+        <div class="absolute bottom-3 right-5 text-emerald-300/60 text-sm animate-bounce"><i class="fa-solid fa-holly-berry"></i></div>
+
+        <!-- ไอคอนซานต้า & ต้นคริสต์มาสตรงกลาง -->
+        <div class="relative mx-auto w-20 h-20 rounded-full bg-gradient-to-b from-yellow-300 via-amber-400 to-yellow-600 p-1 shadow-lg mb-3">
+          <div class="w-full h-full rounded-full bg-gradient-to-br from-red-700 to-emerald-900 flex items-center justify-center relative">
+            <i class="fa-solid fa-tree text-3xl text-emerald-300 drop-shadow"></i>
+            <span class="absolute -top-1.5 -right-1.5 w-7 h-7 rounded-full bg-red-600 border-2 border-yellow-300 flex items-center justify-center text-white text-xs shadow">
+              <i class="fa-solid fa-bell animate-swing"></i>
+            </span>
+          </div>
+        </div>
+
+        <!-- ป้ายข้อความ Christmas Countdown -->
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/15 border border-yellow-300/50 text-yellow-200 text-[11px] font-bold tracking-wide mb-2 shadow-sm">
+          <i class="fa-solid fa-sleigh text-yellow-300"></i>
+          <span>CHRISTMAS PARTY COUNTDOWN</span>
+          <i class="fa-solid fa-gifts text-yellow-300"></i>
+        </div>
+
+        <h3 class="text-xl font-bold text-white drop-shadow-sm">
+          เตรียมเปิดรับลงทะเบียนเร็วๆ นี้!
+        </h3>
+        <p class="text-xs text-red-100/90 mt-1">
+          นับถอยหลังสู่เวลาเปิดระบบลงทะเบียนเข้างานเลี้ยง CM Party
+        </p>
+
+        <!-- กล่องตัวเลขนับถอยหลัง 4 ช่อง (วัน : ชั่วโมง : นาที : วินาที) -->
+        <div class="grid grid-cols-4 gap-2 my-5">
+          <!-- วัน (Days) -->
+          <div class="relative bg-gradient-to-b from-red-600 to-red-800 rounded-2xl p-2.5 border-2 border-yellow-400/80 shadow-lg flex flex-col items-center justify-center">
+            <div class="absolute -top-1.5 inset-x-3 h-1.5 bg-white/80 rounded-full blur-[0.5px]"></div>
+            <span id="cdDays" class="text-2xl sm:text-3xl font-extrabold text-white tracking-wider font-mono drop-shadow">00</span>
+            <span class="text-[10px] font-bold text-yellow-300 uppercase mt-0.5">วัน</span>
+          </div>
+
+          <!-- ชั่วโมง (Hours) -->
+          <div class="relative bg-gradient-to-b from-emerald-600 to-green-800 rounded-2xl p-2.5 border-2 border-yellow-400/80 shadow-lg flex flex-col items-center justify-center">
+            <div class="absolute -top-1.5 inset-x-3 h-1.5 bg-white/80 rounded-full blur-[0.5px]"></div>
+            <span id="cdHours" class="text-2xl sm:text-3xl font-extrabold text-white tracking-wider font-mono drop-shadow">00</span>
+            <span class="text-[10px] font-bold text-yellow-300 uppercase mt-0.5">ชั่วโมง</span>
+          </div>
+
+          <!-- นาที (Minutes) -->
+          <div class="relative bg-gradient-to-b from-red-600 to-red-800 rounded-2xl p-2.5 border-2 border-yellow-400/80 shadow-lg flex flex-col items-center justify-center">
+            <div class="absolute -top-1.5 inset-x-3 h-1.5 bg-white/80 rounded-full blur-[0.5px]"></div>
+            <span id="cdMinutes" class="text-2xl sm:text-3xl font-extrabold text-white tracking-wider font-mono drop-shadow">00</span>
+            <span class="text-[10px] font-bold text-yellow-300 uppercase mt-0.5">นาที</span>
+          </div>
+
+          <!-- วินาที (Seconds) -->
+          <div class="relative bg-gradient-to-b from-amber-500 via-red-600 to-rose-700 rounded-2xl p-2.5 border-2 border-yellow-300 shadow-lg flex flex-col items-center justify-center">
+            <div class="absolute -top-1.5 inset-x-3 h-1.5 bg-white/80 rounded-full blur-[0.5px]"></div>
+            <span id="cdSeconds" class="text-2xl sm:text-3xl font-extrabold text-yellow-200 tracking-wider font-mono drop-shadow animate-pulse">00</span>
+            <span class="text-[10px] font-bold text-white uppercase mt-0.5">วินาที</span>
+          </div>
+        </div>
+
+        <!-- รายละเอียดวันและเวลาเปิดระบบ -->
+        <div class="bg-black/25 backdrop-blur-sm rounded-2xl p-3 border border-yellow-300/30 text-left space-y-1.5 text-xs">
+          <div class="flex items-center gap-2 text-emerald-300">
+            <i class="fa-solid fa-calendar-check shrink-0"></i>
+            <span class="font-semibold">กำหนดเปิดระบบ:</span>
+            <span id="countdownOpenTimeText" class="text-white font-bold ml-auto text-right">-</span>
+          </div>
+          <div id="countdownCloseTimeRow" class="hidden flex items-center gap-2 text-amber-300 pt-1 border-t border-white/10">
+            <i class="fa-solid fa-hourglass-end shrink-0"></i>
+            <span class="font-semibold">กำหนดปิดรับ:</span>
+            <span id="countdownCloseTimeText" class="text-white font-bold ml-auto text-right">-</span>
+          </div>
+        </div>
+
+        <p class="text-[11px] text-yellow-200/90 mt-3 flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-wand-magic-sparkles"></i>
+          <span>หน้าจอจะเปิดเข้าสู่ฟอร์มอัตโนมัติเมื่อถึงเวลาที่กำหนด</span>
+        </p>
+      </div>
+
+      <!-- ปุ่มกดรีเฟรช / ปิดหน้าต่าง -->
+      <div class="flex flex-col sm:flex-row gap-2.5">
+        <button
+          type="button"
+          onclick="window.location.reload()"
+          class="flex-1 py-3 px-5 rounded-2xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white font-bold text-sm shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <i class="fa-solid fa-rotate"></i>
+          <span>รีเฟรชตรวจสอบเวลา</span>
+        </button>
+        <button
+          type="button"
+          onclick="closeLiffWindow()"
+          class="py-3 px-5 rounded-2xl bg-gray-200 hover:bg-gray-300 text-gray-700 font-bold text-sm active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <i class="fa-solid fa-circle-xmark"></i>
+          <span>ปิดหน้าต่าง</span>
+        </button>
+      </div>
+    </div>
+
     <!-- System Closed View (แสดงเมื่อระบบปิดรับลงทะเบียน และไม่ใช่แอดมิน) -->
     <div id="systemClosedContainer" class="hidden p-8 text-center space-y-5">
       <div class="w-20 h-20 rounded-full bg-red-100 border-4 border-red-500 text-red-600 flex items-center justify-center mx-auto shadow-md">
@@ -509,14 +617,15 @@
           document.getElementById('lineUidDisplay').innerText = 'UID: ' + userProfile.userId;
           document.getElementById('lineUid').value = userProfile.userId;
 
-          // 1. ตรวจสอบสถานะแอดมิน และดึงสถานะการเปิด/ปิดระบบ และวันเวลาปิด
+          // 1. ตรวจสอบสถานะแอดมิน และดึงสถานะการเปิด/ปิดระบบ รวมทั้งวันเวลาเปิด-ปิด
           const isAdmin = userProfile.userId === ADMIN_UID;
-          let sysConfig = { systemStatus: 'OPEN', isOpen: true, closingDateTime: '' };
+          let sysConfig = { systemStatus: 'OPEN', isOpen: true, openingDateTime: '', isBeforeOpeningTime: false, closingDateTime: '' };
           try {
             sysConfig = await fetchSystemStatus(userProfile.userId);
           } catch (sysErr) {
             console.warn('Error fetching system status:', sysErr);
           }
+          window.currentSysConfig = sysConfig;
 
           // แสดงแผงควบคุมระบบ (เฉพาะ Admin UID = U1dcbd47c6981745c2f41c5691cde7ff3 เท่านั้น)
           if (isAdmin) {
@@ -524,6 +633,16 @@
           } else {
             const adminPanel = document.getElementById('adminControlPanel');
             if (adminPanel) adminPanel.classList.add('hidden');
+          }
+
+          const isWaitingOpen = Boolean(sysConfig.isBeforeOpeningTime && sysConfig.manualStatus !== 'CLOSED');
+
+          // กรณีเป็นแอดมิน และตั้งเวลาเปิดไว้ในอนาคต ให้แสดงหน้า Countdown ทันทีเพื่อให้แอดมินตรวจสอบหน้าจอได้สะดวก
+          if (isAdmin && isWaitingOpen) {
+            const loadingEl = document.getElementById('liffLoadingContainer');
+            if (loadingEl) loadingEl.classList.add('hidden');
+            showCountdownView(sysConfig.openingDateTime, sysConfig.closingDateTime);
+            return;
           }
 
           // 2. ตรวจสอบว่า UID นี้เคยลงทะเบียนไปแล้วหรือยัง
@@ -539,7 +658,15 @@
             return;
           }
 
-          // 3. ถ้ายังไม่ได้ลงทะเบียน และระบบปิดรับลงทะเบียน (ผู้ใช้ทั่วไปที่ไม่ใช่แอดมิน)
+          // 3. ถ้ายังไม่ได้ลงทะเบียน และยังไม่ถึงเวลาเปิดระบบ -> แสดงหน้า Christmas Countdown
+          if (isWaitingOpen) {
+            const loadingEl = document.getElementById('liffLoadingContainer');
+            if (loadingEl) loadingEl.classList.add('hidden');
+            showCountdownView(sysConfig.openingDateTime, sysConfig.closingDateTime);
+            return;
+          }
+
+          // 4. ถ้ายังไม่ได้ลงทะเบียน และระบบปิดรับลงทะเบียน (ผู้ใช้ทั่วไปที่ไม่ใช่แอดมิน)
           if (!sysConfig.isOpen && !isAdmin) {
             const loadingEl = document.getElementById('liffLoadingContainer');
             if (loadingEl) loadingEl.classList.add('hidden');
@@ -547,7 +674,7 @@
             return;
           }
 
-          // 4. ถ้ายังไม่ได้ลงทะเบียน และระบบเปิดอยู่ (หรือเป็นแอดมิน) ให้ทำตามขั้นตอนปกติ:
+          // 5. ถ้ายังไม่ได้ลงทะเบียน และระบบเปิดอยู่ (หรือเป็นแอดมิน) ให้ทำตามขั้นตอนปกติ:
           // อัปเดตแบนเนอร์แจ้งเตือนเวลาปิดถ้ามีการตั้งไว้
           updateClosingNoticeBanner(sysConfig.closingDateTime);
 
@@ -651,6 +778,10 @@
       if (loadingEl) loadingEl.classList.add('hidden');
       document.getElementById('registrationFormContainer').classList.add('hidden');
       document.getElementById('alreadyRegisteredContainer').classList.add('hidden');
+      const closedEl = document.getElementById('systemClosedContainer');
+      if (closedEl) closedEl.classList.add('hidden');
+      const countdownEl = document.getElementById('countdownContainer');
+      if (countdownEl) countdownEl.classList.add('hidden');
       document.getElementById('mustAddFriendContainer').classList.remove('hidden');
     }
 
@@ -747,6 +878,25 @@
       }
     }
 
+    let countdownTimerInterval = null;
+
+    // แปลง Date/Time String เป็น Timestamp (ms) ตามเวลาไทย (UTC+7)
+    function parseBangkokTimeMs(str) {
+      if (!str) return NaN;
+      const s = String(str).trim();
+      if (!s) return NaN;
+      if (/Z$|[+-]\d{2}:\d{2}$/.test(s)) {
+        return new Date(s).getTime();
+      }
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s)) {
+        return new Date(s + ':00+07:00').getTime();
+      }
+      if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(s)) {
+        return new Date(s + '+07:00').getTime();
+      }
+      return new Date(s).getTime();
+    }
+
     // ซ่อนฟอร์มลงทะเบียนและแสดงหน้าแจ้งเตือนว่าลงทะเบียนเรียบร้อยแล้ว
     function showAlreadyRegisteredView(regData) {
       const loadingEl = document.getElementById('liffLoadingContainer');
@@ -755,6 +905,8 @@
       document.getElementById('mustAddFriendContainer').classList.add('hidden');
       const closedEl = document.getElementById('systemClosedContainer');
       if (closedEl) closedEl.classList.add('hidden');
+      const countdownEl = document.getElementById('countdownContainer');
+      if (countdownEl) countdownEl.classList.add('hidden');
       document.getElementById('alreadyRegisteredContainer').classList.remove('hidden');
 
       if (regData && regData.empId) {
@@ -766,13 +918,109 @@
       }
     }
 
-    // ซ่อนหน้าอื่นทั้งหมดและแสดงหน้าแจ้งเตือนระบบปิดรับข้อมูลชั่วคราว
-    function showSystemClosedView(closingDateTime) {
+    // แสดงหน้า Christmas Countdown นับถอยหลังก่อนถึงเวลาเปิดระบบ
+    function showCountdownView(openingDateTime, closingDateTime) {
       const loadingEl = document.getElementById('liffLoadingContainer');
       if (loadingEl) loadingEl.classList.add('hidden');
       document.getElementById('registrationFormContainer').classList.add('hidden');
       document.getElementById('mustAddFriendContainer').classList.add('hidden');
       document.getElementById('alreadyRegisteredContainer').classList.add('hidden');
+      const closedEl = document.getElementById('systemClosedContainer');
+      if (closedEl) closedEl.classList.add('hidden');
+
+      const countdownEl = document.getElementById('countdownContainer');
+      if (countdownEl) countdownEl.classList.remove('hidden');
+
+      const openTextEl = document.getElementById('countdownOpenTimeText');
+      if (openTextEl) {
+        openTextEl.innerText = openingDateTime ? formatThaiDateTime(openingDateTime) : '-';
+      }
+
+      const closeRowEl = document.getElementById('countdownCloseTimeRow');
+      const closeTextEl = document.getElementById('countdownCloseTimeText');
+      if (closeRowEl && closeTextEl) {
+        if (closingDateTime) {
+          closeTextEl.innerText = formatThaiDateTime(closingDateTime);
+          closeRowEl.classList.remove('hidden');
+        } else {
+          closeRowEl.classList.add('hidden');
+        }
+      }
+
+      startOpeningCountdown(openingDateTime);
+    }
+
+    // เริ่มนับถอยหลังสู่เวลาเปิดระบบ (อัปเดตทุก 1 วินาที)
+    function startOpeningCountdown(openingDateTime) {
+      if (countdownTimerInterval) {
+        clearInterval(countdownTimerInterval);
+        countdownTimerInterval = null;
+      }
+
+      const targetMs = parseBangkokTimeMs(openingDateTime);
+      if (isNaN(targetMs)) return;
+
+      const daysEl = document.getElementById('cdDays');
+      const hoursEl = document.getElementById('cdHours');
+      const minsEl = document.getElementById('cdMinutes');
+      const secsEl = document.getElementById('cdSeconds');
+
+      const updateTick = () => {
+        const now = Date.now();
+        const diff = targetMs - now;
+
+        if (diff <= 0) {
+          if (countdownTimerInterval) {
+            clearInterval(countdownTimerInterval);
+            countdownTimerInterval = null;
+          }
+          if (daysEl) daysEl.innerText = '00';
+          if (hoursEl) hoursEl.innerText = '00';
+          if (minsEl) minsEl.innerText = '00';
+          if (secsEl) secsEl.innerText = '00';
+
+          // เมื่อนับถอยหลังครบ 0 ให้แจ้งเตือนและโหลดหน้าลงทะเบียนอัตโนมัติ
+          Swal.fire({
+            icon: 'success',
+            title: '🎄 เปิดระบบลงทะเบียนแล้ว!',
+            text: 'กำลังพาท่านเข้าสู่หน้าลงทะเบียน CM Party...',
+            timer: 1800,
+            showConfirmButton: false
+          }).then(() => {
+            window.location.reload();
+          });
+          return;
+        }
+
+        const totalSeconds = Math.floor(diff / 1000);
+        const days = Math.floor(totalSeconds / 86400);
+        const hours = Math.floor((totalSeconds % 86400) / 3600);
+        const minutes = Math.floor((totalSeconds % 3600) / 60);
+        const seconds = totalSeconds % 60;
+
+        if (daysEl) daysEl.innerText = String(days).padStart(2, '0');
+        if (hoursEl) hoursEl.innerText = String(hours).padStart(2, '0');
+        if (minsEl) minsEl.innerText = String(minutes).padStart(2, '0');
+        if (secsEl) secsEl.innerText = String(seconds).padStart(2, '0');
+      };
+
+      updateTick();
+      countdownTimerInterval = setInterval(updateTick, 1000);
+    }
+
+    // ซ่อนหน้าอื่นทั้งหมดและแสดงหน้าแจ้งเตือนระบบปิดรับข้อมูลชั่วคราว
+    function showSystemClosedView(closingDateTime) {
+      if (countdownTimerInterval) {
+        clearInterval(countdownTimerInterval);
+        countdownTimerInterval = null;
+      }
+      const loadingEl = document.getElementById('liffLoadingContainer');
+      if (loadingEl) loadingEl.classList.add('hidden');
+      document.getElementById('registrationFormContainer').classList.add('hidden');
+      document.getElementById('mustAddFriendContainer').classList.add('hidden');
+      document.getElementById('alreadyRegisteredContainer').classList.add('hidden');
+      const countdownEl = document.getElementById('countdownContainer');
+      if (countdownEl) countdownEl.classList.add('hidden');
       const closedEl = document.getElementById('systemClosedContainer');
       if (closedEl) closedEl.classList.remove('hidden');
 
@@ -784,6 +1032,32 @@
         } else {
           noticeEl.classList.add('hidden');
         }
+      }
+    }
+
+    // สำหรับแอดมินสลับดูหน้าตัวอย่าง (Countdown / ฟอร์มลงทะเบียน / ปิดระบบ)
+    function adminSwitchPreview(mode) {
+      if (!userProfile || userProfile.userId !== ADMIN_UID) return;
+      const cfg = window.currentSysConfig || {};
+      if (mode === 'countdown') {
+        showCountdownView(cfg.openingDateTime || new Date(Date.now() + 3600000).toISOString(), cfg.closingDateTime || '');
+      } else if (mode === 'closed') {
+        showSystemClosedView(cfg.closingDateTime || '');
+      } else if (mode === 'form') {
+        if (countdownTimerInterval) {
+          clearInterval(countdownTimerInterval);
+          countdownTimerInterval = null;
+        }
+        const loadingEl = document.getElementById('liffLoadingContainer');
+        if (loadingEl) loadingEl.classList.add('hidden');
+        document.getElementById('mustAddFriendContainer').classList.add('hidden');
+        document.getElementById('alreadyRegisteredContainer').classList.add('hidden');
+        const closedEl = document.getElementById('systemClosedContainer');
+        if (closedEl) closedEl.classList.add('hidden');
+        const countdownEl = document.getElementById('countdownContainer');
+        if (countdownEl) countdownEl.classList.add('hidden');
+        updateClosingNoticeBanner(cfg.closingDateTime);
+        document.getElementById('registrationFormContainer').classList.remove('hidden');
       }
     }
 
@@ -929,79 +1203,169 @@
       }
 
       panel.classList.remove('hidden');
-      const config = sysConfig || { isOpen: true, systemStatus: 'OPEN', closingDateTime: '' };
+      const config = sysConfig || { isOpen: true, systemStatus: 'OPEN', openingDateTime: '', isBeforeOpeningTime: false, closingDateTime: '' };
+      const isWaitingOpen = Boolean(config.isBeforeOpeningTime && config.manualStatus !== 'CLOSED');
       const isOpen = Boolean(config.isOpen);
+
+      const openingVal = config.openingDateTime ? toDatetimeLocalValue(config.openingDateTime) : '';
+      const thaiOpeningText = config.openingDateTime ? formatThaiDateTime(config.openingDateTime) : '';
+
       const closingVal = config.closingDateTime ? toDatetimeLocalValue(config.closingDateTime) : '';
       const thaiClosingText = config.closingDateTime ? formatThaiDateTime(config.closingDateTime) : '';
 
-      panel.className = `mx-6 mt-4 p-4 rounded-2xl border-2 ${isOpen ? 'border-emerald-500 bg-emerald-50/95' : 'border-rose-500 bg-rose-50/95'} shadow-lg transition-all text-left`;
+      let statusBadgeHtml = '';
+      let panelThemeClass = '';
+      let headerBorderClass = '';
+      let crownBadgeClass = '';
+
+      if (isWaitingOpen) {
+        panelThemeClass = 'border-amber-500 bg-amber-50/95';
+        headerBorderClass = 'border-amber-200';
+        crownBadgeClass = 'bg-amber-700';
+        statusBadgeHtml = `
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-amber-100 text-amber-900 border border-amber-300">
+            <span class="w-2 h-2 rounded-full bg-amber-500 animate-ping"></span>
+            <span>สถานะ: รอเวลาเปิด (Countdown)</span>
+          </span>
+        `;
+      } else if (isOpen) {
+        panelThemeClass = 'border-emerald-500 bg-emerald-50/95';
+        headerBorderClass = 'border-emerald-200';
+        crownBadgeClass = 'bg-emerald-700';
+        statusBadgeHtml = `
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+            <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span>สถานะ: เปิดรับลงทะเบียน</span>
+          </span>
+        `;
+      } else {
+        panelThemeClass = 'border-rose-500 bg-rose-50/95';
+        headerBorderClass = 'border-rose-200';
+        crownBadgeClass = 'bg-rose-700';
+        statusBadgeHtml = `
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-100 text-rose-800 border border-rose-300">
+            <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+            <span>สถานะ: ปิดระบบ</span>
+          </span>
+        `;
+      }
+
+      panel.className = `mx-6 mt-4 p-4 rounded-2xl border-2 ${panelThemeClass} shadow-lg transition-all text-left`;
 
       panel.innerHTML = `
-        <div class="flex items-center justify-between mb-3 pb-2 border-b ${isOpen ? 'border-emerald-200' : 'border-rose-200'}">
-          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${isOpen ? 'bg-emerald-700' : 'bg-rose-700'} text-white shadow-sm">
+        <div class="flex items-center justify-between mb-3 pb-2 border-b ${headerBorderClass}">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${crownBadgeClass} text-white shadow-sm">
             <i class="fa-solid fa-crown text-yellow-300"></i>
-            <span>แผงควบคุมระบบ (Admin Only)</span>
+            <span>แผงควบคุมแอดมิน</span>
           </span>
-          <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold ${isOpen ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-rose-100 text-rose-800 border border-rose-300'}">
-            <span class="w-2 h-2 rounded-full ${isOpen ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}"></span>
-            <span>สถานะ: ${isOpen ? 'เปิดรับลงทะเบียน' : 'ปิดระบบ'}</span>
-          </span>
+          ${statusBadgeHtml}
         </div>
 
-        <!-- กล่องตั้งค่าวันเวลาปิดระบบ -->
-        <div class="bg-white/90 p-3.5 rounded-xl border border-gray-200 mb-3 space-y-2 shadow-sm">
-          <label class="block text-xs font-bold text-gray-800 flex items-center justify-between">
-            <span class="flex items-center gap-1.5">
-              <i class="fa-solid fa-calendar-clock text-amber-600"></i>
-              <span>กำหนดวัน-เวลาปิดรับลงทะเบียน:</span>
+        <!-- กล่องตั้งค่าวันเวลา เปิด และ ปิด ระบบ -->
+        <div class="bg-white/95 p-3.5 rounded-xl border border-gray-200 mb-3 space-y-3 shadow-sm">
+          <div class="flex items-center justify-between border-b border-gray-100 pb-1.5">
+            <span class="text-xs font-bold text-gray-800 flex items-center gap-1.5">
+              <i class="fa-solid fa-calendar-days text-red-600"></i>
+              <span>ตั้งเวลาเปิด - ปิดระบบอัตโนมัติ</span>
             </span>
-            ${thaiClosingText ? `<span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">ตั้งเวลาไว้แล้ว</span>` : `<span class="text-[10px] text-gray-500">ยังไม่กำหนดเวลา</span>`}
-          </label>
+            ${(thaiOpeningText || thaiClosingText)
+              ? `<span class="text-[10px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">ตั้งเวลาไว้แล้ว</span>`
+              : `<span class="text-[10px] text-gray-400">ไม่ได้ตั้งเวลา</span>`
+            }
+          </div>
 
-          ${thaiClosingText ? `
-            <div class="text-[11px] text-gray-700 bg-amber-50/80 p-2 rounded-lg border border-amber-200/70 flex items-center gap-2">
-              <i class="fa-solid fa-hourglass-half text-amber-600"></i>
-              <div>
-                <p class="font-bold text-amber-900">กำหนดปิด:</p>
-                <p class="text-amber-800">${thaiClosingText}</p>
-              </div>
+          <!-- 1. กำหนดวัน-เวลาเปิดระบบ (Countdown) -->
+          <div class="space-y-1">
+            <div class="flex items-center justify-between">
+              <label for="adminOpeningInput" class="text-[11px] font-bold text-emerald-800 flex items-center gap-1.5">
+                <i class="fa-solid fa-hourglass-start text-emerald-600"></i>
+                <span>1. วัน-เวลาเริ่มเปิดระบบ (แสดงหน้า Countdown ก่อนถึงเวลา):</span>
+              </label>
+              ${thaiOpeningText ? `
+                <button type="button" onclick="clearSingleSchedule('open')" class="text-[10px] text-red-600 hover:underline font-semibold cursor-pointer">
+                  ล้างเวลาเปิด
+                </button>
+              ` : ''}
             </div>
-          ` : ''}
+            <input
+              type="datetime-local"
+              id="adminOpeningInput"
+              value="${openingVal}"
+              class="w-full text-xs px-3 py-2 border border-emerald-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-emerald-50/40 font-sans"
+            />
+            ${thaiOpeningText ? `<p class="text-[11px] text-emerald-700 font-medium"><i class="fa-solid fa-clock mr-1"></i>เปิดระบบ: <b>${thaiOpeningText}</b></p>` : ''}
+          </div>
 
-          <div class="flex flex-col sm:flex-row gap-2 pt-1">
+          <!-- 2. กำหนดวัน-เวลาปิดระบบ -->
+          <div class="space-y-1 pt-1 border-t border-gray-100">
+            <div class="flex items-center justify-between">
+              <label for="adminClosingInput" class="text-[11px] font-bold text-rose-800 flex items-center gap-1.5">
+                <i class="fa-solid fa-hourglass-end text-rose-600"></i>
+                <span>2. วัน-เวลาปิดรับลงทะเบียน:</span>
+              </label>
+              ${thaiClosingText ? `
+                <button type="button" onclick="clearSingleSchedule('close')" class="text-[10px] text-red-600 hover:underline font-semibold cursor-pointer">
+                  ล้างเวลาปิด
+                </button>
+              ` : ''}
+            </div>
             <input
               type="datetime-local"
               id="adminClosingInput"
               value="${closingVal}"
-              class="w-full text-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:outline-none bg-gray-50 font-sans"
+              class="w-full text-xs px-3 py-2 border border-rose-300 rounded-lg focus:ring-2 focus:ring-rose-500 focus:outline-none bg-rose-50/40 font-sans"
             />
+            ${thaiClosingText ? `<p class="text-[11px] text-rose-700 font-medium"><i class="fa-solid fa-clock mr-1"></i>ปิดระบบ: <b>${thaiClosingText}</b></p>` : ''}
           </div>
 
-          <div class="flex gap-2 pt-1">
+          <!-- ปุ่มบันทึกการตั้งค่าเวลา -->
+          <div class="flex gap-2 pt-1.5">
             <button
               type="button"
-              onclick="saveClosingDateTimeSetting()"
-              class="flex-1 py-2 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              onclick="saveScheduleSettings()"
+              class="flex-1 py-2.5 px-3 rounded-xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 active:scale-95 text-white font-bold text-xs shadow transition-all flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <i class="fa-solid fa-floppy-disk"></i>
-              <span>บันทึกวันเวลาปิด</span>
+              <span>บันทึกเวลา เปิด-ปิด</span>
             </button>
-            ${thaiClosingText ? `
+            ${(thaiOpeningText || thaiClosingText) ? `
               <button
                 type="button"
                 onclick="clearClosingDateTimeSetting()"
-                class="py-2 px-3 rounded-lg bg-gray-200 hover:bg-gray-300 active:scale-95 text-gray-700 font-semibold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer"
-                title="ยกเลิกการกำหนดเวลา (เปิดตลอด)"
+                class="py-2.5 px-3 rounded-xl bg-gray-200 hover:bg-gray-300 active:scale-95 text-gray-700 font-semibold text-xs transition-all flex items-center justify-center gap-1 cursor-pointer"
+                title="ล้างเวลาเปิด-ปิดทั้งหมด (เปิดตลอด)"
               >
                 <i class="fa-solid fa-xmark"></i>
-                <span>ยกเลิกกำหนดเวลา</span>
+                <span>ล้างเวลาทั้งหมด</span>
               </button>
             ` : ''}
           </div>
         </div>
 
+        <!-- ปุ่มสลับดูหน้าจอสำหรับแอดมิน (Preview Mode) -->
+        <div class="bg-white/80 p-2.5 rounded-xl border border-gray-200 mb-3">
+          <p class="text-[10px] text-gray-500 font-semibold mb-1.5 flex items-center gap-1">
+            <i class="fa-solid fa-eye text-amber-600"></i>
+            <span>สลับดูหน้าจอตัวอย่าง (เฉพาะแอดมิน):</span>
+          </p>
+          <div class="grid grid-cols-3 gap-1.5">
+            <button type="button" onclick="adminSwitchPreview('countdown')" class="py-1.5 px-2 rounded-lg bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-[10px] border border-amber-300 transition cursor-pointer flex items-center justify-center gap-1">
+              <i class="fa-solid fa-tree text-emerald-700"></i>
+              <span>หน้า Countdown</span>
+            </button>
+            <button type="button" onclick="adminSwitchPreview('form')" class="py-1.5 px-2 rounded-lg bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold text-[10px] border border-emerald-300 transition cursor-pointer flex items-center justify-center gap-1">
+              <i class="fa-solid fa-pen-to-square"></i>
+              <span>หน้าฟอร์ม</span>
+            </button>
+            <button type="button" onclick="adminSwitchPreview('closed')" class="py-1.5 px-2 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-900 font-bold text-[10px] border border-rose-300 transition cursor-pointer flex items-center justify-center gap-1">
+              <i class="fa-solid fa-lock"></i>
+              <span>หน้าปิดระบบ</span>
+            </button>
+          </div>
+        </div>
+
         <!-- ปุ่มเปิด/ปิดระบบแบบทันที (Manual Override) -->
-        <div class="pt-1">
+        <div class="pt-0.5">
           <p class="text-[11px] text-gray-600 mb-1.5 font-medium">สวิตช์เปิด-ปิดทันที (Manual Override):</p>
           ${isOpen ? `
             <button
@@ -1026,30 +1390,53 @@
       `;
     }
 
-    // แอดมินบันทึกวันเวลาปิดระบบ
-    async function saveClosingDateTimeSetting() {
+    // แอดมินบันทึกวันเวลา เปิด และ ปิด ระบบ
+    async function saveScheduleSettings() {
       if (!userProfile || userProfile.userId !== ADMIN_UID) {
         Swal.fire({ icon: 'error', title: 'ไม่มีสิทธิ์', text: 'ฟังก์ชันนี้อนุญาตเฉพาะแอดมินเท่านั้น', confirmButtonColor: '#b91c1c' });
         return;
       }
 
-      const inputEl = document.getElementById('adminClosingInput');
-      const val = (inputEl && inputEl.value) ? inputEl.value.trim() : '';
+      const openInputEl = document.getElementById('adminOpeningInput');
+      const closeInputEl = document.getElementById('adminClosingInput');
+      const openVal = (openInputEl && openInputEl.value) ? openInputEl.value.trim() : '';
+      const closeVal = (closeInputEl && closeInputEl.value) ? closeInputEl.value.trim() : '';
 
-      if (!val) {
+      if (!openVal && !closeVal) {
         Swal.fire({
           icon: 'warning',
           title: 'กรุณาระบุวันและเวลา',
-          text: 'หากต้องการยกเลิกกำหนดเวลา ให้กดปุ่ม "ยกเลิกกำหนดเวลา"',
+          text: 'กรุณาเลือกวัน-เวลาเปิด หรือ วัน-เวลาปิด อย่างน้อย 1 ช่องครับ',
           confirmButtonColor: '#d97706'
         });
         return;
       }
 
-      const formatted = formatThaiDateTime(val);
+      if (openVal && closeVal) {
+        const openMs = parseBangkokTimeMs(openVal);
+        const closeMs = parseBangkokTimeMs(closeVal);
+        if (!isNaN(openMs) && !isNaN(closeMs) && openMs >= closeMs) {
+          Swal.fire({
+            icon: 'error',
+            title: 'เวลาไม่ถูกต้อง',
+            text: 'วัน-เวลาเปิดระบบ ต้องมาก่อน วัน-เวลาปิดระบบครับ',
+            confirmButtonColor: '#b91c1c'
+          });
+          return;
+        }
+      }
+
+      const summaryParts = [];
+      if (openVal) {
+        summaryParts.push(`<div class="p-2 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-900">🟢 <b>เปิดระบบ:</b> ${formatThaiDateTime(openVal)}</div>`);
+      }
+      if (closeVal) {
+        summaryParts.push(`<div class="p-2 rounded-lg bg-rose-50 border border-rose-200 text-rose-900">🔴 <b>ปิดระบบ:</b> ${formatThaiDateTime(closeVal)}</div>`);
+      }
+
       const confirmRes = await Swal.fire({
-        title: 'ยืนยันตั้งเวลาปิดระบบ?',
-        html: `<p class="text-xs text-gray-700">ระบบจะปิดรับการลงทะเบียนอัตโนมัติในวันที่:<br><b class="text-red-600 text-sm">${formatted}</b></p>`,
+        title: 'ยืนยันตั้งเวลา เปิด-ปิด ระบบ?',
+        html: `<div class="text-xs space-y-2 mt-2 text-left">${summaryParts.join('')}</div>`,
         icon: 'question',
         showCancelButton: true,
         confirmButtonColor: '#059669',
@@ -1061,25 +1448,26 @@
       if (!confirmRes.isConfirmed) return;
 
       Swal.fire({
-        title: 'กำลังบันทึก...',
+        title: 'กำลังบันทึกเวลาเปิด-ปิด...',
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
       });
 
       try {
         const data = await sendAdminAction({
-          action: 'setClosingDateTime',
+          action: 'setSchedule',
           adminUid: userProfile.userId,
-          closingDateTime: val
+          openingDateTime: openVal,
+          closingDateTime: closeVal
         });
         Swal.close();
 
         if (data && data.status === 'success') {
           await Swal.fire({
             icon: 'success',
-            title: 'บันทึกเวลาปิดระบบสำเร็จ',
-            text: `ระบบจะปิดรับลงทะเบียนใน ${formatted}`,
-            timer: 1800,
+            title: 'บันทึกเวลาสำเร็จ!',
+            text: data.message || 'อัปเดตกำหนดเวลาเปิด-ปิดระบบเรียบร้อยแล้ว',
+            timer: 1600,
             showConfirmButton: false
           });
           window.location.reload();
@@ -1087,7 +1475,7 @@
           Swal.fire({
             icon: 'error',
             title: 'เกิดข้อผิดพลาด',
-            text: (data && data.message) || 'ไม่สามารถบันทึกเวลาปิดได้',
+            text: (data && data.message) || 'ไม่สามารถบันทึกเวลาได้',
             confirmButtonColor: '#b91c1c'
           });
         }
@@ -1102,41 +1490,110 @@
       }
     }
 
-    // แอดมินยกเลิกการกำหนดเวลาปิดระบบ (เปิดตลอด)
+    // ล้างค่าเวลาเฉพาะช่อง (เปิด หรือ ปิด)
+    async function clearSingleSchedule(type) {
+      if (!userProfile || userProfile.userId !== ADMIN_UID) return;
+      const isClearingOpen = type === 'open';
+
+      const confirmRes = await Swal.fire({
+        title: isClearingOpen ? 'ล้างเวลาเปิดระบบ?' : 'ล้างเวลาปิดระบบ?',
+        text: isClearingOpen
+          ? 'เมื่อล้างเวลาเปิดแล้ว ระบบจะไม่แสดงหน้า Countdown และเปิดให้ใช้งานทันที (หากยังไม่เลยเวลาปิด)'
+          : 'เมื่อล้างเวลาปิดแล้ว ระบบจะไม่ปิดอัตโนมัติ',
+        icon: 'question',
+        showCancelButton: true,
+        confirmButtonColor: '#DC2626',
+        cancelButtonColor: '#9CA3AF',
+        confirmButtonText: 'ยืนยันล้างค่า',
+        cancelButtonText: 'ยกเลิก'
+      });
+
+      if (!confirmRes.isConfirmed) return;
+
+      Swal.fire({
+        title: 'กำลังอัปเดต...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      try {
+        const payload = {
+          action: 'setSchedule',
+          adminUid: userProfile.userId
+        };
+        if (isClearingOpen) {
+          payload.openingDateTime = '';
+        } else {
+          payload.closingDateTime = '';
+        }
+
+        const data = await sendAdminAction(payload);
+        Swal.close();
+
+        if (data && data.status === 'success') {
+          await Swal.fire({
+            icon: 'success',
+            title: 'ล้างค่าเวลาสำเร็จ',
+            timer: 1400,
+            showConfirmButton: false
+          });
+          window.location.reload();
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'เกิดข้อผิดพลาด',
+            text: (data && data.message) || 'ไม่สามารถล้างค่าเวลาได้',
+            confirmButtonColor: '#b91c1c'
+          });
+        }
+      } catch (err) {
+        Swal.close();
+        Swal.fire({
+          icon: 'error',
+          title: 'ข้อผิดพลาดเครือข่าย',
+          text: err.message,
+          confirmButtonColor: '#b91c1c'
+        });
+      }
+    }
+
+    // แอดมินยกเลิกการกำหนดเวลาทั้งเปิดและปิดระบบ (เปิดตลอด)
     async function clearClosingDateTimeSetting() {
       if (!userProfile || userProfile.userId !== ADMIN_UID) return;
 
       const confirmRes = await Swal.fire({
-        title: 'ยกเลิกกำหนดเวลาปิด?',
-        text: 'เมื่อยกเลิกแล้ว ระบบจะเปิดรับลงทะเบียนตลอดเวลา (จนกว่าจะมีการปิดแบบแมนนวลหรือตั้งเวลาใหม่)',
+        title: 'ล้างกำหนดเวลาทั้งหมด?',
+        text: 'เมื่อล้างเวลาเปิด-ปิดทั้งหมดแล้ว ระบบจะเปิดรับลงทะเบียนตลอดเวลา',
         icon: 'warning',
         showCancelButton: true,
         confirmButtonColor: '#DC2626',
         cancelButtonColor: '#9CA3AF',
-        confirmButtonText: 'ยืนยันยกเลิก',
+        confirmButtonText: 'ยืนยันล้างทั้งหมด',
         cancelButtonText: 'กลับ'
       });
 
       if (!confirmRes.isConfirmed) return;
 
       Swal.fire({
-        title: 'กำลังยกเลิก...',
+        title: 'กำลังล้างกำหนดเวลา...',
         allowOutsideClick: false,
         didOpen: () => Swal.showLoading()
       });
 
       try {
         const data = await sendAdminAction({
-          action: 'setClosingDateTime',
+          action: 'setSchedule',
           adminUid: userProfile.userId,
-          closingDateTime: ''
+          openingDateTime: '',
+          closingDateTime: '',
+          targetStatus: 'OPEN'
         });
         Swal.close();
 
         if (data && data.status === 'success') {
           await Swal.fire({
             icon: 'success',
-            title: 'ยกเลิกกำหนดเวลาสำเร็จ',
+            title: 'ล้างกำหนดเวลาสำเร็จ',
             text: 'ระบบกลับสู่สถานะเปิดรับลงทะเบียนปกติแล้ว',
             timer: 1600,
             showConfirmButton: false
@@ -1570,6 +2027,16 @@
       try {
         const checkSys = await fetchSystemStatus(userProfile.userId);
         if (checkSys && !checkSys.isOpen && userProfile.userId !== ADMIN_UID) {
+          if (checkSys.isBeforeOpeningTime && checkSys.manualStatus !== 'CLOSED') {
+            Swal.fire({
+              icon: 'info',
+              title: 'ยังไม่ถึงเวลาเปิดระบบ',
+              text: 'กรุณารอจนกว่าจะถึงเวลาเปิดรับลงทะเบียนครับ',
+              confirmButtonColor: '#059669'
+            });
+            showCountdownView(checkSys.openingDateTime, checkSys.closingDateTime);
+            return;
+          }
           Swal.fire({
             icon: 'error',
             title: 'ระบบปิดรับข้อมูลแล้ว',

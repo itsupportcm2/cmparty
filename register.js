@@ -18,31 +18,71 @@ const REWARD_SHEET_GID = 195154721;
 const ADMIN_UID = 'U1dcbd47c6981745c2f41c5691cde7ff3';
 
 /**
- * ตรวจสอบสถานะการเปิด/ปิดระบบลงทะเบียน (รองรับทั้งตั้งวันเวลาปิด และเปิด/ปิดทันที)
- * คืนค่า: Object { systemStatus, isOpen, closingDateTime, isPastClosingTime, manualStatus }
+ * แปลง Date/Time String (เช่น "2026-12-25T09:00") เป็น Timestamp (ms) ตามเวลาประเทศไทย (UTC+7)
+ */
+function parseBangkokTimeMs(str) {
+  if (!str) return NaN;
+  const s = String(str).trim();
+  if (!s) return NaN;
+  if (/Z$|[+-]\d{2}:\d{2}$/.test(s)) {
+    return new Date(s).getTime();
+  }
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(s)) {
+    return new Date(s + ':00+07:00').getTime();
+  }
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(s)) {
+    return new Date(s + '+07:00').getTime();
+  }
+  return new Date(s).getTime();
+}
+
+/**
+ * ตรวจสอบสถานะการเปิด/ปิดระบบลงทะเบียน (รองรับทั้งตั้งวันเวลาเปิด, ตั้งวันเวลาปิด และเปิด/ปิดทันที)
+ * คืนค่า: Object { systemStatus, isOpen, openingDateTime, isBeforeOpeningTime, closingDateTime, isPastClosingTime, manualStatus }
  */
 function getRegistrationSystemStatus() {
   try {
     const props = PropertiesService.getScriptProperties();
     const manualStatus = props.getProperty('REGISTRATION_SYSTEM_STATUS') || 'OPEN';
+    const openingDateTimeStr = props.getProperty('REGISTRATION_OPENING_DATETIME') || '';
     const closingDateTimeStr = props.getProperty('REGISTRATION_CLOSING_DATETIME') || '';
+
+    const now = Date.now();
+
+    let isBeforeOpeningTime = false;
+    if (openingDateTimeStr) {
+      const openingTime = parseBangkokTimeMs(openingDateTimeStr);
+      if (!isNaN(openingTime) && now < openingTime) {
+        isBeforeOpeningTime = true;
+      }
+    }
 
     let isPastClosingTime = false;
     if (closingDateTimeStr) {
-      const closingTime = new Date(closingDateTimeStr).getTime();
-      const now = Date.now();
+      const closingTime = parseBangkokTimeMs(closingDateTimeStr);
       if (!isNaN(closingTime) && now >= closingTime) {
         isPastClosingTime = true;
       }
     }
 
-    // ระบบจะปิดถ้าเวลาเลยกำหนด หรือถูกตั้งค่า Manual เป็น CLOSED
-    const isClosed = isPastClosingTime || manualStatus === 'CLOSED';
-    const currentStatus = isClosed ? 'CLOSED' : 'OPEN';
+    // ลำดับสถานะ:
+    // 1. หากสั่ง Manual CLOSED หรือเลยกำหนดเวลาปิดแล้ว -> 'CLOSED'
+    // 2. หากยังไม่ถึงเวลาเปิดที่ตั้งไว้ -> 'WAITING_OPEN'
+    // 3. นอกนั้น -> 'OPEN'
+    let currentStatus = 'OPEN';
+    if (manualStatus === 'CLOSED' || isPastClosingTime) {
+      currentStatus = 'CLOSED';
+    } else if (isBeforeOpeningTime) {
+      currentStatus = 'WAITING_OPEN';
+    }
+
+    const isOpen = currentStatus === 'OPEN';
 
     return {
       systemStatus: currentStatus,
-      isOpen: !isClosed,
+      isOpen: isOpen,
+      openingDateTime: openingDateTimeStr,
+      isBeforeOpeningTime: isBeforeOpeningTime,
       closingDateTime: closingDateTimeStr,
       isPastClosingTime: isPastClosingTime,
       manualStatus: manualStatus
@@ -52,6 +92,8 @@ function getRegistrationSystemStatus() {
     return {
       systemStatus: 'OPEN',
       isOpen: true,
+      openingDateTime: '',
+      isBeforeOpeningTime: false,
       closingDateTime: '',
       isPastClosingTime: false,
       manualStatus: 'OPEN'
@@ -60,9 +102,9 @@ function getRegistrationSystemStatus() {
 }
 
 /**
- * บันทึกการกำหนดวันเวลาปิดระบบ หรือเปิด/ปิดระบบลงทะเบียน (เฉพาะ Admin UID เท่านั้น)
+ * บันทึกการกำหนดวันเวลาเปิด-ปิดระบบ หรือเปิด/ปิดระบบลงทะเบียนทันที (เฉพาะ Admin UID เท่านั้น)
  */
-function setRegistrationClosingDateTime(closingDateTime, requesterUid, manualStatus) {
+function setRegistrationSchedule(openingDateTime, closingDateTime, requesterUid, manualStatus) {
   const cleanUid = String(requesterUid || '').trim();
   if (cleanUid !== ADMIN_UID) {
     return {
@@ -73,13 +115,36 @@ function setRegistrationClosingDateTime(closingDateTime, requesterUid, manualSta
 
   const props = PropertiesService.getScriptProperties();
 
+  // ตรวจสอบกรณีตั้งทั้งเวลาเปิดและเวลาปิดพร้อมกัน ว่าเวลาเปิดต้องน้อยกว่าเวลาปิด
+  if (openingDateTime && closingDateTime) {
+    const openMs = parseBangkokTimeMs(openingDateTime);
+    const closeMs = parseBangkokTimeMs(closingDateTime);
+    if (!isNaN(openMs) && !isNaN(closeMs) && openMs >= closeMs) {
+      return {
+        status: 'error',
+        message: 'วันเวลาเปิดระบบต้องมาก่อนวันเวลาปิดระบบครับ'
+      };
+    }
+  }
+
+  // จัดการวันเวลาเปิดระบบ (REGISTRATION_OPENING_DATETIME)
+  if (openingDateTime !== null && openingDateTime !== undefined) {
+    const cleanOpen = String(openingDateTime).trim();
+    if (cleanOpen) {
+      props.setProperty('REGISTRATION_OPENING_DATETIME', cleanOpen);
+      props.setProperty('REGISTRATION_SYSTEM_STATUS', 'OPEN');
+    } else {
+      props.deleteProperty('REGISTRATION_OPENING_DATETIME');
+    }
+  }
+
+  // จัดการวันเวลาปิดระบบ (REGISTRATION_CLOSING_DATETIME)
   if (closingDateTime !== null && closingDateTime !== undefined) {
-    const cleanDateTime = String(closingDateTime).trim();
-    if (cleanDateTime) {
-      props.setProperty('REGISTRATION_CLOSING_DATETIME', cleanDateTime);
-      // หากตั้งเวลาปิดในอนาคต ให้รีเซ็ต manual status เป็น OPEN เพื่อเปิดให้ลงทะเบียนจนกว่าจะถึงเวลา
-      const timeVal = new Date(cleanDateTime).getTime();
-      if (!isNaN(timeVal) && timeVal > Date.now()) {
+    const cleanClose = String(closingDateTime).trim();
+    if (cleanClose) {
+      props.setProperty('REGISTRATION_CLOSING_DATETIME', cleanClose);
+      const closeVal = parseBangkokTimeMs(cleanClose);
+      if (!isNaN(closeVal) && closeVal > Date.now()) {
         props.setProperty('REGISTRATION_SYSTEM_STATUS', 'OPEN');
       }
     } else {
@@ -87,25 +152,43 @@ function setRegistrationClosingDateTime(closingDateTime, requesterUid, manualSta
     }
   }
 
+  // จัดการ Manual Override ('OPEN' หรือ 'CLOSED')
   if (manualStatus) {
-    props.setProperty('REGISTRATION_SYSTEM_STATUS', manualStatus === 'CLOSED' ? 'CLOSED' : 'OPEN');
+    const target = manualStatus === 'CLOSED' ? 'CLOSED' : 'OPEN';
+    props.setProperty('REGISTRATION_SYSTEM_STATUS', target);
+    // หากแอดมินกด "สั่งเปิดระบบทันที (Manual Open)" ให้ล้างเวลาเปิดที่ยังไม่ถึง หรือเวลาปิดที่ผ่านไปแล้วออก เพื่อให้เปิดได้ทันที
+    if (target === 'OPEN') {
+      const curOpen = props.getProperty('REGISTRATION_OPENING_DATETIME') || '';
+      if (curOpen && parseBangkokTimeMs(curOpen) > Date.now()) {
+        props.deleteProperty('REGISTRATION_OPENING_DATETIME');
+      }
+      const curClose = props.getProperty('REGISTRATION_CLOSING_DATETIME') || '';
+      if (curClose && parseBangkokTimeMs(curClose) <= Date.now()) {
+        props.deleteProperty('REGISTRATION_CLOSING_DATETIME');
+      }
+    }
   }
 
   const statusInfo = getRegistrationSystemStatus();
   return {
     status: 'success',
     ...statusInfo,
-    message: statusInfo.closingDateTime
-      ? `บันทึกกำหนดเวลาปิดระบบเรียบร้อยแล้ว: ${statusInfo.closingDateTime.replace('T', ' ')}`
-      : 'บันทึกการตั้งค่าระบบเรียบร้อยแล้ว'
+    message: 'บันทึกการตั้งค่าเวลาเปิด-ปิดระบบเรียบร้อยแล้ว'
   };
+}
+
+/**
+ * ฟังก์ชันสำรองเพื่อความเข้ากันได้ย้อนหลัง
+ */
+function setRegistrationClosingDateTime(closingDateTime, requesterUid, manualStatus, openingDateTime) {
+  return setRegistrationSchedule(openingDateTime, closingDateTime, requesterUid, manualStatus);
 }
 
 /**
  * สลับ/ตั้งค่าสถานะการเปิด-ปิดระบบลงทะเบียน (ฟังก์ชันสำรองแบบเดิม)
  */
 function setRegistrationSystemStatus(targetStatus, requesterUid) {
-  return setRegistrationClosingDateTime(null, requesterUid, targetStatus);
+  return setRegistrationSchedule(null, null, requesterUid, targetStatus);
 }
 
 /**
@@ -334,6 +417,12 @@ function saveRegistrationData(payload) {
     // ตรวจสอบสถานะการเปิด-ปิดระบบลงทะเบียน
     const sysStatusInfo = getRegistrationSystemStatus();
     if (!sysStatusInfo.isOpen && uid !== ADMIN_UID) {
+      if (sysStatusInfo.isBeforeOpeningTime && sysStatusInfo.openingDateTime) {
+        return {
+          status: 'error',
+          message: `ขณะนี้ยังไม่ถึงเวลาเปิดระบบลงทะเบียน (เปิดเวลา ${sysStatusInfo.openingDateTime.replace('T', ' ')})`
+        };
+      }
       let closeMsg = 'ขณะนี้ระบบลงทะเบียนปิดรับข้อมูลแล้ว';
       if (sysStatusInfo.closingDateTime) {
         closeMsg += ` (หมดเวลาเมื่อ ${sysStatusInfo.closingDateTime.replace('T', ' ')})`;
@@ -503,12 +592,13 @@ function doGet(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
-  // กรณีแอดมินตั้งวันเวลาปิดระบบ หรือสลับเปิด-ปิดระบบ: ?action=setClosingDateTime&adminUid=...&closingDateTime=...
-  if (params.action === 'setClosingDateTime' || params.action === 'toggleSystemStatus') {
+  // กรณีแอดมินตั้งวันเวลาเปิด-ปิดระบบ หรือสลับเปิด-ปิดระบบ
+  if (params.action === 'setSchedule' || params.action === 'setClosingDateTime' || params.action === 'toggleSystemStatus') {
     const adminUid = String(params.adminUid || params.uid || '').trim();
+    const openingDateTime = params.openingDateTime !== undefined ? params.openingDateTime : null;
     const closingDateTime = params.closingDateTime !== undefined ? params.closingDateTime : null;
     const manualStatus = params.targetStatus ? String(params.targetStatus) : null;
-    const res = setRegistrationClosingDateTime(closingDateTime, adminUid, manualStatus);
+    const res = setRegistrationSchedule(openingDateTime, closingDateTime, adminUid, manualStatus);
     return ContentService.createTextOutput(JSON.stringify(res))
       .setMimeType(ContentService.MimeType.JSON);
   }
@@ -630,12 +720,13 @@ function doPost(e) {
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // กรณีแอดมินตั้งวันเวลาปิดระบบผ่าน POST: action = setClosingDateTime หรือ toggleSystemStatus
-    if (payload.action === 'setClosingDateTime' || payload.action === 'toggleSystemStatus') {
+    // กรณีแอดมินตั้งวันเวลาเปิด-ปิดระบบผ่าน POST: action = setSchedule, setClosingDateTime หรือ toggleSystemStatus
+    if (payload.action === 'setSchedule' || payload.action === 'setClosingDateTime' || payload.action === 'toggleSystemStatus') {
       const adminUid = String(payload.adminUid || payload.uid || '').trim();
+      const openingDateTime = payload.openingDateTime !== undefined ? payload.openingDateTime : null;
       const closingDateTime = payload.closingDateTime !== undefined ? payload.closingDateTime : null;
       const manualStatus = payload.targetStatus ? String(payload.targetStatus) : null;
-      const res = setRegistrationClosingDateTime(closingDateTime, adminUid, manualStatus);
+      const res = setRegistrationSchedule(openingDateTime, closingDateTime, adminUid, manualStatus);
       return ContentService.createTextOutput(JSON.stringify(res))
         .setMimeType(ContentService.MimeType.JSON);
     }
