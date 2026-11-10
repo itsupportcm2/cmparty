@@ -18,40 +18,94 @@ const REWARD_SHEET_GID = 195154721;
 const ADMIN_UID = 'U1dcbd47c6981745c2f41c5691cde7ff3';
 
 /**
- * ตรวจสอบสถานะการเปิด/ปิดระบบลงทะเบียน
- * คืนค่า: 'OPEN' (เปิด) หรือ 'CLOSED' (ปิด)
+ * ตรวจสอบสถานะการเปิด/ปิดระบบลงทะเบียน (รองรับทั้งตั้งวันเวลาปิด และเปิด/ปิดทันที)
+ * คืนค่า: Object { systemStatus, isOpen, closingDateTime, isPastClosingTime, manualStatus }
  */
 function getRegistrationSystemStatus() {
   try {
     const props = PropertiesService.getScriptProperties();
-    const status = props.getProperty('REGISTRATION_SYSTEM_STATUS');
-    return status === 'CLOSED' ? 'CLOSED' : 'OPEN'; // ค่าเริ่มต้นคือ OPEN
+    const manualStatus = props.getProperty('REGISTRATION_SYSTEM_STATUS') || 'OPEN';
+    const closingDateTimeStr = props.getProperty('REGISTRATION_CLOSING_DATETIME') || '';
+
+    let isPastClosingTime = false;
+    if (closingDateTimeStr) {
+      const closingTime = new Date(closingDateTimeStr).getTime();
+      const now = Date.now();
+      if (!isNaN(closingTime) && now >= closingTime) {
+        isPastClosingTime = true;
+      }
+    }
+
+    // ระบบจะปิดถ้าเวลาเลยกำหนด หรือถูกตั้งค่า Manual เป็น CLOSED
+    const isClosed = isPastClosingTime || manualStatus === 'CLOSED';
+    const currentStatus = isClosed ? 'CLOSED' : 'OPEN';
+
+    return {
+      systemStatus: currentStatus,
+      isOpen: !isClosed,
+      closingDateTime: closingDateTimeStr,
+      isPastClosingTime: isPastClosingTime,
+      manualStatus: manualStatus
+    };
   } catch (e) {
     console.error('Error reading REGISTRATION_SYSTEM_STATUS:', e);
-    return 'OPEN';
+    return {
+      systemStatus: 'OPEN',
+      isOpen: true,
+      closingDateTime: '',
+      isPastClosingTime: false,
+      manualStatus: 'OPEN'
+    };
   }
 }
 
 /**
- * บันทึกการเปิด/ปิดระบบลงทะเบียน (เฉพาะ Admin UID เท่านั้น)
+ * บันทึกการกำหนดวันเวลาปิดระบบ หรือเปิด/ปิดระบบลงทะเบียน (เฉพาะ Admin UID เท่านั้น)
  */
-function setRegistrationSystemStatus(targetStatus, requesterUid) {
+function setRegistrationClosingDateTime(closingDateTime, requesterUid, manualStatus) {
   const cleanUid = String(requesterUid || '').trim();
   if (cleanUid !== ADMIN_UID) {
     return {
       status: 'forbidden',
-      message: 'ไม่มีสิทธิ์ในการเปลี่ยนสถานะระบบ (เฉพาะแอดมินเท่านั้น)'
+      message: 'ไม่มีสิทธิ์ในการเปลี่ยนการตั้งค่าระบบ (เฉพาะแอดมินเท่านั้น)'
     };
   }
 
-  const newStatus = targetStatus === 'CLOSED' ? 'CLOSED' : 'OPEN';
-  PropertiesService.getScriptProperties().setProperty('REGISTRATION_SYSTEM_STATUS', newStatus);
+  const props = PropertiesService.getScriptProperties();
+
+  if (closingDateTime !== null && closingDateTime !== undefined) {
+    const cleanDateTime = String(closingDateTime).trim();
+    if (cleanDateTime) {
+      props.setProperty('REGISTRATION_CLOSING_DATETIME', cleanDateTime);
+      // หากตั้งเวลาปิดในอนาคต ให้รีเซ็ต manual status เป็น OPEN เพื่อเปิดให้ลงทะเบียนจนกว่าจะถึงเวลา
+      const timeVal = new Date(cleanDateTime).getTime();
+      if (!isNaN(timeVal) && timeVal > Date.now()) {
+        props.setProperty('REGISTRATION_SYSTEM_STATUS', 'OPEN');
+      }
+    } else {
+      props.deleteProperty('REGISTRATION_CLOSING_DATETIME');
+    }
+  }
+
+  if (manualStatus) {
+    props.setProperty('REGISTRATION_SYSTEM_STATUS', manualStatus === 'CLOSED' ? 'CLOSED' : 'OPEN');
+  }
+
+  const statusInfo = getRegistrationSystemStatus();
   return {
     status: 'success',
-    systemStatus: newStatus,
-    isOpen: newStatus === 'OPEN',
-    message: newStatus === 'OPEN' ? 'เปิดระบบลงทะเบียนเรียบร้อยแล้ว' : 'ปิดระบบลงทะเบียนเรียบร้อยแล้ว'
+    ...statusInfo,
+    message: statusInfo.closingDateTime
+      ? `บันทึกกำหนดเวลาปิดระบบเรียบร้อยแล้ว: ${statusInfo.closingDateTime.replace('T', ' ')}`
+      : 'บันทึกการตั้งค่าระบบเรียบร้อยแล้ว'
   };
+}
+
+/**
+ * สลับ/ตั้งค่าสถานะการเปิด-ปิดระบบลงทะเบียน (ฟังก์ชันสำรองแบบเดิม)
+ */
+function setRegistrationSystemStatus(targetStatus, requesterUid) {
+  return setRegistrationClosingDateTime(null, requesterUid, targetStatus);
 }
 
 /**
@@ -278,9 +332,13 @@ function saveRegistrationData(payload) {
     }
 
     // ตรวจสอบสถานะการเปิด-ปิดระบบลงทะเบียน
-    const sysStatus = getRegistrationSystemStatus();
-    if (sysStatus === 'CLOSED' && uid !== ADMIN_UID) {
-      return { status: 'error', message: 'ขณะนี้ระบบลงทะเบียนปิดรับข้อมูลชั่วคราว กรุณาติดต่อผู้ดูแลระบบ' };
+    const sysStatusInfo = getRegistrationSystemStatus();
+    if (!sysStatusInfo.isOpen && uid !== ADMIN_UID) {
+      let closeMsg = 'ขณะนี้ระบบลงทะเบียนปิดรับข้อมูลแล้ว';
+      if (sysStatusInfo.closingDateTime) {
+        closeMsg += ` (หมดเวลาเมื่อ ${sysStatusInfo.closingDateTime.replace('T', ' ')})`;
+      }
+      return { status: 'error', message: closeMsg };
     }
 
     // ตรวจสอบสถานะการเข้าร่วมงานจากแบบฟอร์มตั้งต้น (หากตอบ "ไม่ไป" หรือไม่มาร่วมงาน ไม่อนุญาตให้ลงทะเบียน)
@@ -436,20 +494,21 @@ function doGet(e) {
   // กรณีตรวจสอบสถานะเปิด-ปิดระบบลงทะเบียน: ?action=getSystemStatus&uid=...
   if (params.action === 'getSystemStatus') {
     const requesterUid = String(params.uid || '').trim();
-    const currentStatus = getRegistrationSystemStatus();
+    const statusInfo = getRegistrationSystemStatus();
     return ContentService.createTextOutput(JSON.stringify({
       status: 'success',
-      systemStatus: currentStatus,
-      isOpen: currentStatus === 'OPEN',
-      isAdmin: requesterUid === ADMIN_UID
+      ...statusInfo,
+      isAdmin: requesterUid === ADMIN_UID,
+      serverTime: new Date().toISOString()
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
-  // กรณีแอดมินสลับเปิด-ปิดระบบลงทะเบียน: ?action=toggleSystemStatus&adminUid=...&targetStatus=...
-  if (params.action === 'toggleSystemStatus') {
+  // กรณีแอดมินตั้งวันเวลาปิดระบบ หรือสลับเปิด-ปิดระบบ: ?action=setClosingDateTime&adminUid=...&closingDateTime=...
+  if (params.action === 'setClosingDateTime' || params.action === 'toggleSystemStatus') {
     const adminUid = String(params.adminUid || params.uid || '').trim();
-    const targetStatus = String(params.targetStatus || '').trim();
-    const res = setRegistrationSystemStatus(targetStatus, adminUid);
+    const closingDateTime = params.closingDateTime !== undefined ? params.closingDateTime : null;
+    const manualStatus = params.targetStatus ? String(params.targetStatus) : null;
+    const res = setRegistrationClosingDateTime(closingDateTime, adminUid, manualStatus);
     return ContentService.createTextOutput(JSON.stringify(res))
       .setMimeType(ContentService.MimeType.JSON);
   }
@@ -562,20 +621,21 @@ function doPost(e) {
     // กรณีตรวจสอบสถานะเปิด-ปิดระบบลงทะเบียนผ่าน POST: action = getSystemStatus
     if (payload.action === 'getSystemStatus') {
       const requesterUid = String(payload.uid || '').trim();
-      const currentStatus = getRegistrationSystemStatus();
+      const statusInfo = getRegistrationSystemStatus();
       return ContentService.createTextOutput(JSON.stringify({
         status: 'success',
-        systemStatus: currentStatus,
-        isOpen: currentStatus === 'OPEN',
-        isAdmin: requesterUid === ADMIN_UID
+        ...statusInfo,
+        isAdmin: requesterUid === ADMIN_UID,
+        serverTime: new Date().toISOString()
       })).setMimeType(ContentService.MimeType.JSON);
     }
 
-    // กรณีแอดมินสลับเปิด-ปิดระบบลงทะเบียนผ่าน POST: action = toggleSystemStatus
-    if (payload.action === 'toggleSystemStatus') {
+    // กรณีแอดมินตั้งวันเวลาปิดระบบผ่าน POST: action = setClosingDateTime หรือ toggleSystemStatus
+    if (payload.action === 'setClosingDateTime' || payload.action === 'toggleSystemStatus') {
       const adminUid = String(payload.adminUid || payload.uid || '').trim();
-      const targetStatus = String(payload.targetStatus || '').trim();
-      const res = setRegistrationSystemStatus(targetStatus, adminUid);
+      const closingDateTime = payload.closingDateTime !== undefined ? payload.closingDateTime : null;
+      const manualStatus = payload.targetStatus ? String(payload.targetStatus) : null;
+      const res = setRegistrationClosingDateTime(closingDateTime, adminUid, manualStatus);
       return ContentService.createTextOutput(JSON.stringify(res))
         .setMimeType(ContentService.MimeType.JSON);
     }
