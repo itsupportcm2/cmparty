@@ -2354,11 +2354,14 @@
         const result = await callBackendSaveRegistration(payload);
 
         if (result && result.status === 'success') {
-          await sendRegistrationMessageToChat({
-            ...payload,
-            ...(result.data || {}),
-            timestamp: result.timestamp || (result.data && result.data.timestamp) || new Date().toLocaleString('th-TH')
-          });
+          // หากหลังบ้านส่ง Push Flex Message ผ่านบอท LINE สำเร็จแล้ว ไม่ต้องส่งซ้ำด้วย liff.sendMessages
+          if (!result.lineSent) {
+            await sendRegistrationMessageToChat({
+              ...payload,
+              ...(result.data || {}),
+              timestamp: result.timestamp || (result.data && result.data.timestamp) || new Date().toLocaleString('th-TH')
+            });
+          }
 
           await Swal.fire({
             icon: 'success',

@@ -525,10 +525,34 @@ function saveRegistrationData(payload) {
       'ลงทะเบียนสำเร็จ'
     ]);
 
+    // ส่ง Flex Message บัตรยืนยันการลงทะเบียนเข้าแชท LINE ของผู้ลงทะเบียนทันทีผ่าน LINE Push API
+    let lineSent = false;
+    let lineMessageStatus = '';
+    if (uid && uid !== 'TEST_USER') {
+      try {
+        const pushRes = pushRegistrationFlexMessage(uid, {
+          empId: empId,
+          empName: empName,
+          department: department,
+          branch: branch,
+          displayName: displayName,
+          pictureUrl: pictureUrl,
+          timestamp: formattedTime
+        });
+        lineSent = Boolean(pushRes && pushRes.success);
+        lineMessageStatus = (pushRes && pushRes.message) || '';
+      } catch (pushErr) {
+        console.error('Error pushing registration Flex Message:', pushErr);
+        lineMessageStatus = pushErr.message;
+      }
+    }
+
     return {
       status: 'success',
       message: 'บันทึกการลงทะเบียนเข้างานสำเร็จ',
       timestamp: formattedTime,
+      lineSent: lineSent,
+      lineMessageStatus: lineMessageStatus,
       data: {
         empId: empId,
         empName: empName,
@@ -544,6 +568,327 @@ function saveRegistrationData(payload) {
     return { status: 'error', message: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + err.message };
   } finally {
     lock.releaseLock();
+  }
+}
+
+/**
+ * ส่ง LINE Push Message (Flex Message บัตรเข้างาน VIP Pass) แจ้งยืนยันการลงทะเบียนสำเร็จเข้าแชทของผู้ลงทะเบียนโดยตรง
+ */
+function pushRegistrationFlexMessage(uid, info) {
+  const token = (typeof LINE_BOT_ACCESS_TOKEN !== 'undefined' && LINE_BOT_ACCESS_TOKEN)
+    ? LINE_BOT_ACCESS_TOKEN
+    : 'ZUF3tyAspwl3dVgo+5YSqfJZpu1fA438z3vIyHmga+Jre+ZuWrg30Xj1qV4ews6AG+RLY/FiaC+L6lkk6HoEHsed4ZYB7NMMS6n+rWxcpulnh3V7SAohcUx1+84NR8niEI41u5zLf3hlRm5jvKkWIAdB04t89/1O/w1cDnyilFU=';
+
+  const profilePic = (info.pictureUrl && String(info.pictureUrl).indexOf('https://') === 0)
+    ? String(info.pictureUrl)
+    : 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+
+  const lineName = String(info.displayName || 'ผู้เข้าร่วมงาน');
+  const empName = String(info.empName || '-');
+  const empId = String(info.empId || '-');
+  const department = String(info.department || '-');
+  const branch = String(info.branch || '-');
+  const timestamp = String(info.timestamp || Utilities.formatDate(new Date(), 'Asia/Bangkok', 'dd/MM/yyyy HH:mm:ss'));
+
+  const ticketFlexMessage = {
+    type: 'flex',
+    altText: `บัตรเข้างาน CM Party - ${empName} (รหัส ${empId}) ลงทะเบียนสำเร็จแล้ว`,
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      header: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#991B1B',
+        paddingAll: '20px',
+        contents: [
+          {
+            type: 'box',
+            layout: 'horizontal',
+            alignItems: 'center',
+            contents: [
+              {
+                type: 'box',
+                layout: 'vertical',
+                backgroundColor: '#FBBF24',
+                cornerRadius: '20px',
+                paddingStart: '10px',
+                paddingEnd: '10px',
+                paddingTop: '4px',
+                paddingBottom: '4px',
+                flex: 0,
+                contents: [
+                  {
+                    type: 'text',
+                    text: 'VIP PASS',
+                    color: '#78350F',
+                    size: 'xxs',
+                    weight: 'bold'
+                  }
+                ]
+              },
+              {
+                type: 'text',
+                text: 'CHRISTMAS & NEW YEAR',
+                color: '#FDE68A',
+                size: 'xxs',
+                weight: 'bold',
+                align: 'end'
+              }
+            ]
+          },
+          {
+            type: 'text',
+            text: 'CM PARTY TICKET',
+            color: '#FFFFFF',
+            size: 'xl',
+            weight: 'bold',
+            margin: 'md'
+          },
+          {
+            type: 'text',
+            text: 'บัตรยืนยันการลงทะเบียนเข้างานเลี้ยงสำเร็จแล้ว',
+            color: '#FECACA',
+            size: 'xs',
+            margin: 'xs'
+          }
+        ]
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#FFFFFF',
+        paddingAll: '20px',
+        spacing: 'lg',
+        contents: [
+          {
+            type: 'box',
+            layout: 'horizontal',
+            spacing: 'md',
+            alignItems: 'center',
+            contents: [
+              {
+                type: 'box',
+                layout: 'vertical',
+                width: '68px',
+                height: '68px',
+                cornerRadius: '34px',
+                borderWidth: '3px',
+                borderColor: '#15803D',
+                flex: 0,
+                contents: [
+                  {
+                    type: 'image',
+                    url: profilePic,
+                    size: 'full',
+                    aspectMode: 'cover',
+                    aspectRatio: '1:1'
+                  }
+                ]
+              },
+              {
+                type: 'box',
+                layout: 'vertical',
+                spacing: 'xs',
+                contents: [
+                  {
+                    type: 'box',
+                    layout: 'horizontal',
+                    contents: [
+                      {
+                        type: 'box',
+                        layout: 'vertical',
+                        backgroundColor: '#DCFCE7',
+                        cornerRadius: '6px',
+                        paddingStart: '8px',
+                        paddingEnd: '8px',
+                        paddingTop: '2px',
+                        paddingBottom: '2px',
+                        flex: 0,
+                        contents: [
+                          {
+                            type: 'text',
+                            text: 'ลงทะเบียนสำเร็จ',
+                            color: '#15803D',
+                            size: 'xxs',
+                            weight: 'bold'
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    type: 'text',
+                    text: empName,
+                    weight: 'bold',
+                    size: 'lg',
+                    color: '#111827',
+                    wrap: true
+                  },
+                  {
+                    type: 'text',
+                    text: 'LINE: ' + lineName,
+                    size: 'xs',
+                    color: '#6B7280',
+                    wrap: true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            type: 'separator',
+            color: '#E5E7EB'
+          },
+          {
+            type: 'box',
+            layout: 'vertical',
+            backgroundColor: '#FEFCE8',
+            cornerRadius: '12px',
+            paddingAll: '14px',
+            spacing: 'sm',
+            borderWidth: '1px',
+            borderColor: '#FDE68A',
+            contents: [
+              {
+                type: 'box',
+                layout: 'baseline',
+                spacing: 'sm',
+                contents: [
+                  {
+                    type: 'text',
+                    text: 'รหัสพนักงาน',
+                    color: '#92400E',
+                    size: 'xs',
+                    flex: 4
+                  },
+                  {
+                    type: 'text',
+                    text: empId,
+                    color: '#B91C1C',
+                    size: 'sm',
+                    weight: 'bold',
+                    flex: 6,
+                    wrap: true
+                  }
+                ]
+              },
+              {
+                type: 'box',
+                layout: 'baseline',
+                spacing: 'sm',
+                contents: [
+                  {
+                    type: 'text',
+                    text: 'แผนก',
+                    color: '#92400E',
+                    size: 'xs',
+                    flex: 4
+                  },
+                  {
+                    type: 'text',
+                    text: department,
+                    color: '#1F2937',
+                    size: 'xs',
+                    weight: 'bold',
+                    flex: 6,
+                    wrap: true
+                  }
+                ]
+              },
+              {
+                type: 'box',
+                layout: 'baseline',
+                spacing: 'sm',
+                contents: [
+                  {
+                    type: 'text',
+                    text: 'สาขา',
+                    color: '#92400E',
+                    size: 'xs',
+                    flex: 4
+                  },
+                  {
+                    type: 'text',
+                    text: branch,
+                    color: '#15803D',
+                    size: 'xs',
+                    weight: 'bold',
+                    flex: 6,
+                    wrap: true
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#14532D',
+        paddingAll: '14px',
+        spacing: 'xs',
+        contents: [
+          {
+            type: 'box',
+            layout: 'horizontal',
+            alignItems: 'center',
+            contents: [
+              {
+                type: 'text',
+                text: 'STATUS: REGISTERED',
+                color: '#86EFAC',
+                size: 'xxs',
+                weight: 'bold',
+                flex: 1
+              },
+              {
+                type: 'text',
+                text: timestamp,
+                color: '#DCFCE7',
+                size: 'xxs',
+                align: 'end',
+                flex: 1
+              }
+            ]
+          },
+          {
+            type: 'text',
+            text: 'กรุณาแสดงบัตรนี้ที่จุดลงทะเบียนหน้างาน',
+            color: '#FEF08A',
+            size: 'xxs',
+            align: 'center',
+            margin: 'xs'
+          }
+        ]
+      }
+    }
+  };
+
+  const url = 'https://api.line.me/v2/bot/message/push';
+  const options = {
+    method: 'post',
+    contentType: 'application/json',
+    headers: {
+      'Authorization': 'Bearer ' + token
+    },
+    payload: JSON.stringify({
+      to: uid,
+      messages: [ticketFlexMessage]
+    }),
+    muteHttpExceptions: true
+  };
+
+  const response = UrlFetchApp.fetch(url, options);
+  const code = response.getResponseCode();
+  const body = response.getContentText();
+
+  if (code >= 200 && code < 300) {
+    return { success: true, message: 'ส่งบัตรเข้างานเข้า LINE สำเร็จ' };
+  } else {
+    console.error('LINE Registration Push Error (' + code + '): ' + body);
+    return { success: false, message: `LINE API Error (${code}): ${body}` };
   }
 }
 
