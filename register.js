@@ -243,6 +243,11 @@ function saveRegistrationData(payload) {
       return { status: 'error', message: 'ท่านไม่ได้มาร่วมงานลงทะเบียนไม่ได้' };
     }
 
+    // ตรวจสอบว่าผู้ใช้กดเพิ่มเพื่อนกับ LINE Official Account แล้วหรือไม่
+    if (uid && uid !== 'TEST_USER' && !isUserFriendWithBot(uid, true)) {
+      return { status: 'error', message: 'กรุณากดเพิ่มเพื่อน LINE กับ cmparty2026 ก่อนทำการลงทะเบียน' };
+    }
+
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     let regSheet = getSheetSafely(ss, TARGET_SHEET_NAME);
 
@@ -370,6 +375,18 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  // กรณีตรวจสอบสถานะการเป็นเพื่อนกับ LINE Bot: ?action=checkFriendship&uid=...
+  if (params.action === 'checkFriendship') {
+    const checkUid = String(params.uid || '').trim();
+    const bypassCache = params.nocache === '1';
+    const isFriend = isUserFriendWithBot(checkUid, bypassCache);
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'success',
+      uid: checkUid,
+      isFriend: isFriend
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
   // กรณีบันทึกข้อมูลผ่าน GET API (Fallback): ?action=saveRegistration&empId=...
   if (params.action === 'saveRegistration') {
     const saveResult = saveRegistrationData(params);
@@ -461,6 +478,18 @@ function doPost(e) {
       const checkRes = checkEmployeeById(payload.empId);
       return ContentService.createTextOutput(JSON.stringify(checkRes))
         .setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // ตรวจสอบสถานะการเป็นเพื่อนผ่าน POST: action = checkFriendship
+    if (payload.action === 'checkFriendship') {
+      const checkUid = String(payload.uid || '').trim();
+      const bypassCache = payload.nocache === true || payload.nocache === '1';
+      const isFriend = isUserFriendWithBot(checkUid, bypassCache);
+      return ContentService.createTextOutput(JSON.stringify({
+        status: 'success',
+        uid: checkUid,
+        isFriend: isFriend
+      })).setMimeType(ContentService.MimeType.JSON);
     }
 
     // 3. หากเป็นการจัดการข้อมูลรางวัล (Reward CRUD ผ่าน POST)
@@ -1731,13 +1760,16 @@ function getUserProfile(userId) {
  * ตรวจสอบว่าผู้ใช้กดเพิ่มเพื่อนกับ LINE Official Account แล้วหรือไม่
  * (ถ้ายังไม่ได้กดเพิ่มเพื่อน LINE API get profile จะส่ง HTTP 404 กลับมา)
  */
-function isUserFriendWithBot(userId) {
+function isUserFriendWithBot(userId, bypassCache) {
   if (!userId || userId === 'anon') return false;
 
   const cache = CacheService.getScriptCache();
   const cacheKey = 'IS_FRIEND_' + userId;
-  const cachedVal = cache.get(cacheKey);
-  if (cachedVal === '1') return true;
+
+  if (!bypassCache) {
+    const cachedVal = cache.get(cacheKey);
+    if (cachedVal === '1') return true;
+  }
 
   const url = `https://api.line.me/v2/bot/profile/${userId}`;
   const options = {
@@ -1750,11 +1782,14 @@ function isUserFriendWithBot(userId) {
 
   try {
     const response = UrlFetchApp.fetch(url, options);
-    if (response.getResponseCode() === 200) {
+    const code = response.getResponseCode();
+    if (code === 200) {
       cache.put(cacheKey, '1', 600); // แคชไว้ 10 นาที
       return true;
+    } else {
+      cache.remove(cacheKey);
+      return false;
     }
-    return false;
   } catch (e) {
     console.error('Error checking isUserFriendWithBot:', e);
     return false;

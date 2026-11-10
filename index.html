@@ -16,8 +16,8 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-  <!-- LINE LIFF SDK v2.31.2 -->
-  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/versions/2.31.2/sdk.js"></script>
+  <!-- LINE LIFF SDK v2 (Latest Edge) -->
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -135,8 +135,17 @@
       </div>
     </div>
 
-    <!-- Form Content -->
-    <div id="registrationFormContainer" class="p-6 space-y-5">
+    <!-- Initial Loading State while checking LIFF & Friendship -->
+    <div id="liffLoadingContainer" class="p-8 text-center space-y-3">
+      <div class="inline-block animate-spin text-red-600 text-3xl">
+        <i class="fa-solid fa-snowflake"></i>
+      </div>
+      <p class="text-sm font-semibold text-gray-700">กำลังเชื่อมต่อ LINE และตรวจสอบสิทธิ์...</p>
+      <p class="text-xs text-gray-400">ระบบกำลังเตรียมข้อมูล กรุณารอสักครู่</p>
+    </div>
+
+    <!-- Form Content (ซ่อนไว้เริ่มต้นจนกว่าจะยืนยันการเพิ่มเพื่อนสำเร็จ) -->
+    <div id="registrationFormContainer" class="hidden p-6 space-y-5">
 
       <!-- Step 1: Employee ID Input (Auto-check on typing, no button) -->
       <div>
@@ -404,6 +413,8 @@
 
         if (!activeLiffId) {
           console.warn('ยังไม่ได้กำหนด DEFAULT_LIFF_ID ในโค้ด');
+          const loadingEl = document.getElementById('liffLoadingContainer');
+          if (loadingEl) loadingEl.classList.add('hidden');
           document.getElementById('lineDisplayName').innerText = 'กรุณาตั้งค่า LIFF_ID ใน index.html';
           document.getElementById('lineUidDisplay').innerText = 'หรือเปิดด้วย ?liffId=200xxxxxxx-xxxxxxxx';
           return;
@@ -445,30 +456,35 @@
           document.getElementById('lineUidDisplay').innerText = 'UID: ' + userProfile.userId;
           document.getElementById('lineUid').value = userProfile.userId;
 
-          // ตรวจสอบสถานะการเป็นเพื่อนกับ LINE Official Account (liff.getFriendship)
-          const isFriend = await checkFriendshipStatus();
+          // 1. ตรวจสอบสถานะการเป็นเพื่อนขั้นต้น
+          let isFriend = await checkFriendshipStatus(false);
+
+          // 2. หากยังไม่ได้เป็นเพื่อน และเปิดใช้งานใน LINE Client
+          // ให้เรียก liff.requestFriendship() ทันที เพื่อเปิดหน้าต่าง Subwindow ขอเพิ่มเพื่อนอัตโนมัติตาม LINE Tips
+          if (!isFriend && typeof liff !== 'undefined' && liff.isInClient() && typeof liff.requestFriendship === 'function') {
+            try {
+              showMustAddFriendView();
+              await liff.requestFriendship();
+              // ตรวจสอบสถานะอีกครั้งหลังจาก Subwindow ปิดลง
+              isFriend = await checkFriendshipStatus(true);
+            } catch (autoReqErr) {
+              console.warn('liff.requestFriendship auto prompt error/dismissed:', autoReqErr);
+            }
+          }
+
+          // ซ่อนตัวโหลดเริ่มต้น
+          const loadingEl = document.getElementById('liffLoadingContainer');
+          if (loadingEl) loadingEl.classList.add('hidden');
+
+          // 3. หากยังไม่ได้เป็นเพื่อน ไม่อนุญาตให้เข้าสู่ฟอร์มลงทะเบียน
           if (!isFriend) {
             showMustAddFriendView();
-
-            // หากเปิดใน LINE App ให้เด้งหน้าต่าง requestFriendship ขึ้นมาขอเพิ่มเพื่อนอัตโนมัติทันที
-            if (typeof liff !== 'undefined' && liff.isInClient() && liff.requestFriendship) {
-              try {
-                await liff.requestFriendship();
-                const recheck = await checkFriendshipStatus();
-                if (recheck) {
-                  document.getElementById('mustAddFriendContainer').classList.add('hidden');
-                  document.getElementById('registrationFormContainer').classList.remove('hidden');
-                  if (userProfile.userId) {
-                    await checkIfUidAlreadyRegistered(userProfile.userId);
-                  }
-                  return;
-                }
-              } catch (autoErr) {
-                console.warn('Auto requestFriendship prompt skipped/cancelled:', autoErr);
-              }
-            }
             return;
           }
+
+          // 4. หากเป็นเพื่อนแล้ว อนุญาตให้แสดงฟอร์มลงทะเบียน
+          document.getElementById('mustAddFriendContainer').classList.add('hidden');
+          document.getElementById('registrationFormContainer').classList.remove('hidden');
 
           // ตรวจสอบทันทีว่า UID นี้เคยลงทะเบียนไปแล้วหรือยัง
           if (userProfile.userId) {
@@ -477,31 +493,73 @@
         }
       } catch (err) {
         console.error('LIFF Init Error:', err);
+        const loadingEl = document.getElementById('liffLoadingContainer');
+        if (loadingEl) loadingEl.classList.add('hidden');
         document.getElementById('lineDisplayName').innerText = 'ไม่สามารถโหลดโปรไฟล์ LINE ได้';
         document.getElementById('lineUidDisplay').innerText = err.message || 'ตรวจสอบ LIFF ID';
       }
     }
 
-    // ตรวจสอบสถานะการเป็นเพื่อนด้วย liff.getFriendship()
-    async function checkFriendshipStatus() {
+    // ตรวจสอบสถานะการเป็นเพื่อน (เช็คผ่าน LIFF SDK และ Fallback ด้วย Backend API)
+    async function checkFriendshipStatus(forceFresh = false) {
+      // 1. ตรวจสอบด้วย liff.getFriendship()
       try {
-        if (typeof liff !== 'undefined' && liff.getFriendship) {
+        if (typeof liff !== 'undefined' && typeof liff.getFriendship === 'function') {
           const friendship = await liff.getFriendship();
-          console.log('LIFF getFriendship status:', friendship);
-          if (friendship && typeof friendship.friendFlag === 'boolean') {
-            return friendship.friendFlag;
+          console.log('LIFF getFriendship() status:', friendship);
+          if (friendship && typeof friendship.friendFlag === 'boolean' && friendship.friendFlag === true) {
+            return true;
           }
         }
       } catch (e) {
-        console.warn('liff.getFriendship() check warning:', e);
-        // หากเปิดในโหมดทดสอบ หรือภายนอกที่ getFriendship ไม่รองรับ อนุโลมให้ผ่านเพื่อไม่ให้แอปค้าง
-        return true;
+        console.warn('liff.getFriendship() check error:', e);
       }
-      return true;
+
+      // 2. Fallback: ตรวจสอบผ่าน Backend API (เช็คตรงกับ LINE Messaging API: /v2/bot/profile/:userId)
+      if (userProfile && userProfile.userId && userProfile.userId !== 'TEST_USER') {
+        try {
+          const isFriendOnServer = await checkFriendshipViaBackend(userProfile.userId, forceFresh);
+          console.log('Backend checkFriendship result:', isFriendOnServer);
+          if (isFriendOnServer === true) {
+            return true;
+          }
+        } catch (beErr) {
+          console.warn('Backend friendship check error:', beErr);
+        }
+      }
+
+      // หากทั้งสองช่องทางไม่ยืนยันว่ามีสถานะเป็นเพื่อน ให้ถือว่าเป็น false (ยังไม่ได้เพิ่มเพื่อน)
+      return false;
+    }
+
+    // เรียกตรวจสอบการเป็นเพื่อนกับ LINE Bot ผ่าน Google Apps Script API
+    async function checkFriendshipViaBackend(uid, forceFresh = false) {
+      if (!uid) return false;
+      const nocacheParam = forceFresh ? '&nocache=1' : '';
+      const endpoints = [
+        `${GAS_WEB_APP_URL}?action=checkFriendship&uid=${encodeURIComponent(uid)}${nocacheParam}`,
+        `${BACKUP_GAS_WEB_APP_URL}?action=checkFriendship&uid=${encodeURIComponent(uid)}${nocacheParam}`
+      ];
+
+      for (const url of endpoints) {
+        try {
+          const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+          const text = await res.text();
+          const json = JSON.parse(text);
+          if (json && typeof json.isFriend === 'boolean') {
+            return json.isFriend;
+          }
+        } catch (e) {
+          console.warn('Error fetching backend friendship status from ' + url + ':', e);
+        }
+      }
+      return false;
     }
 
     // แสดงหน้าบังคับให้เพิ่มเพื่อนก่อนเข้าใช้งาน
     function showMustAddFriendView() {
+      const loadingEl = document.getElementById('liffLoadingContainer');
+      if (loadingEl) loadingEl.classList.add('hidden');
       document.getElementById('registrationFormContainer').classList.add('hidden');
       document.getElementById('alreadyRegisteredContainer').classList.add('hidden');
       document.getElementById('mustAddFriendContainer').classList.remove('hidden');
@@ -509,12 +567,12 @@
 
     // เรียก liff.requestFriendship() ตามเอกสารทางการ LINE Developers
     async function triggerRequestFriendship() {
-      // 1. ลองใช้ liff.requestFriendship() เพื่อเปิดหน้าต่างย่อยขอเพิ่มเพื่อนโดยตรงใน LIFF
-      if (typeof liff !== 'undefined' && liff.requestFriendship) {
+      // 1. หากอยู่ใน LINE App ให้เรียก liff.requestFriendship() เพื่อเปิด Subwindow
+      if (typeof liff !== 'undefined' && liff.isInClient() && typeof liff.requestFriendship === 'function') {
         try {
           await liff.requestFriendship();
           // เมื่อทำรายการในหน้าต่างย่อยเสร็จแล้ว ให้ตรวจสถานะทันที
-          const isFriend = await checkFriendshipStatus();
+          const isFriend = await checkFriendshipStatus(true);
           if (isFriend) {
             Swal.fire({
               icon: 'success',
@@ -535,7 +593,8 @@
         }
       }
 
-      // 2. Fallback: เปิดหน้า Add Friend ของ LINE Official Account (@383zmkcq)
+      // 2. Fallback กรณี requestFriendship ไม่สำเร็จ หรืออยู่นอก LINE App:
+      // เปิดหน้า Profile / Add Friend ของ LINE Official Account (@383zmkcq)
       const addFriendUrl = 'https://line.me/R/ti/p/@383zmkcq';
       if (typeof liff !== 'undefined' && liff.openWindow) {
         liff.openWindow({ url: addFriendUrl, external: true });
@@ -554,7 +613,7 @@
           didOpen: () => Swal.showLoading()
         });
 
-        const isFriend = await checkFriendshipStatus();
+        const isFriend = await checkFriendshipStatus(true);
         Swal.close();
 
         if (isFriend) {
@@ -578,17 +637,24 @@
             title: 'ยังไม่พบการเพิ่มเพื่อน LINE',
             html: `
               <div class="text-left text-xs space-y-2 text-gray-700 bg-amber-50 p-3.5 rounded-xl border border-amber-200 mt-2">
-                <p>กรุณากดปุ่ม <b>"เพิ่มเพื่อน LINE"</b> และกดยืนยันการเพิ่มเพื่อนกับ <b>cmparty2026</b> ก่อนนะครับ</p>
+                <p>กรุณากดปุ่ม <b>"เพิ่มเพื่อน LINE (cmparty2026)"</b> และกดยืนยันการเพิ่มเพื่อนกับบอทก่อนนะครับ</p>
                 <p class="text-emerald-700 font-semibold">เมื่อเพิ่มเพื่อนเสร็จแล้ว ให้กดปุ่มนี้อีกครั้งเพื่อเข้าสู่ระบบ</p>
               </div>
             `,
-            confirmButtonText: 'ตกลง',
-            confirmButtonColor: '#06C755'
+            confirmButtonText: 'กดเพิ่มเพื่อนทันที',
+            confirmButtonColor: '#06C755',
+            showCancelButton: true,
+            cancelButtonText: 'ปิด',
+            cancelButtonColor: '#9CA3AF'
+          }).then((res) => {
+            if (res.isConfirmed) {
+              triggerRequestFriendship();
+            }
           });
         }
       } catch (err) {
         console.error('Error rechecking friendship:', err);
-        window.location.reload();
+        Swal.close();
       }
     }
 
@@ -945,6 +1011,14 @@
           text: 'ระบบอนุญาตเฉพาะผู้ที่ตอบ "ไป" ในแบบฟอร์มเท่านั้น',
           confirmButtonColor: '#b91c1c'
         });
+        return;
+      }
+
+      // ตรวจสอบการเป็นเพื่อนกับ LINE Bot อีกครั้งก่อนทำการลงทะเบียน
+      const isFriend = await checkFriendshipStatus(true);
+      if (!isFriend) {
+        showMustAddFriendView();
+        triggerRequestFriendship();
         return;
       }
 
