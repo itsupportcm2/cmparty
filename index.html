@@ -243,6 +243,62 @@
       </button>
     </div>
 
+    <!-- Must Add Friend View (แสดงเมื่อยังไม่ได้เพิ่มเพื่อนกับ LINE Official Account) -->
+    <div id="mustAddFriendContainer" class="hidden p-8 text-center space-y-5">
+      <div class="relative w-24 h-24 mx-auto">
+        <div class="w-24 h-24 rounded-full bg-emerald-50 border-4 border-[#06C755] text-[#06C755] flex items-center justify-center shadow-lg">
+          <i class="fa-solid fa-user-plus text-4xl"></i>
+        </div>
+        <span class="absolute -bottom-1 -right-1 bg-[#06C755] text-white text-xs px-2 py-0.5 rounded-full font-bold shadow flex items-center gap-1 border-2 border-white">
+          <i class="fa-brands fa-line"></i>
+        </span>
+      </div>
+
+      <div class="space-y-2">
+        <h3 class="text-xl font-bold text-gray-800">
+          กรุณาเพิ่มเพื่อนกับ LINE ก่อนเข้าใช้งาน
+        </h3>
+        <p class="text-xs text-gray-500 leading-relaxed max-w-xs mx-auto">
+          เพื่อรับบัตรเข้างาน (VIP Ticket), เลขที่จับฉลากของขวัญ และรับการแจ้งเตือนรางวัล Lucky Draw ผ่าน LINE
+        </p>
+      </div>
+
+      <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 text-xs text-amber-900 text-left space-y-1.5">
+        <p class="font-bold flex items-center gap-1.5 text-amber-800">
+          <i class="fa-solid fa-shield-halved"></i>
+          <span>ขั้นตอนการเข้าใช้งาน:</span>
+        </p>
+        <ol class="list-decimal pl-4 space-y-1 text-gray-600">
+          <li>กดปุ่ม <b>"เพิ่มเพื่อน LINE"</b> ด้านล่าง</li>
+          <li>กดยอมรับ / เพิ่มเพื่อนในหน้า LINE</li>
+          <li>กลับมาที่หน้านี้แล้วกด <b>"ฉันเพิ่มเพื่อนแล้ว (ตรวจสอบอีกครั้ง)"</b></li>
+        </ol>
+      </div>
+
+      <div class="space-y-2.5 pt-1">
+        <!-- ปุ่มเพิ่มเพื่อน LINE -->
+        <a
+          id="btnAddFriendLink"
+          href="https://line.me/R/ti/p/@383zmkcq"
+          target="_blank"
+          class="w-full py-3.5 px-6 rounded-2xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-base shadow-lg hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+        >
+          <i class="fa-brands fa-line text-2xl"></i>
+          <span>เพิ่มเพื่อน LINE (cmparty2026)</span>
+        </a>
+
+        <!-- ปุ่มตรวจสอบสถานะอีกครั้ง -->
+        <button
+          type="button"
+          onclick="checkFriendshipAgain()"
+          class="w-full py-3 px-6 rounded-2xl bg-white border-2 border-[#06C755] text-[#05b34c] hover:bg-emerald-50 font-bold text-sm shadow transition-all flex items-center justify-center gap-2"
+        >
+          <i class="fa-solid fa-rotate-right"></i>
+          <span>ฉันเพิ่มเพื่อนแล้ว (ตรวจสอบอีกครั้ง)</span>
+        </button>
+      </div>
+    </div>
+
     <!-- Already Registered View (ซ่อนไว้และแสดงเมื่อ UID นี้เคยลงทะเบียนไปแล้ว) -->
     <div id="alreadyRegisteredContainer" class="hidden p-8 text-center space-y-5">
       <div class="w-20 h-20 rounded-full bg-green-100 border-4 border-green-500 text-green-600 flex items-center justify-center mx-auto shadow-md">
@@ -389,6 +445,13 @@
           document.getElementById('lineUidDisplay').innerText = 'UID: ' + userProfile.userId;
           document.getElementById('lineUid').value = userProfile.userId;
 
+          // ตรวจสอบสถานะการเป็นเพื่อนกับ LINE Official Account (liff.getFriendship)
+          const isFriend = await checkFriendshipStatus();
+          if (!isFriend) {
+            showMustAddFriendView();
+            return;
+          }
+
           // ตรวจสอบทันทีว่า UID นี้เคยลงทะเบียนไปแล้วหรือยัง
           if (userProfile.userId) {
             await checkIfUidAlreadyRegistered(userProfile.userId);
@@ -401,9 +464,83 @@
       }
     }
 
+    // ตรวจสอบสถานะการเป็นเพื่อนด้วย liff.getFriendship()
+    async function checkFriendshipStatus() {
+      try {
+        if (typeof liff !== 'undefined' && liff.getFriendship) {
+          const friendship = await liff.getFriendship();
+          console.log('LIFF getFriendship status:', friendship);
+          if (friendship && typeof friendship.friendFlag === 'boolean') {
+            return friendship.friendFlag;
+          }
+        }
+      } catch (e) {
+        console.warn('liff.getFriendship() check warning:', e);
+        // หากเปิดในโหมดทดสอบ หรือภายนอกที่ getFriendship ไม่รองรับ อนุโลมให้ผ่านเพื่อไม่ให้แอปค้าง
+        return true;
+      }
+      return true;
+    }
+
+    // แสดงหน้าบังคับให้เพิ่มเพื่อนก่อนเข้าใช้งาน
+    function showMustAddFriendView() {
+      document.getElementById('registrationFormContainer').classList.add('hidden');
+      document.getElementById('alreadyRegisteredContainer').classList.add('hidden');
+      document.getElementById('mustAddFriendContainer').classList.remove('hidden');
+    }
+
+    // กดปุ่มตรวจสอบสถานะการเป็นเพื่อนอีกครั้ง
+    async function checkFriendshipAgain() {
+      try {
+        Swal.fire({
+          title: 'กำลังตรวจสอบสถานะการเป็นเพื่อน...',
+          text: 'กรุณารอสักครู่',
+          allowOutsideClick: false,
+          didOpen: () => Swal.showLoading()
+        });
+
+        const isFriend = await checkFriendshipStatus();
+        Swal.close();
+
+        if (isFriend) {
+          Swal.fire({
+            icon: 'success',
+            title: 'ยืนยันการเป็นเพื่อนสำเร็จ!',
+            text: 'ยินดีต้อนรับเข้าสู่งาน CM Party',
+            timer: 1600,
+            showConfirmButton: false
+          });
+
+          document.getElementById('mustAddFriendContainer').classList.add('hidden');
+          document.getElementById('registrationFormContainer').classList.remove('hidden');
+
+          if (userProfile && userProfile.userId) {
+            await checkIfUidAlreadyRegistered(userProfile.userId);
+          }
+        } else {
+          Swal.fire({
+            icon: 'warning',
+            title: 'ยังไม่พบการเพิ่มเพื่อน LINE',
+            html: `
+              <div class="text-left text-xs space-y-2 text-gray-700 bg-amber-50 p-3.5 rounded-xl border border-amber-200 mt-2">
+                <p>กรุณากดปุ่ม <b>"เพิ่มเพื่อน LINE"</b> และกดยืนยันการเพิ่มเพื่อนกับ <b>cmparty2026</b> ก่อนนะครับ</p>
+                <p class="text-emerald-700 font-semibold">เมื่อเพิ่มเพื่อนเสร็จแล้ว ให้กดปุ่มนี้อีกครั้งเพื่อเข้าสู่ระบบ</p>
+              </div>
+            `,
+            confirmButtonText: 'ตกลง',
+            confirmButtonColor: '#06C755'
+          });
+        }
+      } catch (err) {
+        console.error('Error rechecking friendship:', err);
+        window.location.reload();
+      }
+    }
+
     // ซ่อนฟอร์มลงทะเบียนและแสดงหน้าแจ้งเตือนว่าลงทะเบียนเรียบร้อยแล้ว
     function showAlreadyRegisteredView(regData) {
       document.getElementById('registrationFormContainer').classList.add('hidden');
+      document.getElementById('mustAddFriendContainer').classList.add('hidden');
       document.getElementById('alreadyRegisteredContainer').classList.remove('hidden');
 
       if (regData && regData.empId) {
