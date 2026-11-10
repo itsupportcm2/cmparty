@@ -14,6 +14,46 @@ const TARGET_SHEET_NAME = 'Register';
 const GIFT_SHEET_NAME = 'gift';
 const REWARD_SHEET_GID = 195154721;
 
+// บัญชีแอดมินสำหรับจัดการเปิด-ปิดระบบลงทะเบียน
+const ADMIN_UID = 'U1dcbd47c6981745c2f41c5691cde7ff3';
+
+/**
+ * ตรวจสอบสถานะการเปิด/ปิดระบบลงทะเบียน
+ * คืนค่า: 'OPEN' (เปิด) หรือ 'CLOSED' (ปิด)
+ */
+function getRegistrationSystemStatus() {
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const status = props.getProperty('REGISTRATION_SYSTEM_STATUS');
+    return status === 'CLOSED' ? 'CLOSED' : 'OPEN'; // ค่าเริ่มต้นคือ OPEN
+  } catch (e) {
+    console.error('Error reading REGISTRATION_SYSTEM_STATUS:', e);
+    return 'OPEN';
+  }
+}
+
+/**
+ * บันทึกการเปิด/ปิดระบบลงทะเบียน (เฉพาะ Admin UID เท่านั้น)
+ */
+function setRegistrationSystemStatus(targetStatus, requesterUid) {
+  const cleanUid = String(requesterUid || '').trim();
+  if (cleanUid !== ADMIN_UID) {
+    return {
+      status: 'forbidden',
+      message: 'ไม่มีสิทธิ์ในการเปลี่ยนสถานะระบบ (เฉพาะแอดมินเท่านั้น)'
+    };
+  }
+
+  const newStatus = targetStatus === 'CLOSED' ? 'CLOSED' : 'OPEN';
+  PropertiesService.getScriptProperties().setProperty('REGISTRATION_SYSTEM_STATUS', newStatus);
+  return {
+    status: 'success',
+    systemStatus: newStatus,
+    isOpen: newStatus === 'OPEN',
+    message: newStatus === 'OPEN' ? 'เปิดระบบลงทะเบียนเรียบร้อยแล้ว' : 'ปิดระบบลงทะเบียนเรียบร้อยแล้ว'
+  };
+}
+
 /**
  * ⚠️ สำคัญมาก: กดปุ่ม ▶ Run (เรียกใช้) ฟังก์ชันนี้ 1 ครั้งใน Apps Script Editor
  * เพื่ออนุมัติสิทธิ์ (Authorize) ทั้งหมด:
@@ -237,6 +277,12 @@ function saveRegistrationData(payload) {
       return { status: 'error', message: 'ข้อมูลพนักงานไม่ครบถ้วน กรุณาตรวจสอบรหัสพนักงานอีกครั้ง' };
     }
 
+    // ตรวจสอบสถานะการเปิด-ปิดระบบลงทะเบียน
+    const sysStatus = getRegistrationSystemStatus();
+    if (sysStatus === 'CLOSED' && uid !== ADMIN_UID) {
+      return { status: 'error', message: 'ขณะนี้ระบบลงทะเบียนปิดรับข้อมูลชั่วคราว กรุณาติดต่อผู้ดูแลระบบ' };
+    }
+
     // ตรวจสอบสถานะการเข้าร่วมงานจากแบบฟอร์มตั้งต้น (หากตอบ "ไม่ไป" หรือไม่มาร่วมงาน ไม่อนุญาตให้ลงทะเบียน)
     const empCheck = checkEmployeeById(empId);
     if (empCheck && empCheck.status === 'not_attending') {
@@ -387,6 +433,27 @@ function doGet(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
+  // กรณีตรวจสอบสถานะเปิด-ปิดระบบลงทะเบียน: ?action=getSystemStatus&uid=...
+  if (params.action === 'getSystemStatus') {
+    const requesterUid = String(params.uid || '').trim();
+    const currentStatus = getRegistrationSystemStatus();
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'success',
+      systemStatus: currentStatus,
+      isOpen: currentStatus === 'OPEN',
+      isAdmin: requesterUid === ADMIN_UID
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // กรณีแอดมินสลับเปิด-ปิดระบบลงทะเบียน: ?action=toggleSystemStatus&adminUid=...&targetStatus=...
+  if (params.action === 'toggleSystemStatus') {
+    const adminUid = String(params.adminUid || params.uid || '').trim();
+    const targetStatus = String(params.targetStatus || '').trim();
+    const res = setRegistrationSystemStatus(targetStatus, adminUid);
+    return ContentService.createTextOutput(JSON.stringify(res))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+
   // กรณีบันทึกข้อมูลผ่าน GET API (Fallback): ?action=saveRegistration&empId=...
   if (params.action === 'saveRegistration') {
     const saveResult = saveRegistrationData(params);
@@ -490,6 +557,27 @@ function doPost(e) {
         uid: checkUid,
         isFriend: isFriend
       })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // กรณีตรวจสอบสถานะเปิด-ปิดระบบลงทะเบียนผ่าน POST: action = getSystemStatus
+    if (payload.action === 'getSystemStatus') {
+      const requesterUid = String(payload.uid || '').trim();
+      const currentStatus = getRegistrationSystemStatus();
+      return ContentService.createTextOutput(JSON.stringify({
+        status: 'success',
+        systemStatus: currentStatus,
+        isOpen: currentStatus === 'OPEN',
+        isAdmin: requesterUid === ADMIN_UID
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // กรณีแอดมินสลับเปิด-ปิดระบบลงทะเบียนผ่าน POST: action = toggleSystemStatus
+    if (payload.action === 'toggleSystemStatus') {
+      const adminUid = String(payload.adminUid || payload.uid || '').trim();
+      const targetStatus = String(payload.targetStatus || '').trim();
+      const res = setRegistrationSystemStatus(targetStatus, adminUid);
+      return ContentService.createTextOutput(JSON.stringify(res))
+        .setMimeType(ContentService.MimeType.JSON);
     }
 
     // 3. หากเป็นการจัดการข้อมูลรางวัล (Reward CRUD ผ่าน POST)
