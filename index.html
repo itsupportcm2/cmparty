@@ -276,16 +276,16 @@
       </div>
 
       <div class="space-y-2.5 pt-1">
-        <!-- ปุ่มเพิ่มเพื่อน LINE -->
-        <a
-          id="btnAddFriendLink"
-          href="https://line.me/R/ti/p/@383zmkcq"
-          target="_blank"
-          class="w-full py-3.5 px-6 rounded-2xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-base shadow-lg hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+        <!-- ปุ่มเพิ่มเพื่อน LINE (รองรับทั้ง liff.requestFriendship และเปิดลิงก์ตรง) -->
+        <button
+          type="button"
+          id="btnAddFriendBtn"
+          onclick="triggerRequestFriendship()"
+          class="w-full py-3.5 px-6 rounded-2xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-base shadow-lg hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
         >
           <i class="fa-brands fa-line text-2xl"></i>
           <span>เพิ่มเพื่อน LINE (cmparty2026)</span>
-        </a>
+        </button>
 
         <!-- ปุ่มตรวจสอบสถานะอีกครั้ง -->
         <button
@@ -449,6 +449,24 @@
           const isFriend = await checkFriendshipStatus();
           if (!isFriend) {
             showMustAddFriendView();
+
+            // หากเปิดใน LINE App ให้เด้งหน้าต่าง requestFriendship ขึ้นมาขอเพิ่มเพื่อนอัตโนมัติทันที
+            if (typeof liff !== 'undefined' && liff.isInClient() && liff.requestFriendship) {
+              try {
+                await liff.requestFriendship();
+                const recheck = await checkFriendshipStatus();
+                if (recheck) {
+                  document.getElementById('mustAddFriendContainer').classList.add('hidden');
+                  document.getElementById('registrationFormContainer').classList.remove('hidden');
+                  if (userProfile.userId) {
+                    await checkIfUidAlreadyRegistered(userProfile.userId);
+                  }
+                  return;
+                }
+              } catch (autoErr) {
+                console.warn('Auto requestFriendship prompt skipped/cancelled:', autoErr);
+              }
+            }
             return;
           }
 
@@ -487,6 +505,43 @@
       document.getElementById('registrationFormContainer').classList.add('hidden');
       document.getElementById('alreadyRegisteredContainer').classList.add('hidden');
       document.getElementById('mustAddFriendContainer').classList.remove('hidden');
+    }
+
+    // เรียก liff.requestFriendship() ตามเอกสารทางการ LINE Developers
+    async function triggerRequestFriendship() {
+      // 1. ลองใช้ liff.requestFriendship() เพื่อเปิดหน้าต่างย่อยขอเพิ่มเพื่อนโดยตรงใน LIFF
+      if (typeof liff !== 'undefined' && liff.requestFriendship) {
+        try {
+          await liff.requestFriendship();
+          // เมื่อทำรายการในหน้าต่างย่อยเสร็จแล้ว ให้ตรวจสถานะทันที
+          const isFriend = await checkFriendshipStatus();
+          if (isFriend) {
+            Swal.fire({
+              icon: 'success',
+              title: 'เพิ่มเพื่อนสำเร็จ!',
+              text: 'เข้าสู่หน้าลงทะเบียนเข้างานเลี้ยง',
+              timer: 1600,
+              showConfirmButton: false
+            });
+            document.getElementById('mustAddFriendContainer').classList.add('hidden');
+            document.getElementById('registrationFormContainer').classList.remove('hidden');
+            if (userProfile && userProfile.userId) {
+              await checkIfUidAlreadyRegistered(userProfile.userId);
+            }
+            return;
+          }
+        } catch (err) {
+          console.warn('liff.requestFriendship() error or cancelled:', err);
+        }
+      }
+
+      // 2. Fallback: เปิดหน้า Add Friend ของ LINE Official Account (@383zmkcq)
+      const addFriendUrl = 'https://line.me/R/ti/p/@383zmkcq';
+      if (typeof liff !== 'undefined' && liff.openWindow) {
+        liff.openWindow({ url: addFriendUrl, external: true });
+      } else {
+        window.open(addFriendUrl, '_blank');
+      }
     }
 
     // กดปุ่มตรวจสอบสถานะการเป็นเพื่อนอีกครั้ง

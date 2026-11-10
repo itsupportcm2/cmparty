@@ -1166,17 +1166,44 @@ function handleLineWebhookPost(e) {
 
       // 1) กรณีเพิ่มเพื่อนครั้งแรก (หรือปลดบล็อก) -> ส่ง Welcome Flex Message พร้อมโปรไฟล์
       if (event.type === 'follow') {
+        const followUserId = event.source && event.source.userId;
+        if (followUserId) {
+          try {
+            CacheService.getScriptCache().put('IS_FRIEND_' + followUserId, '1', 600);
+          } catch (e) {}
+        }
         handleFollowEvent(event);
       }
 
-      // 2) กรณีส่งข้อความประเภท รูปภาพ (image) -> อัปโหลดขึ้น Drive และส่งข้อความตอบกลับ
-      else if (event.type === 'message' && event.message.type === 'image') {
-        handleImageMessage(event);
+      // 1.1) กรณีบล็อกหรือเลิกติดตาม (unfollow)
+      else if (event.type === 'unfollow') {
+        const unfollowUserId = event.source && event.source.userId;
+        if (unfollowUserId) {
+          try {
+            CacheService.getScriptCache().remove('IS_FRIEND_' + unfollowUserId);
+          } catch (e) {}
+        }
       }
 
-      // 3) กรณีส่งข้อความตัวอักษร (text) -> รองรับคำสั่ง "ตรวจสอบรางวัล" และรับรหัสพนักงานเพื่อเช็คจาก Sheet "gift" (B2:B)
-      else if (event.type === 'message' && event.message.type === 'text') {
-        handleTextMessage(event);
+      // 2) กรณีส่งข้อความ (message) -> ต้องตรวจสอบก่อนว่าผู้ใช้ได้กดเพิ่มเพื่อนกับ LINE Bot แล้วหรือไม่
+      else if (event.type === 'message') {
+        const msgUserId = event.source && event.source.userId;
+
+        // หากผู้ใช้ยังไม่ได้กดเพิ่มเพื่อนกับ LINE Official Account (ทักแชทเข้ามาก่อน) -> บล็อกการใช้งานและแจ้งเตือนให้เพิ่มเพื่อนก่อน
+        if (msgUserId && !isUserFriendWithBot(msgUserId)) {
+          replyMustAddFriendMessage(replyToken);
+          continue;
+        }
+
+        // 2.1) กรณีส่งข้อความประเภท รูปภาพ (image) -> อัปโหลดขึ้น Drive และส่งข้อความตอบกลับ
+        if (event.message && event.message.type === 'image') {
+          handleImageMessage(event);
+        }
+
+        // 2.2) กรณีส่งข้อความตัวอักษร (text) -> รองรับคำสั่ง "ตรวจสอบรางวัล" และรับรหัสพนักงานเพื่อเช็คจาก Sheet "gift" (B2:B)
+        else if (event.message && event.message.type === 'text') {
+          handleTextMessage(event);
+        }
       }
     }
 
@@ -1666,6 +1693,110 @@ function getUserProfile(userId) {
     pictureUrl: 'https://lh5.googleusercontent.com/d/1_default_avatar',
     statusMessage: 'ยินดีต้อนรับสู่บริการของเรา!'
   };
+}
+
+/**
+ * ตรวจสอบว่าผู้ใช้กดเพิ่มเพื่อนกับ LINE Official Account แล้วหรือไม่
+ * (ถ้ายังไม่ได้กดเพิ่มเพื่อน LINE API get profile จะส่ง HTTP 404 กลับมา)
+ */
+function isUserFriendWithBot(userId) {
+  if (!userId || userId === 'anon') return false;
+
+  const cache = CacheService.getScriptCache();
+  const cacheKey = 'IS_FRIEND_' + userId;
+  const cachedVal = cache.get(cacheKey);
+  if (cachedVal === '1') return true;
+
+  const url = `https://api.line.me/v2/bot/profile/${userId}`;
+  const options = {
+    method: 'get',
+    headers: {
+      'Authorization': 'Bearer ' + LINE_BOT_ACCESS_TOKEN
+    },
+    muteHttpExceptions: true
+  };
+
+  try {
+    const response = UrlFetchApp.fetch(url, options);
+    if (response.getResponseCode() === 200) {
+      cache.put(cacheKey, '1', 600); // แคชไว้ 10 นาที
+      return true;
+    }
+    return false;
+  } catch (e) {
+    console.error('Error checking isUserFriendWithBot:', e);
+    return false;
+  }
+}
+
+/**
+ * ส่งข้อความตอบกลับเตือนให้กดเพิ่มเพื่อนก่อนเข้าใช้งานแชท
+ */
+function replyMustAddFriendMessage(replyToken) {
+  const flexMessage = {
+    type: 'flex',
+    altText: 'กรุณากดเพิ่มเพื่อนก่อนเข้าใช้งานแชท CM Party',
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      header: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#DC2626',
+        paddingAll: '16px',
+        contents: [
+          {
+            type: 'text',
+            text: '⚠️ ต้องเพิ่มเพื่อนก่อนใช้งานแชท',
+            color: '#FFFFFF',
+            weight: 'bold',
+            size: 'md'
+          }
+        ]
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        spacing: 'md',
+        paddingAll: '16px',
+        contents: [
+          {
+            type: 'text',
+            text: 'คุณยังไม่ได้กดเพิ่มเพื่อนกับเรา',
+            weight: 'bold',
+            size: 'sm',
+            color: '#1F2937'
+          },
+          {
+            type: 'text',
+            text: 'กรุณากดปุ่ม "เพิ่มเพื่อน" (Add Friend) ที่ด้านบนของห้องแชท หรือกดปุ่มด้านล่าง เพื่อเริ่มใช้งานระบบลงทะเบียน ตรวจสอบรางวัล และอัปโหลดภาพกิจกรรมครับ',
+            wrap: true,
+            size: 'xs',
+            color: '#4B5563'
+          }
+        ]
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        paddingAll: '12px',
+        contents: [
+          {
+            type: 'button',
+            style: 'primary',
+            color: '#06C755',
+            action: {
+              type: 'uri',
+              label: 'กดเพิ่มเพื่อนที่นี่ ➕',
+              uri: 'https://line.me/R/ti/p/@383zmkcq'
+            }
+          }
+        ]
+      }
+    }
+  };
+
+  replyLineMessage(replyToken, [flexMessage]);
 }
 
 function getLineMessageContent(messageId) {
