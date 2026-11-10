@@ -727,7 +727,7 @@
           document.getElementById('lineUidDisplay').innerText = 'UID: ' + userProfile.userId;
           document.getElementById('lineUid').value = userProfile.userId;
 
-          // 1. ตรวจสอบสถานะแอดมิน และดึงสถานะการเปิด/ปิดระบบ รวมทั้งวันเวลาเปิด-ปิด
+          // 1. ตรวจสอบสถานะแอดมิน และดึงสถานะการเปิด/ปิดระบบลงทะเบียน
           const isAdmin = userProfile.userId === ADMIN_UID;
           let sysConfig = { systemStatus: 'OPEN', isOpen: true, openingDateTime: '', isBeforeOpeningTime: false, closingDateTime: '' };
           try {
@@ -737,7 +737,7 @@
           }
           window.currentSysConfig = sysConfig;
 
-          // แสดงแผงควบคุมระบบ (เฉพาะ Admin UID = U1dcbd47c6981745c2f41c5691cde7ff3 เท่านั้น)
+          // แสดงปุ่มแผงควบคุมระบบ (เฉพาะ Admin UID = U1dcbd47c6981745c2f41c5691cde7ff3 เท่านั้น)
           if (isAdmin) {
             renderAdminControlPanel(sysConfig);
           } else {
@@ -745,50 +745,7 @@
             if (adminPanel) adminPanel.classList.add('hidden');
           }
 
-          const isWaitingOpen = Boolean(sysConfig.isBeforeOpeningTime && sysConfig.manualStatus !== 'CLOSED');
-
-          // กรณีเป็นแอดมิน และตั้งเวลาเปิดไว้ในอนาคต ให้แสดงหน้า Countdown ทันทีเพื่อให้แอดมินตรวจสอบหน้าจอได้สะดวก
-          if (isAdmin && isWaitingOpen) {
-            const loadingEl = document.getElementById('liffLoadingContainer');
-            if (loadingEl) loadingEl.classList.add('hidden');
-            showCountdownView(sysConfig.openingDateTime, sysConfig.closingDateTime);
-            return;
-          }
-
-          // 2. ตรวจสอบว่า UID นี้เคยลงทะเบียนไปแล้วหรือยัง
-          // ถ้าใครลงทะเบียนไปแล้ว ให้ขึ้นหน้าลงทะเบียนเรียบร้อยแล้วทันที
-          let alreadyRegistered = false;
-          if (userProfile.userId) {
-            alreadyRegistered = await checkIfUidAlreadyRegistered(userProfile.userId);
-          }
-
-          if (alreadyRegistered) {
-            const loadingEl = document.getElementById('liffLoadingContainer');
-            if (loadingEl) loadingEl.classList.add('hidden');
-            return;
-          }
-
-          // 3. ถ้ายังไม่ได้ลงทะเบียน และยังไม่ถึงเวลาเปิดระบบ -> แสดงหน้า Christmas Countdown
-          if (isWaitingOpen) {
-            const loadingEl = document.getElementById('liffLoadingContainer');
-            if (loadingEl) loadingEl.classList.add('hidden');
-            showCountdownView(sysConfig.openingDateTime, sysConfig.closingDateTime);
-            return;
-          }
-
-          // 4. ถ้ายังไม่ได้ลงทะเบียน และระบบปิดรับลงทะเบียน (ผู้ใช้ทั่วไปที่ไม่ใช่แอดมิน)
-          if (!sysConfig.isOpen && !isAdmin) {
-            const loadingEl = document.getElementById('liffLoadingContainer');
-            if (loadingEl) loadingEl.classList.add('hidden');
-            showSystemClosedView(sysConfig.closingDateTime);
-            return;
-          }
-
-          // 5. ถ้ายังไม่ได้ลงทะเบียน และระบบเปิดอยู่ (หรือเป็นแอดมิน) ให้ทำตามขั้นตอนปกติ:
-          // อัปเดตแบนเนอร์แจ้งเตือนเวลาปิดถ้ามีการตั้งไว้
-          updateClosingNoticeBanner(sysConfig.closingDateTime);
-
-          // เรียก liff.requestFriendship() ตามเอกสารทางการ LINE Developers Tips
+          // 2. เปิดให้ระบบเพิ่มเพื่อน / ปลดบล็อก ทำงานตามปกติเสมอ (ไม่ว่าระบบลงทะเบียนจะเปิดหรือปิดอยู่)
           if (typeof liff !== 'undefined' && liff.isInClient() && typeof liff.requestFriendship === 'function') {
             try {
               console.log('LINE Tips: Calling liff.requestFriendship()...');
@@ -799,23 +756,20 @@
             }
           }
 
-          // ซ่อนตัวโหลดเริ่มต้น
-          const loadingEl = document.getElementById('liffLoadingContainer');
-          if (loadingEl) loadingEl.classList.add('hidden');
-
-          // ตรวจสอบสถานะการเป็นเพื่อนหลังจาก requestFriendship
+          // ตรวจสอบสถานะการเป็นเพื่อน / ปลดบล็อก หลังจาก requestFriendship
           const isFriend = await checkFriendshipStatus(true);
           console.log('Final friendship status:', isFriend);
 
-          // หากยังไม่ได้เป็นเพื่อน -> แสดงหน้าแจ้งเตือนให้เพิ่มเพื่อน
+          // หากยังไม่ได้เพิ่มเพื่อนหรือยังบล็อกอยู่ -> แสดงหน้าเพิ่มเพื่อน/ปลดบล็อกตามปกติ
           if (!isFriend) {
+            const loadingEl = document.getElementById('liffLoadingContainer');
+            if (loadingEl) loadingEl.classList.add('hidden');
             showMustAddFriendView();
             return;
           }
 
-          // หากเป็นเพื่อนแล้ว -> แสดงหน้าฟอร์มลงทะเบียนตามขั้นตอนปกติ
-          document.getElementById('mustAddFriendContainer').classList.add('hidden');
-          document.getElementById('registrationFormContainer').classList.remove('hidden');
+          // 3. เมื่อเป็นเพื่อน/ปลดบล็อกเรียบร้อยแล้ว จึงตรวจสอบสถานะการลงทะเบียนและสถานะเปิด-ปิดเฉพาะส่วนลงทะเบียน
+          await proceedAfterFriendshipVerified();
         }
       } catch (err) {
         console.error('LIFF Init Error:', err);
@@ -824,6 +778,48 @@
         document.getElementById('lineDisplayName').innerText = 'ไม่สามารถโหลดโปรไฟล์ LINE ได้';
         document.getElementById('lineUidDisplay').innerText = err.message || 'ตรวจสอบ LIFF ID';
       }
+    }
+
+    // ดำเนินการตรวจสอบหน้าลงทะเบียนหลังจากยืนยันการเพิ่มเพื่อน/ปลดบล็อกแล้ว
+    async function proceedAfterFriendshipVerified() {
+      const loadingEl = document.getElementById('liffLoadingContainer');
+      if (loadingEl) loadingEl.classList.add('hidden');
+      document.getElementById('mustAddFriendContainer').classList.add('hidden');
+
+      const isAdmin = userProfile && userProfile.userId === ADMIN_UID;
+      const sysConfig = window.currentSysConfig || { systemStatus: 'OPEN', isOpen: true, openingDateTime: '', isBeforeOpeningTime: false, closingDateTime: '' };
+      const isWaitingOpen = Boolean(sysConfig.isBeforeOpeningTime && sysConfig.manualStatus !== 'CLOSED');
+
+      // กรณีเป็นแอดมิน และตั้งเวลาเปิดไว้ในอนาคต ให้แสดงหน้า Countdown ทันทีเพื่อให้แอดมินตรวจสอบหน้าจอได้สะดวก
+      if (isAdmin && isWaitingOpen) {
+        showCountdownView(sysConfig.openingDateTime, sysConfig.closingDateTime);
+        return;
+      }
+
+      // 1. ตรวจสอบว่า UID นี้เคยลงทะเบียนไปแล้วหรือยัง
+      let alreadyRegistered = false;
+      if (userProfile && userProfile.userId) {
+        alreadyRegistered = await checkIfUidAlreadyRegistered(userProfile.userId);
+      }
+      if (alreadyRegistered) {
+        return;
+      }
+
+      // 2. ถ้ายังไม่ได้ลงทะเบียน และยังไม่ถึงเวลาเปิดระบบ -> แสดงหน้า Christmas Countdown
+      if (isWaitingOpen) {
+        showCountdownView(sysConfig.openingDateTime, sysConfig.closingDateTime);
+        return;
+      }
+
+      // 3. ถ้ายังไม่ได้ลงทะเบียน และปิดระบบลงทะเบียนอยู่ (ปิดเฉพาะส่วนลงทะเบียน)
+      if (!sysConfig.isOpen && !isAdmin) {
+        showSystemClosedView(sysConfig.closingDateTime);
+        return;
+      }
+
+      // 4. ถ้าระบบลงทะเบียนเปิดอยู่ (หรือเป็นแอดมิน) -> แสดงฟอร์มลงทะเบียนตามปกติ
+      updateClosingNoticeBanner(sysConfig.closingDateTime);
+      document.getElementById('registrationFormContainer').classList.remove('hidden');
     }
 
     // ตรวจสอบสถานะการเป็นเพื่อน (เช็คผ่าน LIFF SDK และ Fallback ด้วย Backend API)
@@ -904,18 +900,14 @@
           // เมื่อทำรายการในหน้าต่างย่อยเสร็จแล้ว ให้ตรวจสถานะทันที
           const isFriend = await checkFriendshipStatus(true);
           if (isFriend) {
-            Swal.fire({
+            await Swal.fire({
               icon: 'success',
               title: 'เพิ่มเพื่อนสำเร็จ!',
-              text: 'เข้าสู่หน้าลงทะเบียนเข้างานเลี้ยง',
-              timer: 1600,
+              text: 'ยืนยันการเป็นเพื่อนกับ LINE Official Account เรียบร้อยแล้ว',
+              timer: 1500,
               showConfirmButton: false
             });
-            document.getElementById('mustAddFriendContainer').classList.add('hidden');
-            document.getElementById('registrationFormContainer').classList.remove('hidden');
-            if (userProfile && userProfile.userId) {
-              await checkIfUidAlreadyRegistered(userProfile.userId);
-            }
+            await proceedAfterFriendshipVerified();
             return;
           }
         } catch (err) {
@@ -947,20 +939,14 @@
         Swal.close();
 
         if (isFriend) {
-          Swal.fire({
+          await Swal.fire({
             icon: 'success',
             title: 'ยืนยันการเป็นเพื่อนสำเร็จ!',
             text: 'ยินดีต้อนรับเข้าสู่งาน CM Party',
-            timer: 1600,
+            timer: 1500,
             showConfirmButton: false
           });
-
-          document.getElementById('mustAddFriendContainer').classList.add('hidden');
-          document.getElementById('registrationFormContainer').classList.remove('hidden');
-
-          if (userProfile && userProfile.userId) {
-            await checkIfUidAlreadyRegistered(userProfile.userId);
-          }
+          await proceedAfterFriendshipVerified();
         } else {
           Swal.fire({
             icon: 'warning',
