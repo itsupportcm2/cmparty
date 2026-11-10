@@ -758,6 +758,27 @@ function saveRewardRecord(payload) {
       }
     }
 
+    // ตรวจสอบว่ารหัสพนักงานนี้เคยได้รับรางวัลไปแล้วหรือไม่ (ป้องกันการรับรางวัลซ้ำ)
+    if (empId) {
+      const lastRow = rewardSheet.getLastRow();
+      if (lastRow >= 2) {
+        const existingRows = rewardSheet.getRange(2, 1, lastRow - 1, 2).getValues();
+        for (let i = 0; i < existingRows.length; i++) {
+          const checkRowIndex = i + 2;
+          if (checkRowIndex !== rowIndex) {
+            const checkEmpId = String(existingRows[i][1] || '').trim().replace(/\.0$/, '');
+            if (checkEmpId === empId) {
+              const checkRewardName = String(existingRows[i][0] || '').trim();
+              return {
+                status: 'error',
+                message: `รหัสนี้ได้รับรางวัลไปแล้ว โปรดตรวจสอบใหม่อีกครั้ง (ได้รับรางวัล: ${checkRewardName})`
+              };
+            }
+          }
+        }
+      }
+    }
+
     // บันทึกค่าลงในแถวที่กำหนด (A=ชื่อรางวัล, B=รหัสพนักงาน, C=ชื่อ, D=แผนก, E=สาขา, F=uid)
     rewardSheet.getRange(rowIndex, 1, 1, 6).setValues([[
       rewardName,

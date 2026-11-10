@@ -563,6 +563,27 @@
       let emp = employeesMap[cleanId];
 
       if (emp) {
+        // ตรวจสอบว่ารหัสพนักงานนี้เคยได้รับรางวัลไปแล้วหรือไม่
+        const select = document.getElementById('rewardSelect');
+        const selectedRowIndex = select ? parseInt(select.value, 10) : 0;
+        const alreadyWon = rewardsList.find(r => 
+          String(r.empId || '').trim() === cleanId && 
+          r.rowIndex !== selectedRowIndex
+        );
+
+        if (alreadyWon) {
+          currentMatchedEmployee = null;
+          matchIcon.classList.add('hidden');
+          nameEl.innerHTML = `<span class="text-red-700 font-bold">${emp.empName || '-'}</span> <span class="text-[11px] text-gray-500 font-normal">(${cleanId})</span>`;
+          deptEl.innerText = emp.department || '-';
+          branchEl.innerText = emp.branch || '-';
+          previewBox.className = 'mt-3 p-3 rounded-2xl bg-amber-50 border-2 border-amber-400 flex flex-wrap items-center justify-between gap-2 text-xs shadow-sm';
+          uidBadge.className = 'text-[11px] px-2.5 py-1 rounded-full bg-red-100 text-red-800 border border-red-300 font-bold flex items-center gap-1.5';
+          uidBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-600"></i><span>รหัสนี้ได้รับรางวัลไปแล้ว โปรดตรวจสอบใหม่อีกครั้ง (รางวัล: ${alreadyWon.rewardName})</span>`;
+          validateSaveButton();
+          return;
+        }
+
         currentMatchedEmployee = emp;
         matchIcon.classList.remove('hidden');
         nameEl.innerText = emp.empName || '-';
@@ -604,6 +625,31 @@
       const rewardObj = rewardsList.find(r => r.rowIndex === rowIndex);
 
       if (!rewardObj || !currentMatchedEmployee) return;
+
+      // ตรวจสอบว่าพนักงานท่านนี้ได้รับรางวัลไปแล้วหรือไม่ (ป้องกันการบันทึกซ้ำ)
+      const cleanEmpId = String(currentMatchedEmployee.empId || '').trim();
+      const alreadyWon = rewardsList.find(r => 
+        String(r.empId || '').trim() === cleanEmpId && 
+        r.rowIndex !== rowIndex
+      );
+
+      if (alreadyWon) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'รหัสนี้ได้รับรางวัลไปแล้ว โปรดตรวจสอบใหม่อีกครั้ง',
+          html: `
+            <div class="text-left text-xs space-y-2 bg-amber-50 p-4 rounded-xl border border-amber-300 text-gray-800 mt-2">
+              <p><b>พนักงาน:</b> ${currentMatchedEmployee.empName} (รหัส: <span class="text-red-700 font-bold">${cleanEmpId}</span>)</p>
+              <p><b>ได้รับรางวัล:</b> <span class="text-red-700 font-bold">"${alreadyWon.rewardName}"</span> ไปแล้ว</p>
+              <p class="text-[11px] text-amber-800 pt-1">⚠️ ระบบไม่อนุญาตให้รับรางวัลซ้ำ กรุณาตรวจสอบใหม่อีกครั้ง</p>
+            </div>
+          `,
+          confirmButtonText: 'ตกลง',
+          confirmButtonColor: '#b91c1c'
+        });
+        validateSaveButton();
+        return;
+      }
 
       const btn = document.getElementById('btnSaveReward');
       btn.disabled = true;
@@ -672,10 +718,12 @@
             });
           }
         } else {
+          const errMsg = (res && res.message) ? res.message : 'เกิดข้อผิดพลาดในการบันทึก';
+          const isDuplicate = errMsg.includes('รหัสนี้ได้รับรางวัลไปแล้ว');
           Swal.fire({
-            icon: 'error',
-            title: 'บันทึกไม่สำเร็จ',
-            text: (res && res.message) ? res.message : 'เกิดข้อผิดพลาดในการบันทึก',
+            icon: isDuplicate ? 'warning' : 'error',
+            title: isDuplicate ? 'รหัสนี้ได้รับรางวัลไปแล้ว โปรดตรวจสอบใหม่อีกครั้ง' : 'บันทึกไม่สำเร็จ',
+            text: errMsg,
             confirmButtonColor: '#b91c1c'
           });
         }
@@ -955,6 +1003,35 @@
       empInput.addEventListener('keydown', (e) => {
         if (e.key === 'Enter') {
           e.preventDefault();
+          const cleanId = empInput.value.trim();
+          if (!cleanId) return;
+
+          const select = document.getElementById('rewardSelect');
+          const rowIndex = select ? parseInt(select.value, 10) : 0;
+          const alreadyWon = rewardsList.find(r => 
+            String(r.empId || '').trim() === cleanId && 
+            r.rowIndex !== rowIndex
+          );
+
+          if (alreadyWon) {
+            const emp = employeesMap[cleanId];
+            const empName = emp ? emp.empName : cleanId;
+            Swal.fire({
+              icon: 'warning',
+              title: 'รหัสนี้ได้รับรางวัลไปแล้ว โปรดตรวจสอบใหม่อีกครั้ง',
+              html: `
+                <div class="text-left text-xs space-y-2 bg-amber-50 p-4 rounded-xl border border-amber-300 text-gray-800 mt-2">
+                  <p><b>พนักงาน:</b> ${empName} (รหัส: <span class="text-red-700 font-bold">${cleanId}</span>)</p>
+                  <p><b>ได้รับรางวัล:</b> <span class="text-red-700 font-bold">"${alreadyWon.rewardName}"</span> ไปแล้ว</p>
+                  <p class="text-[11px] text-amber-800 pt-1">⚠️ ระบบไม่อนุญาตให้รับรางวัลซ้ำ กรุณาตรวจสอบใหม่อีกครั้ง</p>
+                </div>
+              `,
+              confirmButtonText: 'ตกลง',
+              confirmButtonColor: '#b91c1c'
+            });
+            return;
+          }
+
           const btn = document.getElementById('btnSaveReward');
           if (!btn.disabled) {
             handleQuickSave();
