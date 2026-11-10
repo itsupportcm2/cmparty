@@ -1,11 +1,16 @@
 {
   "timeZone": "Asia/Bangkok",
-  "dependencies": {},
-  "exceptionLogging": "STACKDRIVER",
-  "runtimeVersion": "V8",
+  "dependencies": {
+  },
   "webapp": {
     "executeAs": "USER_DEPLOYING",
-    "access": "ANYONE"
-  }
+    "access": "ANYONE_ANONYMOUS"
+  },
+  "exceptionLogging": "STACKDRIVER",
+  "oauthScopes": [
+    "https://www.googleapis.com/auth/spreadsheets",
+    "https://www.googleapis.com/auth/drive",
+    "https://www.googleapis.com/auth/script.external_request"
+  ],
+  "runtimeVersion": "V8"
 }
-
