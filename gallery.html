@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>แกลเลอรีภาพกิจกรรม - CM Party 2026</title>
+  <title>ภาพความประทับใจในงาน CM Party 2026</title>
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -14,7 +14,7 @@
   <!-- Google Fonts: Prompt & Great Vibes -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -91,6 +91,56 @@
       transform: translateY(-4px) scale(1.015);
       box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.6), 0 0 20px rgba(234, 179, 8, 0.25);
     }
+
+    /* CSS Animations สำหรับสไลด์โชว์ (ลูกเล่นการเปลี่ยนภาพ) */
+    @keyframes kenBurnsEffect1 {
+      0% { transform: scale(1.0) translate(0, 0); }
+      50% { transform: scale(1.10) translate(-1%, -1.2%); }
+      100% { transform: scale(1.04) translate(1%, 0.5%); }
+    }
+    @keyframes kenBurnsEffect2 {
+      0% { transform: scale(1.04) translate(1%, 0.5%); }
+      50% { transform: scale(1.12) translate(1.2%, -1%); }
+      100% { transform: scale(1.0) translate(0, 0); }
+    }
+    .ss-effect-kenburns-1 {
+      animation: kenBurnsEffect1 12s ease-in-out infinite alternate;
+    }
+    .ss-effect-kenburns-2 {
+      animation: kenBurnsEffect2 12s ease-in-out infinite alternate;
+    }
+
+    .ss-effect-fade {
+      animation: ssFade 0.6s ease-in-out;
+    }
+    @keyframes ssFade {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    .ss-effect-zoom {
+      animation: ssZoom 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes ssZoom {
+      0% { opacity: 0; transform: scale(0.88); }
+      100% { opacity: 1; transform: scale(1.0); }
+    }
+
+    .ss-effect-slide {
+      animation: ssSlide 0.55s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    @keyframes ssSlide {
+      0% { opacity: 0; transform: translateX(60px); }
+      100% { opacity: 1; transform: translateX(0); }
+    }
+
+    .ss-effect-flip {
+      animation: ssFlip 0.65s ease-out;
+    }
+    @keyframes ssFlip {
+      0% { opacity: 0; transform: perspective(800px) rotateY(30deg) scale(0.92); }
+      100% { opacity: 1; transform: perspective(800px) rotateY(0deg) scale(1.0); }
+    }
   </style>
 </head>
 <body class="relative min-h-screen pb-16 flex flex-col justify-between selection:bg-amber-400 selection:text-amber-950">
@@ -117,12 +167,23 @@
               <i class="fa-solid fa-snowflake text-[9px] mr-1 text-amber-300"></i>Gallery
             </span>
           </div>
-          <p class="text-[11px] text-gray-300">แกลเลอรีภาพกิจกรรมงานเลี้ยง</p>
+          <p class="text-[11px] text-gray-300">ภาพความประทับใจในงาน CM Party 2026</p>
         </div>
       </a>
 
       <!-- Quick Nav Buttons -->
       <div class="flex items-center gap-2">
+        <!-- Slideshow Quick Launch Button -->
+        <button
+          type="button"
+          onclick="openSlideshowModal()"
+          class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white border border-amber-300/40 shadow-lg active:scale-95 transition flex items-center gap-1.5 cursor-pointer"
+          title="เปิดโหมดสไลด์โชว์สำหรับฉายบนจอใหญ่"
+        >
+          <i class="fa-solid fa-play text-yellow-300 text-[11px]"></i>
+          <span>สไลด์โชว์</span>
+        </button>
+
         <a
           href="index.html"
           class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white/10 hover:bg-white/20 text-gray-200 border border-white/15 transition"
@@ -164,16 +225,16 @@
       </div>
 
       <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-100 tracking-tight drop-shadow-md">
-        📸 ภาพความประทับใจในงานเลี้ยง
+        📸 ภาพความประทับใจในงาน CM Party 2026
       </h1>
       <p class="font-cursive text-2xl sm:text-3xl text-amber-300/90 mt-1">
         Memories of CM Party
       </p>
       <p class="text-xs sm:text-sm text-gray-300 max-w-2xl mx-auto mt-2 leading-relaxed">
-        รวมทุกภาพบรรยากาศ รอยยิ้ม และความอบอุ่นในค่ำคืนงานเลี้ยงสังสรรค์ แปลงลิงก์แสดงผลผ่านระบบ Google CDN (lh5) รวดเร็ว ชัดเจน พร้อมดาวน์โหลด
+        รวมทุกภาพบรรยากาศ รอยยิ้ม และความอบอุ่นในค่ำคืนงานเลี้ยงสังสรรค์แห่งความสุข พร้อมระบบสไลด์โชว์สำหรับฉายบนเวทีจอใหญ่และดาวน์โหลดภาพความทรงจำ
       </p>
 
-      <!-- Tip Banner: ส่งรูปทาง LINE -->
+      <!-- Tip Banner: ส่งรูปทาง LINE + ปุ่มเริ่มสไลด์โชว์ -->
       <div class="mt-4 max-w-xl mx-auto p-3 rounded-2xl bg-emerald-950/60 border border-emerald-500/30 backdrop-blur-sm text-xs text-emerald-200 flex items-center justify-between gap-3 shadow-md">
         <div class="flex items-center gap-2.5 text-left">
           <span class="w-8 h-8 rounded-full bg-emerald-800 text-emerald-200 flex items-center justify-center shrink-0 border border-emerald-400/30">
@@ -184,13 +245,15 @@
             <p class="text-[11px] text-emerald-300/90">ส่งภาพเข้าห้องแชทบอท LINE รูปจะขึ้นแสดงในแกลเลอรีนี้โดยอัตโนมัติ</p>
           </div>
         </div>
+
         <button
           type="button"
-          onclick="copyLh5FormatInfo()"
-          class="shrink-0 px-3 py-1.5 rounded-xl bg-emerald-800/80 hover:bg-emerald-700 text-white font-semibold text-[11px] border border-emerald-400/30 transition flex items-center gap-1"
+          onclick="openSlideshowModal()"
+          class="shrink-0 px-3.5 py-2 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold text-xs shadow-md border border-amber-300/40 transition flex items-center gap-1.5 active:scale-95 cursor-pointer"
+          title="เปิดโหมดสไลด์โชว์เต็มจอ"
         >
-          <i class="fa-solid fa-circle-info text-amber-300"></i>
-          <span>ดูรูปแบบ lh5</span>
+          <i class="fa-solid fa-play text-yellow-300 text-xs"></i>
+          <span>ฉายสไลด์โชว์</span>
         </button>
       </div>
     </section>
@@ -219,18 +282,29 @@
           </div>
         </div>
 
-        <!-- Action Buttons & Refresh -->
+        <!-- Action Buttons & Refresh & Slideshow -->
         <div class="flex items-center gap-2">
+          <!-- Slideshow Main Button -->
+          <button
+            type="button"
+            onclick="openSlideshowModal()"
+            class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 active:scale-95 text-white font-bold text-xs shadow-md border border-amber-300/40 transition flex items-center gap-1.5 cursor-pointer"
+            title="เปิดโหมดสไลด์โชว์สำหรับฉายบนจอใหญ่ในงานเลี้ยง"
+          >
+            <i class="fa-solid fa-play text-yellow-300 text-xs"></i>
+            <span>เปิดสไลด์โชว์</span>
+          </button>
+
           <!-- Refresh Button -->
           <button
             type="button"
             id="btnRefreshGallery"
             onclick="loadGalleryImages(true)"
-            class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 active:scale-95 text-white font-semibold text-xs shadow-md border border-amber-400/40 transition flex items-center gap-1.5 cursor-pointer"
+            class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-gray-200 font-semibold text-xs border border-white/20 transition flex items-center gap-1.5 cursor-pointer"
             title="รีเฟรชรูปภาพจาก Google Drive ทันที"
           >
             <i id="refreshIcon" class="fa-solid fa-rotate"></i>
-            <span>รีเฟรชภาพ</span>
+            <span class="hidden sm:inline">รีเฟรช</span>
           </button>
 
           <!-- Link to Drive Folder -->
@@ -242,7 +316,7 @@
             title="เปิดโฟลเดอร์ต้นฉบับบน Google Drive"
           >
             <i class="fa-solid fa-folder-open text-amber-300"></i>
-            <span class="hidden sm:inline">เปิดโฟลเดอร์ Drive</span>
+            <span class="hidden md:inline">Drive</span>
           </a>
         </div>
       </div>
@@ -352,7 +426,292 @@
     </div>
   </main>
 
-  <!-- Fullscreen Lightbox Modal (Click to View Photo in Luxury High-Res) -->
+  <!-- ============================================================ -->
+  <!-- 🎬 FULLSCREEN SLIDESHOW MODAL (โหมดสไลด์โชว์ ปรับแต่งลูกเล่นสุดหรู) -->
+  <!-- ============================================================ -->
+  <div
+    id="slideshowModal"
+    class="fixed inset-0 z-50 bg-[#070102] text-white flex flex-col justify-between hidden select-none overflow-hidden"
+    tabindex="-1"
+  >
+    <!-- Background Ambient Glow (Blurred real-time image) -->
+    <div class="absolute inset-0 overflow-hidden pointer-events-none">
+      <img
+        id="ssAmbientBg"
+        src=""
+        alt=""
+        class="w-full h-full object-cover blur-3xl opacity-35 scale-125 transition-all duration-1000 ease-in-out"
+      />
+      <div class="absolute inset-0 bg-black/45"></div>
+    </div>
+
+    <!-- Snowflakes Layer inside Slideshow -->
+    <div id="ssSnowflakes" class="absolute inset-0 pointer-events-none z-10 overflow-hidden" aria-hidden="true"></div>
+
+    <!-- Top Floating Bar (Header) -->
+    <div id="ssTopBar" class="relative z-20 flex items-center justify-between px-4 sm:px-6 py-3 bg-gradient-to-b from-black/85 via-black/40 to-transparent transition-opacity duration-300">
+      <!-- Left: Logo & Event Title -->
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 to-red-500 shadow flex items-center justify-center overflow-hidden">
+          <img src="https://lh5.googleusercontent.com/d/1rzj7RdJ76nk5OccBPZ-kj-qxDp_Rg_Yk" alt="Logo" class="w-full h-full object-cover rounded-full" />
+        </div>
+        <div>
+          <span class="font-bold text-xs sm:text-sm text-amber-200 tracking-wide drop-shadow">CM PARTY 2026</span>
+          <span class="hidden sm:inline-block text-[10px] bg-red-700/80 text-amber-100 px-2 py-0.5 rounded-full ml-2 border border-amber-400/30">
+            SLIDESHOW
+          </span>
+        </div>
+      </div>
+
+      <!-- Center: Counter & Progress Timer -->
+      <div class="flex flex-col items-center gap-1">
+        <div class="flex items-center gap-2">
+          <span id="ssCounter" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500 text-amber-950 shadow">
+            1 / 1
+          </span>
+          <span id="ssStatusBadge" class="text-[11px] font-semibold text-emerald-400 flex items-center gap-1.5">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+            <span id="ssStatusText">กำลังฉาย</span>
+          </span>
+        </div>
+        <!-- Progress Bar for Next Slide -->
+        <div class="w-32 sm:w-48 h-1 bg-white/20 rounded-full overflow-hidden">
+          <div id="ssProgressBar" class="h-full bg-gradient-to-r from-amber-400 to-yellow-300 w-0 transition-all duration-100 ease-linear"></div>
+        </div>
+      </div>
+
+      <!-- Right: Action Buttons & Settings Drawer Toggle -->
+      <div class="flex items-center gap-1.5 sm:gap-2">
+        <!-- Settings Pop-up Toggle -->
+        <button
+          type="button"
+          onclick="toggleSlideshowSettings()"
+          class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/25 text-amber-300 text-xs font-semibold border border-white/20 transition flex items-center gap-1.5 cursor-pointer shadow"
+          title="ปรับแต่งลูกเล่นสไลด์โชว์"
+        >
+          <i class="fa-solid fa-sliders text-xs"></i>
+          <span class="hidden md:inline">ปรับแต่งลูกเล่น</span>
+        </button>
+
+        <!-- Fullscreen Button -->
+        <button
+          type="button"
+          onclick="toggleFullscreen()"
+          class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/25 text-white flex items-center justify-center transition border border-white/20 cursor-pointer"
+          title="เปิด/ปิด เต็มจอ (F)"
+        >
+          <i id="ssFullscreenIcon" class="fa-solid fa-expand text-xs"></i>
+        </button>
+
+        <!-- Close Slideshow -->
+        <button
+          type="button"
+          onclick="closeSlideshowModal()"
+          class="w-9 h-9 rounded-xl bg-red-600/80 hover:bg-red-600 text-white flex items-center justify-center transition border border-red-400/40 cursor-pointer shadow"
+          title="ออกจากสไลด์โชว์ (ESC)"
+        >
+          <i class="fa-solid fa-xmark text-sm"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Stage (Active Slide) -->
+    <div id="ssStage" class="relative z-10 flex-1 flex items-center justify-center overflow-hidden p-2 sm:p-8" onclick="handleStageClick()">
+      <!-- Prev & Next Arrows (hover reveal) -->
+      <button
+        type="button"
+        onclick="prevSlide(); event.stopPropagation();"
+        class="absolute left-3 sm:left-6 z-30 w-12 h-12 rounded-full bg-black/50 hover:bg-amber-500 hover:text-amber-950 text-white border border-white/20 flex items-center justify-center transition shadow-2xl cursor-pointer active:scale-90"
+        title="ภาพก่อนหน้า (ลูกศรซ้าย)"
+      >
+        <i class="fa-solid fa-chevron-left text-lg"></i>
+      </button>
+
+      <button
+        type="button"
+        onclick="nextSlide(); event.stopPropagation();"
+        class="absolute right-3 sm:right-6 z-30 w-12 h-12 rounded-full bg-black/50 hover:bg-amber-500 hover:text-amber-950 text-white border border-white/20 flex items-center justify-center transition shadow-2xl cursor-pointer active:scale-90"
+        title="ภาพถัดไป (ลูกศรขวา)"
+      >
+        <i class="fa-solid fa-chevron-right text-lg"></i>
+      </button>
+
+      <!-- Center Slide Image Display with transition wrapper -->
+      <div id="ssImageContainer" class="relative max-w-full max-h-full flex items-center justify-center overflow-hidden rounded-2xl">
+        <img
+          id="ssMainImage"
+          src=""
+          alt="Slideshow"
+          class="max-w-full max-h-[78vh] object-contain rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] border-2 border-amber-400/40 select-none transition-all duration-700"
+        />
+      </div>
+    </div>
+
+    <!-- Bottom Floating Bar (Controls + Photo Caption) -->
+    <div id="ssBottomBar" class="relative z-20 flex flex-col items-center justify-center px-4 py-3 bg-gradient-to-t from-black/90 via-black/50 to-transparent transition-opacity duration-300 space-y-2">
+      <!-- Photo Caption (Name & Upload Date) -->
+      <div id="ssCaptionBox" class="text-center max-w-xl truncate px-3">
+        <p id="ssPhotoTitle" class="text-sm sm:text-base font-bold text-amber-200 truncate drop-shadow">
+          -
+        </p>
+        <p id="ssPhotoDate" class="text-xs text-gray-300 drop-shadow">
+          -
+        </p>
+      </div>
+
+      <!-- Controls Row: Play/Pause, Speed, Effect Indicator, Shuffle -->
+      <div class="flex items-center gap-2 sm:gap-3 bg-black/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/15 shadow-xl">
+        <!-- Prev Button -->
+        <button
+          type="button"
+          onclick="prevSlide()"
+          class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-gray-200 flex items-center justify-center transition"
+          title="ภาพก่อนหน้า"
+        >
+          <i class="fa-solid fa-backward-step text-xs"></i>
+        </button>
+
+        <!-- Play/Pause Main Button -->
+        <button
+          type="button"
+          id="ssPlayPauseBtn"
+          onclick="togglePlayPause()"
+          class="w-10 h-10 rounded-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-amber-950 font-bold flex items-center justify-center shadow-lg transition active:scale-95"
+          title="เล่น / หยุดชั่วคราว (Space)"
+        >
+          <i id="ssPlayPauseIcon" class="fa-solid fa-pause text-base"></i>
+        </button>
+
+        <!-- Next Button -->
+        <button
+          type="button"
+          onclick="nextSlide()"
+          class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-gray-200 flex items-center justify-center transition"
+          title="ภาพถัดไป"
+        >
+          <i class="fa-solid fa-forward-step text-xs"></i>
+        </button>
+
+        <span class="w-px h-5 bg-white/20 mx-1"></span>
+
+        <!-- Quick Speed Selector -->
+        <div class="flex items-center gap-1 text-[11px]">
+          <span class="text-gray-400 hidden sm:inline mr-1">ความเร็ว:</span>
+          <button type="button" onclick="setSlideshowSpeed(3000)" class="ss-speed-btn px-2 py-0.5 rounded-md hover:bg-white/20 text-gray-300" data-speed="3000">3s</button>
+          <button type="button" onclick="setSlideshowSpeed(5000)" class="ss-speed-btn px-2 py-0.5 rounded-md bg-amber-500 text-amber-950 font-bold" data-speed="5000">5s</button>
+          <button type="button" onclick="setSlideshowSpeed(8000)" class="ss-speed-btn px-2 py-0.5 rounded-md hover:bg-white/20 text-gray-300" data-speed="8000">8s</button>
+          <button type="button" onclick="setSlideshowSpeed(12000)" class="ss-speed-btn px-2 py-0.5 rounded-md hover:bg-white/20 text-gray-300 hidden sm:inline-block" data-speed="12000">12s</button>
+        </div>
+
+        <span class="w-px h-5 bg-white/20 mx-1"></span>
+
+        <!-- Shuffle Button -->
+        <button
+          type="button"
+          id="ssShuffleBtn"
+          onclick="toggleShuffle()"
+          class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 text-xs transition flex items-center gap-1"
+          title="สลับเป็นโหมดสุ่มภาพ"
+        >
+          <i class="fa-solid fa-shuffle text-xs"></i>
+          <span class="hidden md:inline">สุ่มภาพ</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Settings Drawer / Modal (แผงปรับแต่งลูกเล่นสไลด์โชว์) -->
+    <div
+      id="ssSettingsModal"
+      class="hidden absolute right-4 top-16 z-40 w-80 max-w-[90vw] bg-black/90 backdrop-blur-xl border-2 border-amber-400/50 rounded-3xl p-4 shadow-2xl space-y-3.5 text-xs text-gray-200"
+    >
+      <div class="flex items-center justify-between border-b border-white/15 pb-2">
+        <h4 class="font-bold text-amber-200 flex items-center gap-2 text-sm">
+          <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
+          <span>ปรับแต่งลูกเล่นสไลด์โชว์</span>
+        </h4>
+        <button type="button" onclick="toggleSlideshowSettings()" class="text-gray-400 hover:text-white">
+          <i class="fa-solid fa-xmark text-base"></i>
+        </button>
+      </div>
+
+      <!-- 1. เอฟเฟกต์การเปลี่ยนภาพ (Transition Effect) -->
+      <div class="space-y-1.5">
+        <label class="font-semibold text-gray-300 block">ลูกเล่นการเปลี่ยนรูปภาพ (Transition):</label>
+        <select
+          id="ssEffectSelect"
+          onchange="changeSlideshowEffect(this.value)"
+          class="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white font-medium focus:outline-none focus:border-amber-400 cursor-pointer"
+        >
+          <option value="kenburns" class="bg-gray-900 text-white" selected>🎬 Ken Burns (ซูมภาพยนตร์ นุ่มนวล แนะนำ)</option>
+          <option value="fade" class="bg-gray-900 text-white">✨ Crossfade (เฟดละมุน)</option>
+          <option value="zoom" class="bg-gray-900 text-white">🔍 Zoom In & Out (ซูมมิติเข้า-ออก)</option>
+          <option value="slide" class="bg-gray-900 text-white">↔️ Slide Horizontal (สไลด์ด้านข้าง)</option>
+          <option value="flip" class="bg-gray-900 text-white">🔄 3D Flip (หมุน 3 มิติ)</option>
+        </select>
+      </div>
+
+      <!-- 2. ความเร็วในการเปลี่ยนภาพ -->
+      <div class="space-y-1.5">
+        <div class="flex items-center justify-between">
+          <label class="font-semibold text-gray-300">ระยะเวลาแสดงภาพแต่ละรูป:</label>
+          <span id="ssSpeedLabel" class="text-amber-300 font-bold">5 วินาที</span>
+        </div>
+        <input
+          type="range"
+          id="ssSpeedSlider"
+          min="2"
+          max="20"
+          step="1"
+          value="5"
+          oninput="handleSpeedSlider(this.value)"
+          class="w-full accent-amber-500 cursor-pointer"
+        />
+        <div class="flex justify-between text-[10px] text-gray-400">
+          <span>เร็ว (2s)</span>
+          <span>ปานกลาง (5s)</span>
+          <span>ช้า (20s)</span>
+        </div>
+      </div>
+
+      <!-- 3. ลูกเล่นบรรยากาศเพิ่มเติม (Toggles) -->
+      <div class="pt-2 border-t border-white/15 space-y-2">
+        <!-- Ambient Glow Toggle -->
+        <label class="flex items-center justify-between cursor-pointer">
+          <span class="flex items-center gap-1.5 text-gray-300">
+            <i class="fa-solid fa-lightbulb text-amber-400 text-xs"></i>
+            <span>แสงออร่าพื้นหลัง (Ambient Glow)</span>
+          </span>
+          <input type="checkbox" id="ssToggleAmbient" checked onchange="toggleAmbientGlow(this.checked)" class="accent-amber-500 cursor-pointer w-4 h-4" />
+        </label>
+
+        <!-- Snowflakes Toggle -->
+        <label class="flex items-center justify-between cursor-pointer">
+          <span class="flex items-center gap-1.5 text-gray-300">
+            <i class="fa-regular fa-snowflake text-blue-300 text-xs"></i>
+            <span>เกล็ดหิมะตกในสไลด์โชว์</span>
+          </span>
+          <input type="checkbox" id="ssToggleSnow" checked onchange="toggleSlideshowSnow(this.checked)" class="accent-amber-500 cursor-pointer w-4 h-4" />
+        </label>
+
+        <!-- Caption Toggle -->
+        <label class="flex items-center justify-between cursor-pointer">
+          <span class="flex items-center gap-1.5 text-gray-300">
+            <i class="fa-solid fa-font text-emerald-400 text-xs"></i>
+            <span>แสดงชื่อไฟล์และวันที่</span>
+          </span>
+          <input type="checkbox" id="ssToggleCaption" checked onchange="toggleCaption(this.checked)" class="accent-amber-500 cursor-pointer w-4 h-4" />
+        </label>
+      </div>
+
+      <div class="pt-2 text-center text-[10px] text-gray-400 border-t border-white/10">
+        กด <kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white font-mono">Space</kbd> เพื่อเล่น/หยุด, <kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white font-mono">F</kbd> เต็มจอ, <kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white font-mono">ESC</kbd> ออก
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================ -->
+  <!-- 🔍 FULLSCREEN LIGHTBOX MODAL (หน้าต่างดูภาพขยายใหญ่) -->
+  <!-- ============================================================ -->
   <div
     id="lightboxModal"
     class="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between hidden transition-opacity duration-200"
@@ -371,15 +730,26 @@
       </div>
 
       <div class="flex items-center gap-2">
-        <!-- Copy lh5 Link -->
+        <!-- Slideshow Launch from Lightbox -->
         <button
           type="button"
-          onclick="copyCurrentPhotoLh5Link()"
+          onclick="startSlideshowFromCurrentLightbox()"
+          class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white text-xs font-bold border border-amber-300/40 transition flex items-center gap-1.5"
+          title="เริ่มสไลด์โชว์ต่อจากภาพนี้"
+        >
+          <i class="fa-solid fa-play text-xs text-yellow-300"></i>
+          <span class="hidden sm:inline">เล่นสไลด์โชว์</span>
+        </button>
+
+        <!-- Copy Link -->
+        <button
+          type="button"
+          onclick="copyCurrentPhotoLink()"
           class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-amber-300 text-xs font-medium border border-white/15 transition flex items-center gap-1.5"
-          title="คัดลอกลิงก์รูปภาพ (lh5)"
+          title="คัดลอกลิงก์รูปภาพ"
         >
           <i class="fa-solid fa-link text-xs"></i>
-          <span class="hidden sm:inline">คัดลอกลิงก์ lh5</span>
+          <span class="hidden sm:inline">คัดลอกลิงก์</span>
         </button>
 
         <!-- Download Button -->
@@ -542,7 +912,24 @@
     let currentZoomLevel = 1.0;
     let currentGridColumns = 3;
 
-    // สร้างหิมะตก
+    // สถานะระบบสไลด์โชว์ (Slideshow State)
+    let slideshowIndex = 0;
+    let isSlideshowActive = false;
+    let isSlideshowPlaying = true;
+    let slideshowSpeedMs = 5000;
+    let slideshowEffect = 'kenburns'; // 'kenburns' | 'fade' | 'zoom' | 'slide' | 'flip'
+    let isShuffle = false;
+    let showAmbientGlow = true;
+    let showSlideshowSnow = true;
+    let showCaptionText = true;
+
+    let slideshowTimer = null;
+    let progressTimer = null;
+    let progressStepStartTime = 0;
+    let ssUserActivityTimer = null;
+    let kenBurnsToggle = 1;
+
+    // สร้างหิมะตกบนหน้าหลัก
     function createSnowflakes() {
       const container = document.getElementById('snowflakesContainer');
       if (!container) return;
@@ -559,6 +946,23 @@
         snowflake.style.animationDelay = Math.random() * 5 + 's';
         snowflake.style.fontSize = Math.random() * 12 + 8 + 'px';
         snowflake.style.opacity = (Math.random() * 0.6 + 0.2).toString();
+        container.appendChild(snowflake);
+      }
+    }
+
+    // สร้างหิมะตกในหน้าต่างสไลด์โชว์
+    function createSlideshowSnowflakes() {
+      const container = document.getElementById('ssSnowflakes');
+      if (!container) return;
+      container.innerHTML = '';
+      for (let i = 0; i < 24; i++) {
+        const snowflake = document.createElement('i');
+        snowflake.className = 'fa-regular fa-snowflake snowflake';
+        snowflake.style.left = Math.random() * 100 + 'vw';
+        snowflake.style.animationDuration = Math.random() * 4 + 7 + 's';
+        snowflake.style.animationDelay = Math.random() * 4 + 's';
+        snowflake.style.fontSize = Math.random() * 10 + 9 + 'px';
+        snowflake.style.opacity = (Math.random() * 0.5 + 0.2).toString();
         container.appendChild(snowflake);
       }
     }
@@ -695,7 +1099,6 @@
         card.className = 'gallery-img-card group relative aspect-square rounded-2xl overflow-hidden bg-black/40 border border-amber-500/20 shadow-lg cursor-pointer';
         card.onclick = () => openLightbox(index);
 
-        // แปลงขนาดไฟล์ให้อ่านง่าย
         const formattedSize = formatFileSize(img.size);
 
         card.innerHTML = `
@@ -710,10 +1113,11 @@
 
           <!-- Gradient Overlay ตอน Hover -->
           <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-3 pointer-events-none">
-            <!-- Top Tag: lh5 Badge & Zoom Icon -->
+            <!-- Top Tag: Event Badge & Zoom Icon -->
             <div class="flex items-center justify-between">
-              <span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/90 text-amber-950 font-bold shadow-sm">
-                lh5 CDN
+              <span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/90 text-amber-950 font-bold shadow-sm flex items-center gap-1">
+                <i class="fa-solid fa-gift text-[9px]"></i>
+                <span>CM Party</span>
               </span>
               <span class="w-7 h-7 rounded-full bg-white/20 backdrop-blur-sm text-white flex items-center justify-center text-xs">
                 <i class="fa-solid fa-magnifying-glass-plus"></i>
@@ -735,9 +1139,9 @@
           <!-- Quick Copy Link Button (มุมขวาบน) -->
           <button
             type="button"
-            onclick="copySpecificLh5Link('${img.url}'); event.stopPropagation();"
+            onclick="copySpecificPhotoLink('${img.url}'); event.stopPropagation();"
             class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 w-8 h-8 rounded-full bg-black/70 hover:bg-amber-500 hover:text-amber-950 text-white border border-white/20 flex items-center justify-center text-xs transition duration-200 z-10"
-            title="คัดลอกลิงก์รูปภาพ (lh5)"
+            title="คัดลอกลิงก์รูปภาพ"
           >
             <i class="fa-regular fa-copy"></i>
           </button>
@@ -764,7 +1168,296 @@
       document.getElementById('totalPhotosCount').innerText = '0';
     }
 
-    // เปิด Lightbox แสดงรูปภาพขนาดใหญ่
+    // ==========================================
+    // 🎬 SLIDESHOW LOGIC & CUSTOMIZATIONS
+    // ==========================================
+
+    function openSlideshowModal(startIndex = 0) {
+      const list = filteredImages.length > 0 ? filteredImages : allImages;
+      if (list.length === 0) {
+        Swal.fire({
+          icon: 'info',
+          title: 'ยังไม่มีรูปภาพ',
+          text: 'ยังไม่มีรูปภาพสำหรับเล่นสไลด์โชว์ในขณะนี้',
+          confirmButtonColor: '#b45309'
+        });
+        return;
+      }
+
+      isSlideshowActive = true;
+      slideshowIndex = Math.max(0, Math.min(startIndex, list.length - 1));
+      isSlideshowPlaying = true;
+
+      const modal = document.getElementById('slideshowModal');
+      modal.classList.remove('hidden');
+      modal.focus();
+
+      createSlideshowSnowflakes();
+      updateSlideshowDisplay();
+      startSlideshowAutoTimer();
+
+      // Setup Mouse Activity Tracker for Auto-hiding Controls
+      document.addEventListener('mousemove', resetSlideshowControlsActivity);
+      resetSlideshowControlsActivity();
+    }
+
+    function closeSlideshowModal() {
+      isSlideshowActive = false;
+      stopSlideshowAutoTimer();
+
+      const modal = document.getElementById('slideshowModal');
+      modal.classList.add('hidden');
+
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+
+      document.removeEventListener('mousemove', resetSlideshowControlsActivity);
+      closeSlideshowSettings();
+    }
+
+    function updateSlideshowDisplay() {
+      const list = filteredImages.length > 0 ? filteredImages : allImages;
+      if (list.length === 0) return;
+
+      const photo = list[slideshowIndex];
+      const mainImg = document.getElementById('ssMainImage');
+      const ambientBg = document.getElementById('ssAmbientBg');
+
+      document.getElementById('ssCounter').innerText = `${slideshowIndex + 1} / ${list.length}`;
+      document.getElementById('ssPhotoTitle').innerText = photo.name || '-';
+      document.getElementById('ssPhotoDate').innerText = photo.date ? `ถ่าย/อัปโหลดเมื่อ: ${photo.date}` : '';
+
+      // จัดการ Animation ลูกเล่นเปลี่ยนภาพ
+      mainImg.className = 'max-w-full max-h-[78vh] object-contain rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] border-2 border-amber-400/40 select-none';
+
+      if (slideshowEffect === 'kenburns') {
+        kenBurnsToggle = kenBurnsToggle === 1 ? 2 : 1;
+        mainImg.classList.add(`ss-effect-kenburns-${kenBurnsToggle}`);
+      } else if (slideshowEffect === 'fade') {
+        mainImg.classList.add('ss-effect-fade');
+      } else if (slideshowEffect === 'zoom') {
+        mainImg.classList.add('ss-effect-zoom');
+      } else if (slideshowEffect === 'slide') {
+        mainImg.classList.add('ss-effect-slide');
+      } else if (slideshowEffect === 'flip') {
+        mainImg.classList.add('ss-effect-flip');
+      }
+
+      mainImg.src = photo.url;
+      if (showAmbientGlow) {
+        ambientBg.src = photo.url;
+      }
+    }
+
+    function nextSlide() {
+      const list = filteredImages.length > 0 ? filteredImages : allImages;
+      if (list.length === 0) return;
+
+      if (isShuffle) {
+        let randIndex = Math.floor(Math.random() * list.length);
+        if (randIndex === slideshowIndex && list.length > 1) {
+          randIndex = (randIndex + 1) % list.length;
+        }
+        slideshowIndex = randIndex;
+      } else {
+        slideshowIndex = (slideshowIndex + 1) % list.length;
+      }
+
+      updateSlideshowDisplay();
+      if (isSlideshowPlaying) {
+        restartSlideshowTimer();
+      }
+    }
+
+    function prevSlide() {
+      const list = filteredImages.length > 0 ? filteredImages : allImages;
+      if (list.length === 0) return;
+
+      slideshowIndex = (slideshowIndex - 1 + list.length) % list.length;
+      updateSlideshowDisplay();
+      if (isSlideshowPlaying) {
+        restartSlideshowTimer();
+      }
+    }
+
+    function togglePlayPause() {
+      isSlideshowPlaying = !isSlideshowPlaying;
+      const icon = document.getElementById('ssPlayPauseIcon');
+      const badge = document.getElementById('ssStatusBadge');
+      const text = document.getElementById('ssStatusText');
+
+      if (isSlideshowPlaying) {
+        icon.className = 'fa-solid fa-pause text-base';
+        badge.className = 'text-[11px] font-semibold text-emerald-400 flex items-center gap-1.5';
+        text.innerText = 'กำลังฉาย';
+        startSlideshowAutoTimer();
+      } else {
+        icon.className = 'fa-solid fa-play text-base';
+        badge.className = 'text-[11px] font-semibold text-amber-400 flex items-center gap-1.5';
+        text.innerText = 'หยุดชั่วคราว';
+        stopSlideshowAutoTimer();
+      }
+    }
+
+    function startSlideshowAutoTimer() {
+      stopSlideshowAutoTimer();
+      if (!isSlideshowPlaying) return;
+
+      progressStepStartTime = Date.now();
+      slideshowTimer = setTimeout(() => {
+        nextSlide();
+      }, slideshowSpeedMs);
+
+      // Smooth Progress Bar
+      const progressBar = document.getElementById('ssProgressBar');
+      progressTimer = setInterval(() => {
+        const elapsed = Date.now() - progressStepStartTime;
+        const pct = Math.min(100, (elapsed / slideshowSpeedMs) * 100);
+        if (progressBar) progressBar.style.width = pct + '%';
+      }, 80);
+    }
+
+    function stopSlideshowAutoTimer() {
+      if (slideshowTimer) {
+        clearTimeout(slideshowTimer);
+        slideshowTimer = null;
+      }
+      if (progressTimer) {
+        clearInterval(progressTimer);
+        progressTimer = null;
+      }
+      const progressBar = document.getElementById('ssProgressBar');
+      if (progressBar) progressBar.style.width = '0%';
+    }
+
+    function restartSlideshowTimer() {
+      stopSlideshowAutoTimer();
+      if (isSlideshowPlaying) {
+        startSlideshowAutoTimer();
+      }
+    }
+
+    function setSlideshowSpeed(ms) {
+      slideshowSpeedMs = ms;
+      document.querySelectorAll('.ss-speed-btn').forEach(btn => {
+        const speed = parseInt(btn.dataset.speed, 10);
+        if (speed === ms) {
+          btn.className = 'ss-speed-btn px-2 py-0.5 rounded-md bg-amber-500 text-amber-950 font-bold';
+        } else {
+          btn.className = 'ss-speed-btn px-2 py-0.5 rounded-md hover:bg-white/20 text-gray-300';
+        }
+      });
+
+      const slider = document.getElementById('ssSpeedSlider');
+      if (slider) slider.value = Math.round(ms / 1000);
+      const label = document.getElementById('ssSpeedLabel');
+      if (label) label.innerText = `${Math.round(ms / 1000)} วินาที`;
+
+      restartSlideshowTimer();
+    }
+
+    function handleSpeedSlider(seconds) {
+      const ms = parseInt(seconds, 10) * 1000;
+      setSlideshowSpeed(ms);
+    }
+
+    function changeSlideshowEffect(effect) {
+      slideshowEffect = effect;
+      updateSlideshowDisplay();
+    }
+
+    function toggleShuffle() {
+      isShuffle = !isShuffle;
+      const btn = document.getElementById('ssShuffleBtn');
+      if (isShuffle) {
+        btn.className = 'px-2.5 py-1 rounded-lg bg-amber-500 text-amber-950 font-bold text-xs transition flex items-center gap-1 shadow';
+      } else {
+        btn.className = 'px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 text-xs transition flex items-center gap-1';
+      }
+    }
+
+    function toggleAmbientGlow(enabled) {
+      showAmbientGlow = enabled;
+      const bg = document.getElementById('ssAmbientBg');
+      if (bg) {
+        bg.style.display = enabled ? 'block' : 'none';
+        if (enabled) updateSlideshowDisplay();
+      }
+    }
+
+    function toggleSlideshowSnow(enabled) {
+      showSlideshowSnow = enabled;
+      const container = document.getElementById('ssSnowflakes');
+      if (container) {
+        container.style.display = enabled ? 'block' : 'none';
+      }
+    }
+
+    function toggleCaption(enabled) {
+      showCaptionText = enabled;
+      const box = document.getElementById('ssCaptionBox');
+      if (box) {
+        box.style.display = enabled ? 'block' : 'none';
+      }
+    }
+
+    function toggleSlideshowSettings() {
+      const modal = document.getElementById('ssSettingsModal');
+      if (modal) modal.classList.toggle('hidden');
+    }
+
+    function closeSlideshowSettings() {
+      const modal = document.getElementById('ssSettingsModal');
+      if (modal) modal.classList.add('hidden');
+    }
+
+    function toggleFullscreen() {
+      const icon = document.getElementById('ssFullscreenIcon');
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().then(() => {
+          if (icon) icon.className = 'fa-solid fa-compress text-xs';
+        }).catch(err => console.warn('Fullscreen error:', err));
+      } else {
+        document.exitFullscreen().then(() => {
+          if (icon) icon.className = 'fa-solid fa-expand text-xs';
+        }).catch(() => {});
+      }
+    }
+
+    // ซ่อนแถบเครื่องมืออัตโนมัติเมื่อไม่มีการขยับเมาส์เกิน 3.5 วินาที
+    function resetSlideshowControlsActivity() {
+      if (!isSlideshowActive) return;
+      const topBar = document.getElementById('ssTopBar');
+      const bottomBar = document.getElementById('ssBottomBar');
+      if (topBar) topBar.style.opacity = '1';
+      if (bottomBar) bottomBar.style.opacity = '1';
+
+      clearTimeout(ssUserActivityTimer);
+      ssUserActivityTimer = setTimeout(() => {
+        const settingsOpen = !document.getElementById('ssSettingsModal')?.classList.contains('hidden');
+        if (isSlideshowActive && isSlideshowPlaying && !settingsOpen) {
+          if (topBar) topBar.style.opacity = '0';
+          if (bottomBar) bottomBar.style.opacity = '0';
+        }
+      }, 3500);
+    }
+
+    function handleStageClick() {
+      // แตะที่ภาพเพื่อสลับ Play/Pause
+      togglePlayPause();
+    }
+
+    function startSlideshowFromCurrentLightbox() {
+      const index = currentLightboxIndex >= 0 ? currentLightboxIndex : 0;
+      closeLightbox();
+      openSlideshowModal(index);
+    }
+
+    // ==========================================
+    // 🔍 FULLSCREEN LIGHTBOX LOGIC
+    // ==========================================
+
     function openLightbox(index) {
       if (index < 0 || index >= filteredImages.length) return;
       currentLightboxIndex = index;
@@ -818,56 +1511,33 @@
       document.getElementById('lbZoomText').innerText = '100%';
     }
 
-    // คัดลอกลิงก์รูปภาพ lh5 ลงคลิปบอร์ด
-    async function copyCurrentPhotoLh5Link() {
+    async function copyCurrentPhotoLink() {
       if (currentLightboxIndex < 0 || currentLightboxIndex >= filteredImages.length) return;
       const photo = filteredImages[currentLightboxIndex];
-      copySpecificLh5Link(photo.url);
+      copySpecificPhotoLink(photo.url);
     }
 
-    async function copySpecificLh5Link(url) {
+    async function copySpecificPhotoLink(url) {
       try {
         await navigator.clipboard.writeText(url);
         Swal.fire({
           toast: true,
           position: 'top-end',
           icon: 'success',
-          title: 'คัดลอกลิงก์ lh5 แล้ว!',
+          title: 'คัดลอกลิงก์รูปภาพแล้ว!',
           html: `<div class="text-[11px] text-gray-400 truncate max-w-xs">${escapeHtml(url)}</div>`,
           showConfirmButton: false,
           timer: 2000
         });
       } catch (e) {
-        prompt('คัดลอกลิงก์รูปภาพ (lh5):', url);
+        prompt('คัดลอกลิงก์รูปภาพ:', url);
       }
     }
 
-    // แสดงคำอธิบายรูปแบบ lh5
-    function copyLh5FormatInfo() {
-      Swal.fire({
-        icon: 'info',
-        title: 'โครงสร้างลิงก์รูปภาพ (Google CDN lh5)',
-        html: `
-          <div class="text-left text-xs space-y-2.5 text-gray-700 bg-amber-50 p-3.5 rounded-xl border border-amber-200 mt-2">
-            <p><b>ลิงก์โฟลเดอร์ Google Drive:</b></p>
-            <div class="p-2 bg-white rounded border border-gray-200 font-mono text-[11px] break-all select-all">
-              https://drive.google.com/drive/folders/${DRIVE_FOLDER_ID}?usp=sharing
-            </div>
-            <p class="pt-1"><b>รูปแบบการแปลงเป็น lh5 Direct Image URL:</b></p>
-            <div class="p-2 bg-white rounded border border-gray-200 font-mono text-[11px] break-all text-emerald-700 font-bold select-all">
-              https://lh5.googleusercontent.com/d/<b>{FILE_ID}</b>
-            </div>
-            <p class="text-gray-500 text-[11px]">
-              ✨ รูปแบบนี้ให้ความเร็วสูงผ่าน Google Content Network และสามารถเปิดดูบนเว็บไซต์หรือ LINE ได้โดยตรงโดยไม่ต้องล็อกอิน
-            </p>
-          </div>
-        `,
-        confirmButtonText: 'รับทราบ',
-        confirmButtonColor: '#b45309'
-      });
-    }
+    // ==========================================
+    // TOOLBAR SEARCH & SORT & LAYOUT
+    // ==========================================
 
-    // จัดการการค้นหา
     function handleSearchPhotos() {
       const input = document.getElementById('gallerySearchInput');
       const clearBtn = document.getElementById('clearSearchBtn');
@@ -924,23 +1594,41 @@
         .replace(/'/g, '&#039;');
     }
 
-    // Keyboard Shortcuts (Arrow keys & Escape)
+    // Keyboard Shortcuts (Arrow keys, Spacebar, Escape, F)
     document.addEventListener('keydown', (e) => {
-      const modal = document.getElementById('lightboxModal');
-      if (modal.classList.contains('hidden')) return;
+      // If Slideshow is active
+      if (isSlideshowActive) {
+        if (e.key === 'Escape') {
+          closeSlideshowModal();
+        } else if (e.key === ' ' || e.code === 'Space') {
+          e.preventDefault();
+          togglePlayPause();
+        } else if (e.key === 'ArrowLeft') {
+          prevSlide();
+        } else if (e.key === 'ArrowRight') {
+          nextSlide();
+        } else if (e.key === 'f' || e.key === 'F') {
+          toggleFullscreen();
+        }
+        return;
+      }
 
-      if (e.key === 'Escape') {
-        closeLightbox();
-      } else if (e.key === 'ArrowLeft') {
-        navigatePhoto(-1);
-      } else if (e.key === 'ArrowRight') {
-        navigatePhoto(1);
-      } else if (e.key === '+' || e.key === '=') {
-        zoomPhoto(0.25);
-      } else if (e.key === '-') {
-        zoomPhoto(-0.25);
-      } else if (e.key === '0') {
-        resetZoom();
+      // If Lightbox is active
+      const modal = document.getElementById('lightboxModal');
+      if (!modal.classList.contains('hidden')) {
+        if (e.key === 'Escape') {
+          closeLightbox();
+        } else if (e.key === 'ArrowLeft') {
+          navigatePhoto(-1);
+        } else if (e.key === 'ArrowRight') {
+          navigatePhoto(1);
+        } else if (e.key === '+' || e.key === '=') {
+          zoomPhoto(0.25);
+        } else if (e.key === '-') {
+          zoomPhoto(-0.25);
+        } else if (e.key === '0') {
+          resetZoom();
+        }
       }
     });
 
@@ -951,4 +1639,3 @@
   </script>
 </body>
 </html>
-
