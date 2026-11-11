@@ -909,12 +909,133 @@ function getSheetSafely(ss, targetName) {
 }
 
 /**
+ * ดึงรายการรูปภาพทั้งหมดจากโฟลเดอร์ Google Drive (1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L)
+ * แปลงลิงก์รูปภาพเป็น https://lh5.googleusercontent.com/d/{id} ตามที่ผู้ใช้ต้องการ
+ */
+function getGalleryImages(bypassCache) {
+  try {
+    const cache = CacheService.getScriptCache();
+    const cacheKey = 'GALLERY_IMAGES_CACHE';
+
+    if (!bypassCache) {
+      const cachedData = cache.get(cacheKey);
+      if (cachedData) {
+        try {
+          return JSON.parse(cachedData);
+        } catch (cErr) {}
+      }
+    }
+
+    const folderId = (typeof LINE_DRIVE_FOLDER_ID !== 'undefined' && LINE_DRIVE_FOLDER_ID)
+      ? LINE_DRIVE_FOLDER_ID.trim()
+      : '1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L';
+
+    let folder;
+    try {
+      folder = DriveApp.getFolderById(folderId);
+    } catch (fErr) {
+      folder = getTargetDriveFolder();
+    }
+
+    if (!folder) {
+      return { status: 'error', message: 'ไม่พบโฟลเดอร์ Google Drive สำหรับเก็บรูปภาพ' };
+    }
+
+    const images = [];
+
+    // ฟังก์ชันช่วยเก็บไฟล์รูปภาพจากโฟลเดอร์
+    function collectImagesFromFolder(targetFolder) {
+      const files = targetFolder.getFiles();
+      while (files.hasNext()) {
+        const file = files.next();
+        const mime = String(file.getMimeType() || '').toLowerCase();
+        const name = file.getName();
+
+        const isImageMime = mime.indexOf('image/') !== -1;
+        const isImageExt = /\.(jpg|jpeg|png|webp|gif|heic|bmp)$/i.test(name);
+
+        if (isImageMime || isImageExt) {
+          const fileId = file.getId();
+
+          // พยายามตั้งค่าแชร์ไฟล์เป็นสาธารณะ (Anyone with link view) เพื่อให้ lh5 โหลดภาพได้
+          try {
+            if (file.getSharingAccess() !== DriveApp.Access.ANYONE_WITH_LINK) {
+              file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+            }
+          } catch (shareErr) {}
+
+          const createdDate = file.getDateCreated();
+          const formattedDate = createdDate
+            ? Utilities.formatDate(createdDate, 'Asia/Bangkok', 'dd/MM/yyyy HH:mm:ss')
+            : '';
+
+          images.push({
+            id: fileId,
+            name: name,
+            size: file.getSize(),
+            date: formattedDate,
+            timestamp: createdDate ? createdDate.getTime() : 0,
+            url: `https://lh5.googleusercontent.com/d/${fileId}`,
+            fallbackUrl: `https://lh3.googleusercontent.com/d/${fileId}`,
+            thumbnailUrl: `https://lh5.googleusercontent.com/d/${fileId}=w800`,
+            driveThumbnailUrl: `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`,
+            driveViewUrl: file.getUrl() || `https://drive.google.com/file/d/${fileId}/view`
+          });
+        }
+      }
+
+      // วนหาโฟลเดอร์ย่อย (ถ้ามี)
+      const subfolders = targetFolder.getFolders();
+      while (subfolders.hasNext()) {
+        collectImagesFromFolder(subfolders.next());
+      }
+    }
+
+    collectImagesFromFolder(folder);
+
+    // เรียงลำดับจากรูปล่าสุดไปหารูปแรกสุด (ใหม่สุดอยู่บน)
+    images.sort((a, b) => b.timestamp - a.timestamp);
+
+    const result = {
+      status: 'success',
+      total: images.length,
+      folderId: folder.getId(),
+      folderName: folder.getName(),
+      folderUrl: `https://drive.google.com/drive/folders/${folder.getId()}?usp=sharing`,
+      images: images,
+      fetchedAt: Utilities.formatDate(new Date(), 'Asia/Bangkok', 'dd/MM/yyyy HH:mm:ss')
+    };
+
+    // จำผลลัพธ์ลง Cache 30 วินาทีเพื่อความรวดเร็ว
+    try {
+      const jsonStr = JSON.stringify(result);
+      if (jsonStr.length < 95000) {
+        cache.put(cacheKey, jsonStr, 30);
+      }
+    } catch (cachePutErr) {}
+
+    return result;
+  } catch (err) {
+    console.error('Error in getGalleryImages:', err);
+    return { status: 'error', message: err.message };
+  }
+}
+
+/**
  * Entry Point หลักสำหรับ Web App (doGet & doPost)
  * - doGet: แสดงหน้าเว็บลงทะเบียน (index.html) หรือตอบกลับ JSON เมื่อส่งพารามิเตอร์ ?action=checkEmployee&empId=...
  * - doPost: รองรับทั้งการบันทึกข้อมูลลงทะเบียนเข้า Sheet "Register" และรับ Event จาก LINE Webhook อัตโนมัติ
  */
 function doGet(e) {
   const params = (e && e.parameter) ? e.parameter : {};
+
+  // กรณีเรียกดูแกลเลอรีภาพกิจกรรมผ่าน GET API: ?action=getGalleryImages
+  if (params.action === 'getGalleryImages' || params.action === 'getPhotos') {
+    const bypassCache = params.nocache === '1' || params.nocache === 'true';
+    const result = getGalleryImages(bypassCache);
+    return ContentService.createTextOutput(JSON.stringify(result))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 
   // กรณีเรียกเช็คข้อมูลพนักงานผ่าน GET API: ?action=checkEmployee&empId=672002
   if (params.action === 'checkEmployee') {
@@ -1016,6 +1137,15 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
+  // เปิดหน้าเว็บแกลเลอรีภาพกิจกรรม (gallery.html) เมื่อส่ง ?page=gallery หรือ ?page=photos
+  if (params.page === 'gallery' || params.page === 'photos') {
+    return HtmlService.createTemplateFromFile('gallery')
+      .evaluate()
+      .setTitle('📸 แกลเลอรีภาพกิจกรรม - CM Party')
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
   // เปิดหน้าเว็บระบบบันทึกรางวัล (reward.html) เมื่อส่ง ?page=reward
   if (params.page === 'reward') {
     return HtmlService.createTemplateFromFile('reward')
@@ -1094,6 +1224,11 @@ function doPost(e) {
     }
 
     // 3. หากเป็นการจัดการข้อมูลรางวัล (Reward CRUD ผ่าน POST)
+    if (payload.action === 'getGalleryImages' || payload.action === 'getPhotos') {
+      const bypassCache = payload.nocache === true || payload.nocache === '1';
+      return ContentService.createTextOutput(JSON.stringify(getGalleryImages(bypassCache)))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
     if (payload.action === 'getRewardInitData') {
       return ContentService.createTextOutput(JSON.stringify(getRewardInitData()))
         .setMimeType(ContentService.MimeType.JSON);

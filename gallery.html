@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>แกลเลอรีภาพกิจกรรม - CM Party 2026</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Google Fonts: Prompt & Great Vibes -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- SweetAlert2 -->
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+  <style>
+    body {
+      font-family: 'Prompt', sans-serif;
+      background: radial-gradient(circle at top, #7f1d1d 0%, #3f0708 45%, #052e16 100%);
+      min-height: 100vh;
+      overflow-x: hidden;
+      color: #f3f4f6;
+    }
+
+    .font-cursive {
+      font-family: 'Great Vibes', cursive;
+    }
+
+    /* เอฟเฟกต์หิมะตก */
+    .snowflake {
+      position: fixed;
+      top: -20px;
+      color: rgba(255, 255, 255, 0.75);
+      user-select: none;
+      z-index: 0;
+      pointer-events: none;
+      animation-name: snowfall;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+    }
+
+    @keyframes snowfall {
+      0% {
+        transform: translateY(-10vh) translateX(0) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: translateY(105vh) translateX(50px) rotate(360deg);
+        opacity: 0.2;
+      }
+    }
+
+    /* การ์ดและ Shimmer Skeleton */
+    .shimmer-placeholder {
+      background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.05) 100%);
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    /* Scrollbar สไตล์พรีเมียม */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.3);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(234, 179, 8, 0.4);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(234, 179, 8, 0.7);
+    }
+
+    .gallery-img-card {
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    .gallery-img-card:hover {
+      transform: translateY(-4px) scale(1.015);
+      box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.6), 0 0 20px rgba(234, 179, 8, 0.25);
+    }
+  </style>
+</head>
+<body class="relative min-h-screen pb-16 flex flex-col justify-between selection:bg-amber-400 selection:text-amber-950">
+
+  <!-- Snowflakes Layer -->
+  <div id="snowflakesContainer" class="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true"></div>
+
+  <!-- Header Navigation Bar -->
+  <header class="relative z-10 w-full border-b border-amber-500/20 bg-black/30 backdrop-blur-md sticky top-0 px-4 py-3">
+    <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
+      <!-- Logo & Brand -->
+      <a href="index.html" class="flex items-center gap-3 group">
+        <div class="w-10 h-10 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 via-red-500 to-emerald-500 shadow-md flex items-center justify-center overflow-hidden">
+          <img
+            src="https://lh5.googleusercontent.com/d/1rzj7RdJ76nk5OccBPZ-kj-qxDp_Rg_Yk"
+            alt="CM Party Logo"
+            class="w-full h-full object-cover rounded-full group-hover:scale-110 transition duration-300"
+          />
+        </div>
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="font-bold text-sm tracking-wide text-amber-200">CM PARTY 2026</span>
+            <span class="text-[10px] bg-red-700/80 text-amber-100 px-2 py-0.5 rounded-full border border-amber-400/30 font-semibold">
+              <i class="fa-solid fa-snowflake text-[9px] mr-1 text-amber-300"></i>Gallery
+            </span>
+          </div>
+          <p class="text-[11px] text-gray-300">แกลเลอรีภาพกิจกรรมงานเลี้ยง</p>
+        </div>
+      </a>
+
+      <!-- Quick Nav Buttons -->
+      <div class="flex items-center gap-2">
+        <a
+          href="index.html"
+          class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white/10 hover:bg-white/20 text-gray-200 border border-white/15 transition"
+        >
+          <i class="fa-solid fa-id-card text-amber-300"></i>
+          <span>ลงทะเบียน</span>
+        </a>
+        <a
+          href="reward.html"
+          class="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-medium bg-white/10 hover:bg-white/20 text-gray-200 border border-white/15 transition"
+        >
+          <i class="fa-solid fa-gift text-red-400"></i>
+          <span>ของรางวัล</span>
+        </a>
+        <a
+          href="https://drive.google.com/drive/folders/1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L?usp=sharing"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-amber-950 shadow-md transition"
+          title="เปิดโฟลเดอร์ Google Drive"
+        >
+          <i class="fa-brands fa-google-drive text-sm"></i>
+          <span class="hidden md:inline">Google Drive</span>
+          <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
+
+    <!-- Hero Title Banner (Christmas Luxury Style) -->
+    <section class="text-center mb-8 relative">
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-red-900/80 via-amber-900/60 to-emerald-900/80 border border-amber-400/40 text-amber-200 text-xs font-semibold shadow-lg mb-3">
+        <i class="fa-solid fa-star text-yellow-400 text-xs"></i>
+        <span>CHRISTMAS & NEW YEAR CELEBRATION 2026</span>
+        <i class="fa-solid fa-star text-yellow-400 text-xs"></i>
+      </div>
+
+      <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-100 tracking-tight drop-shadow-md">
+        📸 ภาพความประทับใจในงานเลี้ยง
+      </h1>
+      <p class="font-cursive text-2xl sm:text-3xl text-amber-300/90 mt-1">
+        Memories of CM Party
+      </p>
+      <p class="text-xs sm:text-sm text-gray-300 max-w-2xl mx-auto mt-2 leading-relaxed">
+        รวมทุกภาพบรรยากาศ รอยยิ้ม และความอบอุ่นในค่ำคืนงานเลี้ยงสังสรรค์ แปลงลิงก์แสดงผลผ่านระบบ Google CDN (lh5) รวดเร็ว ชัดเจน พร้อมดาวน์โหลด
+      </p>
+
+      <!-- Tip Banner: ส่งรูปทาง LINE -->
+      <div class="mt-4 max-w-xl mx-auto p-3 rounded-2xl bg-emerald-950/60 border border-emerald-500/30 backdrop-blur-sm text-xs text-emerald-200 flex items-center justify-between gap-3 shadow-md">
+        <div class="flex items-center gap-2.5 text-left">
+          <span class="w-8 h-8 rounded-full bg-emerald-800 text-emerald-200 flex items-center justify-center shrink-0 border border-emerald-400/30">
+            <i class="fa-brands fa-line text-lg"></i>
+          </span>
+          <div>
+            <p class="font-bold text-emerald-100">ส่งรูปภาพร่วมสนุกผ่าน LINE</p>
+            <p class="text-[11px] text-emerald-300/90">ส่งภาพเข้าห้องแชทบอท LINE รูปจะขึ้นแสดงในแกลเลอรีนี้โดยอัตโนมัติ</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onclick="copyLh5FormatInfo()"
+          class="shrink-0 px-3 py-1.5 rounded-xl bg-emerald-800/80 hover:bg-emerald-700 text-white font-semibold text-[11px] border border-emerald-400/30 transition flex items-center gap-1"
+        >
+          <i class="fa-solid fa-circle-info text-amber-300"></i>
+          <span>ดูรูปแบบ lh5</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- Controls & Filter Toolbar -->
+    <section class="mb-6 bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-amber-500/20 shadow-xl space-y-3">
+      <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
+        <!-- Live Stats Counters -->
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+          <div class="px-3 py-1.5 rounded-xl bg-red-950/70 border border-red-500/30 text-red-200 flex items-center gap-2">
+            <i class="fa-solid fa-images text-amber-300"></i>
+            <span>ทั้งหมด:</span>
+            <b id="totalPhotosCount" class="text-white font-bold text-sm">0</b>
+            <span>ภาพ</span>
+          </div>
+
+          <div class="px-3 py-1.5 rounded-xl bg-emerald-950/70 border border-emerald-500/30 text-emerald-200 flex items-center gap-2">
+            <i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i>
+            <span>โฟลเดอร์ Drive:</span>
+            <span class="text-white font-medium truncate max-w-[120px]" title="1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L">LINE_Bot_Uploads</span>
+          </div>
+
+          <div id="lastUpdatedNotice" class="text-[11px] text-gray-400 flex items-center gap-1 hidden sm:flex">
+            <i class="fa-solid fa-clock text-amber-400/80 text-[10px]"></i>
+            <span id="lastUpdatedText">-</span>
+          </div>
+        </div>
+
+        <!-- Action Buttons & Refresh -->
+        <div class="flex items-center gap-2">
+          <!-- Refresh Button -->
+          <button
+            type="button"
+            id="btnRefreshGallery"
+            onclick="loadGalleryImages(true)"
+            class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-500 hover:to-amber-600 active:scale-95 text-white font-semibold text-xs shadow-md border border-amber-400/40 transition flex items-center gap-1.5 cursor-pointer"
+            title="รีเฟรชรูปภาพจาก Google Drive ทันที"
+          >
+            <i id="refreshIcon" class="fa-solid fa-rotate"></i>
+            <span>รีเฟรชภาพ</span>
+          </button>
+
+          <!-- Link to Drive Folder -->
+          <a
+            href="https://drive.google.com/drive/folders/1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L?usp=sharing"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-gray-200 text-xs font-semibold border border-white/20 transition flex items-center gap-1.5"
+            title="เปิดโฟลเดอร์ต้นฉบับบน Google Drive"
+          >
+            <i class="fa-solid fa-folder-open text-amber-300"></i>
+            <span class="hidden sm:inline">เปิดโฟลเดอร์ Drive</span>
+          </a>
+        </div>
+      </div>
+
+      <!-- Search & Layout Controls Row -->
+      <div class="pt-2 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+        <!-- Search Box -->
+        <div class="relative flex-1 max-w-md">
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+          <input
+            type="text"
+            id="gallerySearchInput"
+            placeholder="ค้นหาตามชื่อไฟล์ วันที่ เช่น 202611, LINE_..."
+            oninput="handleSearchPhotos()"
+            class="w-full pl-9 pr-8 py-2 rounded-xl bg-black/40 border border-white/20 text-xs text-white placeholder-gray-400 focus:outline-none focus:border-amber-400 transition"
+          />
+          <button
+            type="button"
+            id="clearSearchBtn"
+            onclick="clearSearch()"
+            class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-xs"
+          >
+            <i class="fa-solid fa-circle-xmark"></i>
+          </button>
+        </div>
+
+        <!-- Sort & Columns Selector -->
+        <div class="flex items-center gap-2">
+          <!-- Sort Dropdown -->
+          <div class="relative">
+            <select
+              id="sortOrderSelect"
+              onchange="handleSortChange()"
+              class="appearance-none pl-3 pr-8 py-2 rounded-xl bg-black/40 border border-white/20 text-xs text-amber-200 font-medium focus:outline-none focus:border-amber-400 cursor-pointer"
+            >
+              <option value="newest" class="bg-gray-900 text-white">🕒 ใหม่สุดก่อน</option>
+              <option value="oldest" class="bg-gray-900 text-white">⌛ เก่าสุดก่อน</option>
+              <option value="name" class="bg-gray-900 text-white">🔤 ตามชื่อไฟล์</option>
+            </select>
+            <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] pointer-events-none"></i>
+          </div>
+
+          <!-- Grid Columns Selector -->
+          <div class="hidden sm:flex items-center bg-black/40 rounded-xl p-1 border border-white/15 text-xs text-gray-300">
+            <button
+              type="button"
+              onclick="setGridColumns(2)"
+              id="colBtn2"
+              class="px-2.5 py-1 rounded-lg hover:text-white transition"
+              title="2 คอลัมน์"
+            >2</button>
+            <button
+              type="button"
+              onclick="setGridColumns(3)"
+              id="colBtn3"
+              class="px-2.5 py-1 rounded-lg bg-amber-500 text-amber-950 font-bold transition"
+              title="3 คอลัมน์ (แนะนำ)"
+            >3</button>
+            <button
+              type="button"
+              onclick="setGridColumns(4)"
+              id="colBtn4"
+              class="px-2.5 py-1 rounded-lg hover:text-white transition"
+              title="4 คอลัมน์"
+            >4</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Gallery Grid Container -->
+    <div
+      id="galleryGrid"
+      class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4 md:gap-5"
+    >
+      <!-- Skeletons will appear here on initial load -->
+    </div>
+
+    <!-- Empty State Container -->
+    <div id="galleryEmptyState" class="hidden text-center py-16 px-4 bg-black/30 rounded-3xl border border-white/10 my-8">
+      <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-tr from-amber-500/20 via-red-500/20 to-emerald-500/20 border-2 border-amber-400/40 flex items-center justify-center text-amber-300 mb-4 shadow-lg">
+        <i class="fa-solid fa-camera-retro text-3xl"></i>
+      </div>
+      <h3 class="text-xl font-bold text-amber-200">ยังไม่พบรูปภาพในโฟลเดอร์</h3>
+      <p class="text-xs text-gray-300 max-w-md mx-auto mt-1 leading-relaxed">
+        ส่งรูปภาพผ่านห้องแชท LINE cmparty2026 เพื่ออัปโหลดภาพกิจกรรม หรือกดปุ่มรีเฟรชเพื่อโหลดภาพใหม่อีกครั้ง
+      </p>
+      <div class="mt-4 flex items-center justify-center gap-2">
+        <button
+          type="button"
+          onclick="loadGalleryImages(true)"
+          class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold text-xs shadow-md transition flex items-center gap-1.5"
+        >
+          <i class="fa-solid fa-rotate"></i>
+          <span>ลองรีเฟรชอีกครั้ง</span>
+        </button>
+        <a
+          href="https://drive.google.com/drive/folders/1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L?usp=sharing"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-gray-200 font-semibold text-xs border border-white/20 transition flex items-center gap-1.5"
+        >
+          <i class="fa-brands fa-google-drive"></i>
+          <span>เปิดดูใน Google Drive</span>
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Fullscreen Lightbox Modal (Click to View Photo in Luxury High-Res) -->
+  <div
+    id="lightboxModal"
+    class="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between hidden transition-opacity duration-200"
+    role="dialog"
+    aria-modal="true"
+  >
+    <!-- Lightbox Header Bar -->
+    <div class="flex items-center justify-between px-4 py-3 bg-black/60 border-b border-white/10 text-white z-10">
+      <div class="flex items-center gap-2 truncate pr-2">
+        <span id="lbCounter" class="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500 text-amber-950">
+          ภาพที่ 1 / 1
+        </span>
+        <span id="lbFileName" class="text-xs text-gray-300 font-medium truncate max-w-xs sm:max-w-md">
+          -
+        </span>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <!-- Copy lh5 Link -->
+        <button
+          type="button"
+          onclick="copyCurrentPhotoLh5Link()"
+          class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-amber-300 text-xs font-medium border border-white/15 transition flex items-center gap-1.5"
+          title="คัดลอกลิงก์รูปภาพ (lh5)"
+        >
+          <i class="fa-solid fa-link text-xs"></i>
+          <span class="hidden sm:inline">คัดลอกลิงก์ lh5</span>
+        </button>
+
+        <!-- Download Button -->
+        <a
+          id="lbDownloadBtn"
+          href="#"
+          target="_blank"
+          download
+          class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-gray-200 text-xs font-medium border border-white/15 transition flex items-center gap-1.5"
+          title="ดาวน์โหลดรูปภาพ"
+        >
+          <i class="fa-solid fa-download text-xs"></i>
+          <span class="hidden sm:inline">ดาวน์โหลด</span>
+        </a>
+
+        <!-- Drive Button -->
+        <a
+          id="lbDriveBtn"
+          href="#"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 text-xs font-bold transition flex items-center gap-1.5"
+          title="เปิดรูปใน Google Drive"
+        >
+          <i class="fa-brands fa-google-drive text-xs"></i>
+          <span class="hidden sm:inline">Drive</span>
+        </a>
+
+        <!-- Close Button -->
+        <button
+          type="button"
+          onclick="closeLightbox()"
+          class="w-9 h-9 rounded-full bg-white/10 hover:bg-red-600 text-white flex items-center justify-center transition cursor-pointer"
+          title="ปิดหน้าต่างรูปภาพ (ESC)"
+        >
+          <i class="fa-solid fa-xmark text-lg"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- Lightbox Main Stage (Image Area + Prev/Next Buttons) -->
+    <div class="relative flex-1 flex items-center justify-center overflow-hidden p-2 sm:p-6" onclick="if (event.target === this) closeLightbox()">
+      <!-- Prev Button -->
+      <button
+        type="button"
+        id="btnPrevPhoto"
+        onclick="navigatePhoto(-1); event.stopPropagation();"
+        class="absolute left-2 sm:left-4 z-20 w-11 h-11 rounded-full bg-black/60 hover:bg-amber-500 hover:text-amber-950 text-white border border-white/20 flex items-center justify-center transition shadow-lg cursor-pointer active:scale-95"
+        title="ภาพก่อนหน้า (ลูกศรซ้าย)"
+      >
+        <i class="fa-solid fa-chevron-left text-lg"></i>
+      </button>
+
+      <!-- Centered Image Container -->
+      <div id="lbImageWrapper" class="relative max-w-full max-h-full flex items-center justify-center transition-transform duration-200">
+        <img
+          id="lbImage"
+          src=""
+          alt="Expanded Photo"
+          class="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl border border-white/10 select-none"
+        />
+      </div>
+
+      <!-- Next Button -->
+      <button
+        type="button"
+        id="btnNextPhoto"
+        onclick="navigatePhoto(1); event.stopPropagation();"
+        class="absolute right-2 sm:right-4 z-20 w-11 h-11 rounded-full bg-black/60 hover:bg-amber-500 hover:text-amber-950 text-white border border-white/20 flex items-center justify-center transition shadow-lg cursor-pointer active:scale-95"
+        title="ภาพถัดไป (ลูกศรขวา)"
+      >
+        <i class="fa-solid fa-chevron-right text-lg"></i>
+      </button>
+    </div>
+
+    <!-- Lightbox Footer Meta & Zoom Controls -->
+    <div class="px-4 py-2.5 bg-black/70 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-300">
+      <div class="flex items-center gap-3">
+        <span id="lbDate" class="text-amber-200">
+          <i class="fa-regular fa-calendar-check mr-1 text-amber-400"></i>-
+        </span>
+        <span id="lbFileSize" class="text-gray-400 border-l border-white/20 pl-3">
+          -
+        </span>
+      </div>
+
+      <!-- Zoom Controls -->
+      <div class="flex items-center gap-2">
+        <button
+          type="button"
+          onclick="zoomPhoto(-0.25)"
+          class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-gray-200 transition"
+          title="ซูมออก (-)"
+        >
+          <i class="fa-solid fa-magnifying-glass-minus"></i>
+        </button>
+        <span id="lbZoomText" class="text-amber-300 font-semibold text-[11px] min-w-[45px] text-center">100%</span>
+        <button
+          type="button"
+          onclick="zoomPhoto(0.25)"
+          class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-gray-200 transition"
+          title="ซูมเข้า (+)"
+        >
+          <i class="fa-solid fa-magnifying-glass-plus"></i>
+        </button>
+        <button
+          type="button"
+          onclick="resetZoom()"
+          class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-gray-200 transition text-[11px]"
+          title="รีเซ็ตขนาดภาพ"
+        >
+          รีเซ็ต
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer class="relative z-10 w-full mt-12 py-6 px-4 bg-black/50 border-t border-white/10 text-center text-xs text-gray-400 space-y-2">
+    <div class="flex flex-wrap items-center justify-center gap-4 text-gray-300 font-medium">
+      <a href="index.html" class="hover:text-amber-300 transition flex items-center gap-1.5">
+        <i class="fa-solid fa-id-badge text-red-400"></i>
+        <span>ระบบลงทะเบียน</span>
+      </a>
+      <span class="text-white/20">•</span>
+      <a href="reward.html" class="hover:text-amber-300 transition flex items-center gap-1.5">
+        <i class="fa-solid fa-gift text-yellow-400"></i>
+        <span>ตรวจสอบของรางวัล</span>
+      </a>
+      <span class="text-white/20">•</span>
+      <a
+        href="https://drive.google.com/drive/folders/1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L?usp=sharing"
+        target="_blank"
+        rel="noopener noreferrer"
+        class="hover:text-amber-300 transition flex items-center gap-1.5"
+      >
+        <i class="fa-brands fa-google-drive text-emerald-400"></i>
+        <span>โฟลเดอร์ Google Drive</span>
+      </a>
+    </div>
+    <p class="text-[11px] text-gray-400 flex items-center justify-center gap-1.5 pt-1">
+      <i class="fa-regular fa-snowflake text-red-400"></i>
+      <span>CM Frozenfood Christmas & New Year Celebration 2026</span>
+      <i class="fa-regular fa-snowflake text-emerald-400"></i>
+    </p>
+  </footer>
+
+  <script>
+    // ==========================================
+    // การตั้งค่า API และโฟลเดอร์ Google Drive
+    // ==========================================
+    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx6yDgQvf3RvCVu8nHRN3yQM6IM5Be2JZpESNT6nJ3XddDsOlrMj_S7nIPCRUqmZBjFYw/exec';
+    const BACKUP_GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzXGB3ckVANtHFesKySN341DrmH-FQHWbPg1zGcS9MBTpYWVWtHe7SDlu7cvoXauNld2A/exec';
+    const DRIVE_FOLDER_ID = '1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L';
+    const DRIVE_FOLDER_URL = `https://drive.google.com/drive/folders/${DRIVE_FOLDER_ID}?usp=sharing`;
+
+    let allImages = [];
+    let filteredImages = [];
+    let currentLightboxIndex = -1;
+    let currentZoomLevel = 1.0;
+    let currentGridColumns = 3;
+
+    // สร้างหิมะตก
+    function createSnowflakes() {
+      const container = document.getElementById('snowflakesContainer');
+      if (!container) return;
+      container.innerHTML = '';
+      const icons = ['fa-snowflake', 'fa-snowflake', 'fa-star', 'fa-sparkle'];
+      const count = window.innerWidth < 640 ? 18 : 36;
+
+      for (let i = 0; i < count; i++) {
+        const snowflake = document.createElement('i');
+        const iconClass = icons[Math.floor(Math.random() * icons.length)];
+        snowflake.className = `fa-regular ${iconClass} snowflake`;
+        snowflake.style.left = Math.random() * 100 + 'vw';
+        snowflake.style.animationDuration = Math.random() * 5 + 6 + 's';
+        snowflake.style.animationDelay = Math.random() * 5 + 's';
+        snowflake.style.fontSize = Math.random() * 12 + 8 + 'px';
+        snowflake.style.opacity = (Math.random() * 0.6 + 0.2).toString();
+        container.appendChild(snowflake);
+      }
+    }
+
+    // แสดง Skeleton Placeholder ขณะกำลังโหลดรูป
+    function renderSkeletons(count = 8) {
+      const grid = document.getElementById('galleryGrid');
+      grid.innerHTML = '';
+      for (let i = 0; i < count; i++) {
+        const card = document.createElement('div');
+        card.className = 'aspect-square rounded-2xl bg-white/5 border border-white/10 overflow-hidden relative shimmer-placeholder';
+        grid.appendChild(card);
+      }
+    }
+
+    // โหลดรูปภาพจากระบบ Google Apps Script Backend (ดึงไฟล์จาก Drive Folder แปลงเป็น lh5)
+    async function loadGalleryImages(forceRefresh = false) {
+      const refreshBtn = document.getElementById('btnRefreshGallery');
+      const refreshIcon = document.getElementById('refreshIcon');
+      if (refreshIcon) refreshIcon.classList.add('fa-spin');
+      if (refreshBtn) refreshBtn.disabled = true;
+
+      renderSkeletons(allImages.length > 0 ? Math.min(allImages.length, 12) : 8);
+
+      try {
+        let result = null;
+
+        // 1. หากเปิดผ่าน GAS HtmlService โดยตรง
+        if (typeof google !== 'undefined' && google.script && google.script.run) {
+          try {
+            result = await new Promise((resolve, reject) => {
+              google.script.run
+                .withSuccessHandler(resolve)
+                .withFailureHandler(reject)
+                .getGalleryImages(forceRefresh);
+            });
+          } catch (gasErr) {
+            console.warn('google.script.run getGalleryImages failed, fallback to Web App URL:', gasErr);
+          }
+        }
+
+        // 2. เรียกผ่าน GAS Web App URL
+        if (!result || result.status !== 'success') {
+          const urlsToTry = [GAS_WEB_APP_URL, BACKUP_GAS_WEB_APP_URL].filter(Boolean);
+          for (const apiUrl of urlsToTry) {
+            try {
+              const url = `${apiUrl}?action=getGalleryImages&nocache=${forceRefresh ? '1' : '0'}&t=${Date.now()}`;
+              const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+              const json = await res.json();
+              if (json && json.status === 'success') {
+                result = json;
+                break;
+              }
+            } catch (fetchErr) {
+              console.warn('Fetch getGalleryImages error:', fetchErr);
+            }
+          }
+        }
+
+        if (result && result.status === 'success' && Array.isArray(result.images)) {
+          allImages = result.images;
+          document.getElementById('totalPhotosCount').innerText = allImages.length;
+          document.getElementById('lastUpdatedText').innerText = result.fetchedAt ? `อัปเดต: ${result.fetchedAt}` : 'อัปเดตล่าสุด';
+
+          applyFilterAndSort();
+
+          if (forceRefresh) {
+            Swal.fire({
+              toast: true,
+              position: 'top-end',
+              icon: 'success',
+              title: `โหลดภาพสำเร็จ (${allImages.length} ภาพ)`,
+              showConfirmButton: false,
+              timer: 1800
+            });
+          }
+        } else {
+          showEmptyState();
+        }
+      } catch (err) {
+        console.error('Error loading gallery images:', err);
+        showEmptyState();
+        Swal.fire({
+          icon: 'error',
+          title: 'ไม่สามารถโหลดรูปภาพได้',
+          text: err.message || 'กรุณาลองใหม่อีกครั้ง',
+          confirmButtonColor: '#b91c1c'
+        });
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('fa-spin');
+        if (refreshBtn) refreshBtn.disabled = false;
+      }
+    }
+
+    // กรองและเรียงลำดับรูปภาพ
+    function applyFilterAndSort() {
+      const keyword = (document.getElementById('gallerySearchInput')?.value || '').trim().toLowerCase();
+      const sortOrder = document.getElementById('sortOrderSelect')?.value || 'newest';
+
+      filteredImages = allImages.filter(img => {
+        if (!keyword) return true;
+        const text = `${img.name} ${img.date} ${img.id}`.toLowerCase();
+        return text.indexOf(keyword) !== -1;
+      });
+
+      if (sortOrder === 'newest') {
+        filteredImages.sort((a, b) => b.timestamp - a.timestamp);
+      } else if (sortOrder === 'oldest') {
+        filteredImages.sort((a, b) => a.timestamp - b.timestamp);
+      } else if (sortOrder === 'name') {
+        filteredImages.sort((a, b) => (a.name || '').localeCompare(b.name || ''));
+      }
+
+      renderGalleryGrid();
+    }
+
+    // แสดงรูปภาพลงใน Grid การ์ด
+    function renderGalleryGrid() {
+      const grid = document.getElementById('galleryGrid');
+      const emptyState = document.getElementById('galleryEmptyState');
+      grid.innerHTML = '';
+
+      if (filteredImages.length === 0) {
+        grid.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        return;
+      }
+
+      grid.classList.remove('hidden');
+      emptyState.classList.add('hidden');
+
+      filteredImages.forEach((img, index) => {
+        const card = document.createElement('div');
+        card.className = 'gallery-img-card group relative aspect-square rounded-2xl overflow-hidden bg-black/40 border border-amber-500/20 shadow-lg cursor-pointer';
+        card.onclick = () => openLightbox(index);
+
+        // แปลงขนาดไฟล์ให้อ่านง่าย
+        const formattedSize = formatFileSize(img.size);
+
+        card.innerHTML = `
+          <!-- รูปภาพหลักแสดงผลผ่าน URL Google lh5 -->
+          <img
+            src="${img.url}"
+            alt="${escapeHtml(img.name)}"
+            loading="lazy"
+            class="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+            onerror="handleImgError(this, '${img.fallbackUrl}', '${img.driveThumbnailUrl}')"
+          />
+
+          <!-- Gradient Overlay ตอน Hover -->
+          <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-3 pointer-events-none">
+            <!-- Top Tag: lh5 Badge & Zoom Icon -->
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/90 text-amber-950 font-bold shadow-sm">
+                lh5 CDN
+              </span>
+              <span class="w-7 h-7 rounded-full bg-white/20 backdrop-blur-sm text-white flex items-center justify-center text-xs">
+                <i class="fa-solid fa-magnifying-glass-plus"></i>
+              </span>
+            </div>
+
+            <!-- Bottom Metadata & Actions -->
+            <div class="space-y-1">
+              <p class="text-xs font-semibold text-white truncate drop-shadow">
+                ${escapeHtml(img.name)}
+              </p>
+              <div class="flex items-center justify-between text-[11px] text-gray-300">
+                <span class="truncate">${img.date || '-'}</span>
+                <span class="text-amber-300 font-medium">${formattedSize}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Copy Link Button (มุมขวาบน) -->
+          <button
+            type="button"
+            onclick="copySpecificLh5Link('${img.url}'); event.stopPropagation();"
+            class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 w-8 h-8 rounded-full bg-black/70 hover:bg-amber-500 hover:text-amber-950 text-white border border-white/20 flex items-center justify-center text-xs transition duration-200 z-10"
+            title="คัดลอกลิงก์รูปภาพ (lh5)"
+          >
+            <i class="fa-regular fa-copy"></i>
+          </button>
+        `;
+
+        grid.appendChild(card);
+      });
+    }
+
+    // กรณีโหลดภาพจาก lh5 ติดปัญหา ให้ fallback ไปที่ lh3 หรือ Google Drive thumbnail
+    function handleImgError(imgEl, fallbackUrl, driveThumbUrl) {
+      if (!imgEl.dataset.triedFallback && fallbackUrl) {
+        imgEl.dataset.triedFallback = 'true';
+        imgEl.src = fallbackUrl;
+      } else if (!imgEl.dataset.triedThumb && driveThumbUrl) {
+        imgEl.dataset.triedThumb = 'true';
+        imgEl.src = driveThumbUrl;
+      }
+    }
+
+    function showEmptyState() {
+      document.getElementById('galleryGrid').classList.add('hidden');
+      document.getElementById('galleryEmptyState').classList.remove('hidden');
+      document.getElementById('totalPhotosCount').innerText = '0';
+    }
+
+    // เปิด Lightbox แสดงรูปภาพขนาดใหญ่
+    function openLightbox(index) {
+      if (index < 0 || index >= filteredImages.length) return;
+      currentLightboxIndex = index;
+      currentZoomLevel = 1.0;
+
+      const photo = filteredImages[index];
+      const modal = document.getElementById('lightboxModal');
+      const lbImg = document.getElementById('lbImage');
+
+      document.getElementById('lbCounter').innerText = `ภาพที่ ${index + 1} จาก ${filteredImages.length}`;
+      document.getElementById('lbFileName').innerText = photo.name || '-';
+      document.getElementById('lbDate').innerHTML = `<i class="fa-regular fa-calendar-check mr-1 text-amber-400"></i>${photo.date || 'ไม่ระบุวันที่'}`;
+      document.getElementById('lbFileSize').innerText = formatFileSize(photo.size);
+
+      document.getElementById('lbDriveBtn').href = photo.driveViewUrl || DRIVE_FOLDER_URL;
+      document.getElementById('lbDownloadBtn').href = photo.url;
+
+      lbImg.src = photo.url;
+      resetZoom();
+
+      modal.classList.remove('hidden');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeLightbox() {
+      const modal = document.getElementById('lightboxModal');
+      modal.classList.add('hidden');
+      document.body.style.overflow = '';
+      currentLightboxIndex = -1;
+    }
+
+    function navigatePhoto(direction) {
+      if (filteredImages.length === 0) return;
+      let nextIndex = currentLightboxIndex + direction;
+      if (nextIndex < 0) nextIndex = filteredImages.length - 1;
+      if (nextIndex >= filteredImages.length) nextIndex = 0;
+      openLightbox(nextIndex);
+    }
+
+    function zoomPhoto(delta) {
+      currentZoomLevel = Math.max(0.5, Math.min(3.0, currentZoomLevel + delta));
+      const wrapper = document.getElementById('lbImageWrapper');
+      wrapper.style.transform = `scale(${currentZoomLevel})`;
+      document.getElementById('lbZoomText').innerText = `${Math.round(currentZoomLevel * 100)}%`;
+    }
+
+    function resetZoom() {
+      currentZoomLevel = 1.0;
+      const wrapper = document.getElementById('lbImageWrapper');
+      wrapper.style.transform = 'scale(1)';
+      document.getElementById('lbZoomText').innerText = '100%';
+    }
+
+    // คัดลอกลิงก์รูปภาพ lh5 ลงคลิปบอร์ด
+    async function copyCurrentPhotoLh5Link() {
+      if (currentLightboxIndex < 0 || currentLightboxIndex >= filteredImages.length) return;
+      const photo = filteredImages[currentLightboxIndex];
+      copySpecificLh5Link(photo.url);
+    }
+
+    async function copySpecificLh5Link(url) {
+      try {
+        await navigator.clipboard.writeText(url);
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'คัดลอกลิงก์ lh5 แล้ว!',
+          html: `<div class="text-[11px] text-gray-400 truncate max-w-xs">${escapeHtml(url)}</div>`,
+          showConfirmButton: false,
+          timer: 2000
+        });
+      } catch (e) {
+        prompt('คัดลอกลิงก์รูปภาพ (lh5):', url);
+      }
+    }
+
+    // แสดงคำอธิบายรูปแบบ lh5
+    function copyLh5FormatInfo() {
+      Swal.fire({
+        icon: 'info',
+        title: 'โครงสร้างลิงก์รูปภาพ (Google CDN lh5)',
+        html: `
+          <div class="text-left text-xs space-y-2.5 text-gray-700 bg-amber-50 p-3.5 rounded-xl border border-amber-200 mt-2">
+            <p><b>ลิงก์โฟลเดอร์ Google Drive:</b></p>
+            <div class="p-2 bg-white rounded border border-gray-200 font-mono text-[11px] break-all select-all">
+              https://drive.google.com/drive/folders/${DRIVE_FOLDER_ID}?usp=sharing
+            </div>
+            <p class="pt-1"><b>รูปแบบการแปลงเป็น lh5 Direct Image URL:</b></p>
+            <div class="p-2 bg-white rounded border border-gray-200 font-mono text-[11px] break-all text-emerald-700 font-bold select-all">
+              https://lh5.googleusercontent.com/d/<b>{FILE_ID}</b>
+            </div>
+            <p class="text-gray-500 text-[11px]">
+              ✨ รูปแบบนี้ให้ความเร็วสูงผ่าน Google Content Network และสามารถเปิดดูบนเว็บไซต์หรือ LINE ได้โดยตรงโดยไม่ต้องล็อกอิน
+            </p>
+          </div>
+        `,
+        confirmButtonText: 'รับทราบ',
+        confirmButtonColor: '#b45309'
+      });
+    }
+
+    // จัดการการค้นหา
+    function handleSearchPhotos() {
+      const input = document.getElementById('gallerySearchInput');
+      const clearBtn = document.getElementById('clearSearchBtn');
+      if (input.value.trim()) {
+        clearBtn.classList.remove('hidden');
+      } else {
+        clearBtn.classList.add('hidden');
+      }
+      applyFilterAndSort();
+    }
+
+    function clearSearch() {
+      const input = document.getElementById('gallerySearchInput');
+      input.value = '';
+      document.getElementById('clearSearchBtn').classList.add('hidden');
+      applyFilterAndSort();
+      input.focus();
+    }
+
+    function handleSortChange() {
+      applyFilterAndSort();
+    }
+
+    function setGridColumns(cols) {
+      currentGridColumns = cols;
+      const grid = document.getElementById('galleryGrid');
+      grid.className = `grid grid-cols-2 sm:grid-cols-${cols} lg:grid-cols-${cols} gap-3 sm:gap-4 md:gap-5`;
+
+      [2, 3, 4].forEach(c => {
+        const btn = document.getElementById(`colBtn${c}`);
+        if (!btn) return;
+        if (c === cols) {
+          btn.className = 'px-2.5 py-1 rounded-lg bg-amber-500 text-amber-950 font-bold transition';
+        } else {
+          btn.className = 'px-2.5 py-1 rounded-lg hover:text-white transition';
+        }
+      });
+    }
+
+    function formatFileSize(bytes) {
+      if (!bytes || isNaN(bytes)) return '-';
+      if (bytes < 1024) return bytes + ' B';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    // Keyboard Shortcuts (Arrow keys & Escape)
+    document.addEventListener('keydown', (e) => {
+      const modal = document.getElementById('lightboxModal');
+      if (modal.classList.contains('hidden')) return;
+
+      if (e.key === 'Escape') {
+        closeLightbox();
+      } else if (e.key === 'ArrowLeft') {
+        navigatePhoto(-1);
+      } else if (e.key === 'ArrowRight') {
+        navigatePhoto(1);
+      } else if (e.key === '+' || e.key === '=') {
+        zoomPhoto(0.25);
+      } else if (e.key === '-') {
+        zoomPhoto(-0.25);
+      } else if (e.key === '0') {
+        resetZoom();
+      }
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      createSnowflakes();
+      loadGalleryImages();
+    });
+  </script>
+</body>
+</html>
+
