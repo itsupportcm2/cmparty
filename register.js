@@ -2236,6 +2236,7 @@ function createGiftCheckFlexMessage(empId, rewardsList) {
         layout: 'vertical',
         backgroundColor: '#14532D',
         paddingAll: '14px',
+        spacing: 'sm',
         contents: [
           {
             type: 'text',
@@ -2245,6 +2246,17 @@ function createGiftCheckFlexMessage(empId, rewardsList) {
             weight: 'bold',
             align: 'center',
             wrap: true
+          },
+          {
+            type: 'button',
+            style: 'primary',
+            color: '#DC2626',
+            height: 'sm',
+            action: {
+              type: 'message',
+              label: 'ตรวจสอบรางวัล',
+              text: 'ตรวจสอบรางวัล'
+            }
           },
           {
             type: 'text',
@@ -2496,23 +2508,33 @@ function createNoRewardFlexMessage(empId, empInfo) {
         layout: 'vertical',
         backgroundColor: '#14532D',
         paddingAll: '14px',
+        spacing: 'sm',
         contents: [
           {
+            type: 'button',
+            style: 'primary',
+            color: '#DC2626',
+            height: 'sm',
+            action: {
+              type: 'message',
+              label: 'ตรวจสอบรางวัล',
+              text: 'ตรวจสอบรางวัล'
+            }
+          },
+          {
             type: 'text',
-            text: 'หากมีการจับรางวัลรอบถัดไป พิมพ์ "ตรวจสอบรางวัล" เพื่อเช็คผลอีกครั้งได้ค่ะ',
+            text: 'กดปุ่มด้านบนเพื่อตรวจสอบรางวัลอีกครั้ง',
             color: '#FEF08A',
-            size: 'xs',
-            weight: 'bold',
+            size: 'xxs',
             align: 'center',
-            wrap: true
+            margin: 'xs'
           },
           {
             type: 'text',
             text: 'ข้อมูล ณ เวลา: ' + nowStr,
             color: '#86EFAC',
             size: 'xxs',
-            align: 'center',
-            margin: 'xs'
+            align: 'center'
           }
         ]
       }
