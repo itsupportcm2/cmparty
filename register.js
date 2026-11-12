@@ -1164,6 +1164,10 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(saveRewardRecord(params)))
       .setMimeType(ContentService.MimeType.JSON);
   }
+  if (params.action === 'saveBatchRewards') {
+    return ContentService.createTextOutput(JSON.stringify(saveBatchRewards(params)))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
   if (params.action === 'deleteReward') {
     return ContentService.createTextOutput(JSON.stringify(deleteRewardRecord(params)))
       .setMimeType(ContentService.MimeType.JSON);
@@ -1275,6 +1279,10 @@ function doPost(e) {
     }
     if (payload.action === 'saveReward') {
       return ContentService.createTextOutput(JSON.stringify(saveRewardRecord(payload)))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    if (payload.action === 'saveBatchRewards') {
+      return ContentService.createTextOutput(JSON.stringify(saveBatchRewards(payload)))
         .setMimeType(ContentService.MimeType.JSON);
     }
     if (payload.action === 'deleteReward') {
@@ -1587,11 +1595,21 @@ function saveRewardRecord(payload) {
       }
     }
 
-    // ตรวจสอบว่ารหัสพนักงานนี้เคยได้รับรางวัลไปแล้วหรือไม่ (ป้องกันการรับรางวัลซ้ำ)
+    // ตรวจสอบว่ารหัสพนักงานนี้เคยได้รับรางวัลไปแล้วหรือไม่ (ป้องกันการรับรางวัลซ้ำ) และแถวรางวัลยังว่างจริง
     if (empId) {
       const lastRow = rewardSheet.getLastRow();
       if (lastRow >= 2) {
         const existingRows = rewardSheet.getRange(2, 1, lastRow - 1, 2).getValues();
+        const targetIdx = rowIndex - 2;
+        if (targetIdx >= 0 && targetIdx < existingRows.length) {
+          const currentOwnerId = String(existingRows[targetIdx][1] || '').trim().replace(/\.0$/, '');
+          if (currentOwnerId) {
+            return {
+              status: 'error',
+              message: `รางวัล "${rewardName}" แถวที่ ${rowIndex} ถูกแจกให้รหัส ${currentOwnerId} ไปแล้ว (กรุณารีเฟรชข้อมูล)`
+            };
+          }
+        }
         for (let i = 0; i < existingRows.length; i++) {
           const checkRowIndex = i + 2;
           if (checkRowIndex !== rowIndex) {
@@ -1658,6 +1676,199 @@ function saveRewardRecord(payload) {
     };
   } catch (err) {
     console.error('Error in saveRewardRecord:', err);
+    return { status: 'error', message: err.message };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
+ * บันทึกผู้ได้รับรางวัลแบบหลายรายการพร้อมกันในครั้งเดียว (Batch Lucky Draw)
+ * - ใช้ LockService ล็อกรอบเดียว ตรวจสอบสิทธิ์ใน Register และกันซ้ำทั้งผู้รับและแถวรางวัล
+ * - ส่ง LINE Flex Message แจ้งเตือนผู้ได้รับรางวัลทุกคนที่มี LINE UID เหมือนบันทึกทีละรายการ
+ */
+function saveBatchRewards(payload) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(15000);
+
+    let items = [];
+    if (Array.isArray(payload.items)) {
+      items = payload.items;
+    } else if (typeof payload.items === 'string' && payload.items.trim()) {
+      items = JSON.parse(payload.items);
+    }
+
+    if (!items || items.length === 0) {
+      return { status: 'error', message: 'ไม่มีรายการรางวัลสำหรับบันทึก' };
+    }
+
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const rewardSheet = getRewardSheet(ss);
+    if (!rewardSheet) {
+      return { status: 'error', message: 'ไม่พบแผ่นงานรางวัล (Sheet gift)' };
+    }
+
+    const { employeesMap } = getRegisteredEmployeesFromRegisterSheet(ss);
+    const lastRow = rewardSheet.getLastRow();
+    const assignedEmpToReward = {};
+    const existingRowMap = {};
+
+    if (lastRow >= 2) {
+      const existingRows = rewardSheet.getRange(2, 1, lastRow - 1, 2).getValues();
+      for (let i = 0; i < existingRows.length; i++) {
+        const rNum = i + 2;
+        const rName = String(existingRows[i][0] || '').trim();
+        const eId = String(existingRows[i][1] || '').trim().replace(/\.0$/, '');
+        existingRowMap[rNum] = { rewardName: rName, empId: eId };
+        if (eId && !assignedEmpToReward[eId]) {
+          assignedEmpToReward[eId] = rName || `แถว ${rNum}`;
+        }
+      }
+    }
+
+    const results = [];
+    const committed = [];
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i] || {};
+      const rowIdx = parseInt(item.rowIndex, 10);
+      const reqRewardName = String(item.rewardName || '').trim();
+      const empId = String(item.empId || '').trim().replace(/\.0$/, '');
+
+      if (!rowIdx || rowIdx < 2) {
+        results.push({ rowIndex: rowIdx, rewardName: reqRewardName, empId: empId, status: 'error', message: 'rowIndex ไม่ถูกต้อง' });
+        continue;
+      }
+
+      const existingRow = existingRowMap[rowIdx];
+      if (existingRow && existingRow.empId) {
+        results.push({
+          rowIndex: rowIdx,
+          rewardName: reqRewardName || existingRow.rewardName,
+          empId: empId,
+          status: 'error',
+          message: `รางวัล "${reqRewardName || existingRow.rewardName}" ถูกแจกให้รหัส ${existingRow.empId} ไปแล้ว`
+        });
+        continue;
+      }
+
+      const finalRewardName = reqRewardName || (existingRow ? existingRow.rewardName : '');
+      if (!finalRewardName || !empId) {
+        results.push({ rowIndex: rowIdx, rewardName: finalRewardName, empId: empId, status: 'error', message: 'ข้อมูลรางวัลหรือรหัสพนักงานไม่ครบ' });
+        continue;
+      }
+
+      const regEmp = employeesMap[empId];
+      if (!regEmp) {
+        results.push({
+          rowIndex: rowIdx,
+          rewardName: finalRewardName,
+          empId: empId,
+          status: 'error',
+          message: `ไม่พบรหัสพนักงาน ${empId} ใน Sheet Register`
+        });
+        continue;
+      }
+
+      if (assignedEmpToReward[empId]) {
+        results.push({
+          rowIndex: rowIdx,
+          rewardName: finalRewardName,
+          empId: empId,
+          empName: regEmp.empName || '',
+          status: 'error',
+          message: `รหัส ${empId} ได้รับรางวัล "${assignedEmpToReward[empId]}" ไปแล้ว`
+        });
+        continue;
+      }
+
+      const empName = regEmp.empName || '';
+      const department = regEmp.department || '';
+      const branch = regEmp.branch || '';
+      const uid = regEmp.uid || '';
+      const pictureUrl = regEmp.pictureUrl || '';
+
+      rewardSheet.getRange(rowIdx, 1, 1, 6).setValues([[
+        finalRewardName,
+        empId,
+        empName,
+        department,
+        branch,
+        uid
+      ]]);
+
+      assignedEmpToReward[empId] = finalRewardName;
+      existingRowMap[rowIdx] = { rewardName: finalRewardName, empId: empId };
+
+      const recordObj = {
+        rowIndex: rowIdx,
+        rewardName: finalRewardName,
+        empId: empId,
+        empName: empName,
+        department: department,
+        branch: branch,
+        uid: uid,
+        pictureUrl: pictureUrl,
+        status: 'success',
+        lineSent: false,
+        lineMessageStatus: ''
+      };
+      committed.push(recordObj);
+      results.push(recordObj);
+    }
+
+    if (committed.length > 0) {
+      SpreadsheetApp.flush();
+    }
+
+    let lineSentCount = 0;
+    let permissionRequired = false;
+
+    for (let j = 0; j < committed.length; j++) {
+      const rec = committed[j];
+      if (rec.uid && rec.uid !== 'TEST_USER') {
+        try {
+          const pushRes = pushRewardFlexMessage(rec.uid, {
+            rewardName: rec.rewardName,
+            empId: rec.empId,
+            empName: rec.empName,
+            department: rec.department,
+            branch: rec.branch,
+            pictureUrl: rec.pictureUrl
+          });
+          rec.lineSent = Boolean(pushRes.success);
+          rec.lineMessageStatus = pushRes.message || '';
+          if (rec.lineSent) {
+            lineSentCount++;
+          } else if (String(rec.lineMessageStatus).indexOf('script.external_request') !== -1 || String(rec.lineMessageStatus).indexOf('UrlFetchApp') !== -1) {
+            permissionRequired = true;
+          }
+        } catch (pushErr) {
+          rec.lineMessageStatus = pushErr.message || String(pushErr);
+          if (rec.lineMessageStatus.indexOf('script.external_request') !== -1 || rec.lineMessageStatus.indexOf('UrlFetchApp') !== -1) {
+            permissionRequired = true;
+          }
+        }
+      } else {
+        rec.lineMessageStatus = 'ไม่มี LINE UID ในหน้า Register (บันทึกลง Sheet สำเร็จ)';
+      }
+    }
+
+    const errorCount = results.filter(r => r.status !== 'success').length;
+    return {
+      status: committed.length > 0 ? 'success' : 'error',
+      message: committed.length > 0
+        ? `บันทึกรางวัลสำเร็จ ${committed.length} รายการ (ส่งแจ้งเตือน LINE ${lineSentCount} คน)`
+        : ((results[0] && results[0].message) || 'ไม่สามารถบันทึกรางวัลได้'),
+      savedCount: committed.length,
+      errorCount: errorCount,
+      lineSentCount: lineSentCount,
+      permissionRequired: permissionRequired,
+      results: results
+    };
+  } catch (err) {
+    console.error('Error in saveBatchRewards:', err);
     return { status: 'error', message: err.message };
   } finally {
     lock.releaseLock();

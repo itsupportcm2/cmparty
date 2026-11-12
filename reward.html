@@ -162,13 +162,37 @@
         </div>
       </div>
 
-      <!-- Quick Entry Form (คีย์ด่วน กระทัดรัด Cute Christmas Style) -->
-      <div class="p-5 sm:p-6 bg-gradient-to-b from-rose-50/40 to-white border-b border-rose-100">
-        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <h2 class="text-sm font-extrabold text-rose-700 uppercase tracking-wide flex items-center gap-2">
-            <span>✨</span>
-            <span id="formModeTitle">คีย์ผู้ได้รับรางวัลด่วน (เลือกของรางวัล + พิมพ์รหัสพนักงาน)</span>
-          </h2>
+      <!-- Quick Entry & Auto Lucky Draw Section (Cute Christmas Style) -->
+      <div class="p-5 sm:p-6 bg-gradient-to-b from-rose-50/40 to-white border-b border-rose-100 space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <!-- Mode Switcher Tabs -->
+            <div class="inline-flex rounded-full bg-rose-100/70 p-1 border border-rose-200 text-xs font-bold shadow-2xs">
+              <button
+                type="button"
+                id="modeBtnManual"
+                onclick="switchEntryMode('manual')"
+                class="px-3.5 py-1.5 rounded-full bg-white text-rose-700 shadow-xs transition flex items-center gap-1.5 cursor-pointer"
+              >
+                <i class="fa-solid fa-keyboard"></i>
+                <span>คีย์รหัสเอง</span>
+              </button>
+              <button
+                type="button"
+                id="modeBtnAuto"
+                onclick="switchEntryMode('auto')"
+                class="px-3.5 py-1.5 rounded-full text-slate-600 hover:text-rose-700 transition flex items-center gap-1.5 cursor-pointer"
+              >
+                <i class="fa-solid fa-shuffle"></i>
+                <span>สุ่มอัตโนมัติ (หลายรางวัล)</span>
+              </button>
+            </div>
+            <h2 class="hidden sm:flex text-xs font-bold text-rose-700/80 items-center gap-1.5">
+              <span>✨</span>
+              <span id="formModeTitle">เลือกของรางวัล + พิมพ์รหัสพนักงาน</span>
+            </h2>
+          </div>
+
           <button
             type="button"
             onclick="openNewPrizeModal()"
@@ -179,84 +203,233 @@
           </button>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
-          <!-- 1. เลือกรางวัล -->
-          <div class="md:col-span-5">
-            <label class="block text-xs font-bold text-rose-700/85 mb-1">
-              <i class="fa-solid fa-gift text-rose-500 mr-1"></i>รายการรางวัล (คลิกเลือกจากตารางด้านล่างได้)
-            </label>
-            <select
-              id="rewardSelect"
-              onchange="handleSelectRewardDropdown()"
-              class="w-full px-3.5 py-2.5 rounded-2xl border-2 border-rose-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-300/30 outline-none text-sm font-semibold bg-white text-slate-700 cursor-pointer"
-            >
-              <option value="">-- กำลังโหลดรายการรางวัล... --</option>
-            </select>
-          </div>
+        <!-- ========== MODE 1: คีย์รหัสพนักงานเอง (Manual) ========== -->
+        <div id="manualEntrySection" class="space-y-3">
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
+            <!-- 1. เลือกรางวัล -->
+            <div class="md:col-span-5">
+              <label class="block text-xs font-bold text-rose-700/85 mb-1">
+                <i class="fa-solid fa-gift text-rose-500 mr-1"></i>รายการรางวัล (คลิกเลือกจากตารางด้านล่างได้)
+              </label>
+              <select
+                id="rewardSelect"
+                onchange="handleSelectRewardDropdown()"
+                class="w-full px-3.5 py-2.5 rounded-2xl border-2 border-rose-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-300/30 outline-none text-sm font-semibold bg-white text-slate-700 cursor-pointer"
+              >
+                <option value="">-- กำลังโหลดรายการรางวัล... --</option>
+              </select>
+            </div>
 
-          <!-- 2. กรอกรหัสพนักงาน (ดึงจาก Sheet Register) -->
-          <div class="md:col-span-3">
-            <label class="block text-xs font-bold text-rose-700/85 mb-1">
-              <i class="fa-solid fa-id-card text-rose-500 mr-1"></i>รหัสพนักงาน (Sheet Register)
-            </label>
-            <div class="relative">
-              <input
-                type="tel"
-                inputmode="numeric"
-                id="empIdInput"
-                list="registeredEmployeesDatalist"
-                autocomplete="off"
-                placeholder="พิมพ์รหัสผู้ลงทะเบียน..."
-                class="w-full pl-3.5 pr-9 py-2.5 rounded-2xl border-2 border-rose-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-300/30 outline-none text-sm font-bold text-rose-600 bg-rose-50/30 focus:bg-white"
-              />
-              <datalist id="registeredEmployeesDatalist"></datalist>
-              <span id="empMatchIcon" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-emerald-500">
-                <i class="fa-solid fa-circle-check"></i>
-              </span>
+            <!-- 2. กรอกรหัสพนักงาน (ดึงจาก Sheet Register) -->
+            <div class="md:col-span-3">
+              <label class="block text-xs font-bold text-rose-700/85 mb-1">
+                <i class="fa-solid fa-id-card text-rose-500 mr-1"></i>รหัสพนักงาน (Sheet Register)
+              </label>
+              <div class="relative">
+                <input
+                  type="tel"
+                  inputmode="numeric"
+                  id="empIdInput"
+                  list="registeredEmployeesDatalist"
+                  autocomplete="off"
+                  placeholder="พิมพ์รหัสผู้ลงทะเบียน..."
+                  class="w-full pl-3.5 pr-9 py-2.5 rounded-2xl border-2 border-rose-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-300/30 outline-none text-sm font-bold text-rose-600 bg-rose-50/30 focus:bg-white"
+                />
+                <datalist id="registeredEmployeesDatalist"></datalist>
+                <span id="empMatchIcon" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-emerald-500">
+                  <i class="fa-solid fa-circle-check"></i>
+                </span>
+              </div>
+            </div>
+
+            <!-- 3. ปุ่มบันทึก & ส่งแจ้งเตือน LINE -->
+            <div class="md:col-span-4 flex gap-2 md:pt-5">
+              <button
+                type="button"
+                id="btnSaveReward"
+                onclick="handleQuickSave()"
+                disabled
+                class="flex-1 py-2.5 px-4 rounded-2xl bg-gradient-to-r from-rose-500 via-red-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed text-white font-bold text-sm border-2 border-white/80 shadow-md shadow-rose-500/20 hover:shadow-lg active:scale-95 transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <i class="fa-solid fa-paper-plane"></i>
+                <span>บันทึก & แจ้งเตือน LINE</span>
+              </button>
+              <button
+                type="button"
+                onclick="resetQuickForm()"
+                title="ล้างช่องกรอก"
+                class="py-2.5 px-3.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-semibold text-sm transition cursor-pointer"
+              >
+                <i class="fa-solid fa-rotate-left"></i>
+              </button>
             </div>
           </div>
 
-          <!-- 3. ปุ่มบันทึก & ส่งแจ้งเตือน LINE -->
-          <div class="md:col-span-4 flex gap-2 md:pt-5">
-            <button
-              type="button"
-              id="btnSaveReward"
-              onclick="handleQuickSave()"
-              disabled
-              class="flex-1 py-2.5 px-4 rounded-2xl bg-gradient-to-r from-rose-500 via-red-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed text-white font-bold text-sm border-2 border-white/80 shadow-md shadow-rose-500/20 hover:shadow-lg active:scale-95 transition flex items-center justify-center gap-2 cursor-pointer"
-            >
-              <i class="fa-solid fa-paper-plane"></i>
-              <span>บันทึก & แจ้งเตือน LINE</span>
-            </button>
-            <button
-              type="button"
-              onclick="resetQuickForm()"
-              title="ล้างช่องกรอก"
-              class="py-2.5 px-3.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-semibold text-sm transition cursor-pointer"
-            >
-              <i class="fa-solid fa-rotate-left"></i>
-            </button>
+          <!-- แถบแสดงข้อมูลพนักงานที่ดึงมาอัตโนมัติ (0ms) -->
+          <div id="empPreviewBox" class="p-3.5 rounded-2xl bg-rose-50/40 border-2 border-dashed border-rose-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+            <div class="flex flex-wrap items-center gap-x-5 gap-y-1">
+              <div>
+                <span class="text-slate-400">ชื่อ-สกุล:</span>
+                <span id="previewName" class="font-bold text-slate-800 ml-1">-</span>
+              </div>
+              <div>
+                <span class="text-slate-400">แผนก:</span>
+                <span id="previewDept" class="font-semibold text-slate-700 ml-1">-</span>
+              </div>
+              <div>
+                <span class="text-slate-400">สาขา:</span>
+                <span id="previewBranch" class="font-semibold text-emerald-600 ml-1">-</span>
+              </div>
+            </div>
+            <div id="previewUidBadge" class="text-[11px] px-3 py-0.5 rounded-full bg-white text-slate-500 border border-rose-200 font-medium">
+              <i class="fa-brands fa-line mr-1 text-emerald-500"></i><span>รอตรวจสอบรหัสพนักงาน</span>
+            </div>
           </div>
         </div>
 
-        <!-- แถบแสดงข้อมูลพนักงานที่ดึงมาอัตโนมัติ (0ms) -->
-        <div id="empPreviewBox" class="mt-3 p-3.5 rounded-2xl bg-rose-50/40 border-2 border-dashed border-rose-200 flex flex-wrap items-center justify-between gap-2 text-xs">
-          <div class="flex flex-wrap items-center gap-x-5 gap-y-1">
-            <div>
-              <span class="text-slate-400">ชื่อ-สกุล:</span>
-              <span id="previewName" class="font-bold text-slate-800 ml-1">-</span>
+        <!-- ========== MODE 2: สุ่มผู้โชคดีอัตโนมัติ (Admin Batch Lucky Draw) ========== -->
+        <div id="autoDrawSection" class="hidden space-y-4">
+          <!-- Pool Stats + Settings Row -->
+          <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3 p-3.5 rounded-2xl bg-white border-2 border-rose-200/80 shadow-2xs">
+            <div class="flex flex-wrap items-center gap-2 text-xs">
+              <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 font-bold">
+                <i class="fa-solid fa-users text-emerald-600"></i>
+                <span>พร้อมสุ่ม (ยังไม่เคยได้รางวัล):</span>
+                <b id="autoEligibleCount" class="text-sm text-emerald-700">0</b>
+                <span>คน</span>
+              </span>
+              <span class="text-[11px] text-slate-500 font-medium">
+                (มี LINE UID <b id="autoEligibleUidCount" class="text-emerald-600">0</b> คน)
+              </span>
+              <label class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 bg-slate-50 px-2.5 py-1 rounded-full border border-slate-200 cursor-pointer hover:bg-rose-50 transition">
+                <input
+                  type="checkbox"
+                  id="autoRequireUidCheck"
+                  onchange="updateAutoDrawPoolSummary()"
+                  class="accent-rose-500 rounded cursor-pointer"
+                />
+                <span>เฉพาะคนมี LINE UID</span>
+              </label>
             </div>
-            <div>
-              <span class="text-slate-400">แผนก:</span>
-              <span id="previewDept" class="font-semibold text-slate-700 ml-1">-</span>
+
+            <!-- สวิตช์สลับโหมด 1-Click vs ยืนยันก่อนบันทึก -->
+            <label class="inline-flex items-center gap-2.5 cursor-pointer select-none px-3 py-1.5 rounded-full bg-rose-50/80 border border-rose-200">
+              <span class="relative inline-flex items-center">
+                <input
+                  type="checkbox"
+                  id="autoOneClickSwitch"
+                  onchange="updateOneClickToggleUI()"
+                  class="sr-only peer"
+                />
+                <span class="w-9 h-5 bg-slate-300 peer-focus:outline-none rounded-full peer peer-checked:bg-amber-500 transition-colors after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4 shadow-inner"></span>
+              </span>
+              <span id="autoOneClickLabel" class="text-xs font-bold text-rose-700">
+                🛡️ สุ่มโชว์ชื่อก่อน → กดยืนยันเพื่อบันทึก
+              </span>
+            </label>
+          </div>
+
+          <!-- Multi-Select Unassigned Prizes Box -->
+          <div class="rounded-2xl bg-white border-2 border-rose-200/80 p-3.5 space-y-2.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div class="flex items-center gap-2">
+                <span class="text-xs font-extrabold text-rose-800 flex items-center gap-1.5">
+                  <i class="fa-solid fa-gifts text-rose-500"></i>
+                  <span>เลือกรางวัลที่จะสุ่ม (ติ๊กเลือกได้ทีละหลายรางวัล)</span>
+                </span>
+                <span id="autoSelectedCountBadge" class="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 border border-rose-200">
+                  เลือก 0 รายการ
+                </span>
+              </div>
+
+              <!-- Quick Batch Buttons -->
+              <div class="flex flex-wrap items-center gap-1.5 text-[11px] font-bold">
+                <span class="text-slate-400 font-medium mr-0.5">เลือกด่วน:</span>
+                <button type="button" onclick="autoSelectBatchCount(1)" class="px-2.5 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition cursor-pointer">1</button>
+                <button type="button" onclick="autoSelectBatchCount(3)" class="px-2.5 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition cursor-pointer">3</button>
+                <button type="button" onclick="autoSelectBatchCount(5)" class="px-2.5 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition cursor-pointer">5</button>
+                <button type="button" onclick="autoSelectBatchCount(10)" class="px-2.5 py-1 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 transition cursor-pointer">10</button>
+                <button type="button" onclick="autoSelectAllRemaining()" class="px-2.5 py-1 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition cursor-pointer">เลือกทั้งหมด</button>
+                <button type="button" onclick="autoClearSelectedPrizes()" class="px-2.5 py-1 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 border border-slate-200 transition cursor-pointer">ล้างที่เลือก</button>
+              </div>
             </div>
-            <div>
-              <span class="text-slate-400">สาขา:</span>
-              <span id="previewBranch" class="font-semibold text-emerald-600 ml-1">-</span>
+
+            <!-- Prize Filter Input -->
+            <div class="relative">
+              <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-rose-300 text-xs"></i>
+              <input
+                type="text"
+                id="autoPrizeFilterInput"
+                oninput="renderAutoDrawPrizeList()"
+                placeholder="กรองชื่อรางวัลที่ยังไม่ได้แจก..."
+                class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-rose-200 text-xs bg-rose-50/30 focus:bg-white focus:border-rose-400 outline-none"
+              />
+            </div>
+
+            <!-- Checklist of Unassigned Prizes -->
+            <div id="autoPrizeCheckboxList" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 max-h-44 overflow-y-auto pr-1">
+              <!-- Checkboxes rendered by JS -->
             </div>
           </div>
-          <div id="previewUidBadge" class="text-[11px] px-3 py-0.5 rounded-full bg-white text-slate-500 border border-rose-200 font-medium">
-            <i class="fa-brands fa-line mr-1 text-emerald-500"></i><span>รอตรวจสอบรหัสพนักงาน</span>
+
+          <!-- Primary Draw Trigger Button -->
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5">
+            <button
+              type="button"
+              id="btnRunAutoDraw"
+              onclick="handleStartAutoDraw()"
+              disabled
+              class="flex-1 py-3 px-5 rounded-2xl bg-gradient-to-r from-rose-500 via-red-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed text-white font-bold text-sm border-2 border-white shadow-lg shadow-rose-500/20 active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <i class="fa-solid fa-shuffle"></i>
+              <span id="btnRunAutoDrawText">กรุณาเลือกรางวัลที่ต้องการสุ่ม</span>
+            </button>
+          </div>
+
+          <!-- Pending Winners Preview Card (สำหรับโหมดโชว์ชื่อก่อนกดยืนยัน) -->
+          <div id="autoPendingBox" class="hidden rounded-2xl bg-gradient-to-b from-amber-50/80 to-white border-2 border-amber-300 p-4 space-y-3 shadow-sm">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 pb-2.5">
+              <div>
+                <h3 class="text-sm font-extrabold text-amber-900 flex items-center gap-1.5">
+                  <span>🎯</span>
+                  <span>ผลสุ่มผู้โชคดี (<span id="autoPendingCountText">0</span> รายการ) — รอแอดมินกดยืนยัน</span>
+                </h3>
+                <p class="text-[11px] text-amber-800/80 mt-0.5">
+                  ตรวจสอบรายชื่อก่อนบันทึกจริง สามารถกด <b>"สุ่มใหม่"</b> เฉพาะคนที่ไม่แสดงตัวได้ (ยังไม่มีการบันทึกลง Sheet หรือส่ง LINE)
+                </p>
+              </div>
+              <button
+                type="button"
+                onclick="cancelPendingDraw()"
+                class="text-xs font-bold text-slate-500 hover:text-rose-600 px-2.5 py-1 rounded-full bg-white border border-slate-200 cursor-pointer transition"
+              >
+                ยกเลิกชุดนี้
+              </button>
+            </div>
+
+            <div id="autoPendingList" class="space-y-2 max-h-72 overflow-y-auto pr-1">
+              <!-- Pending winner rows rendered here -->
+            </div>
+
+            <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 pt-1">
+              <button
+                type="button"
+                id="btnConfirmPendingDraw"
+                onclick="handleConfirmPendingDraw()"
+                class="flex-1 py-3 px-4 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-sm border-2 border-white shadow-md shadow-emerald-500/20 active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer"
+              >
+                <i class="fa-solid fa-circle-check"></i>
+                <span id="btnConfirmPendingText">ยืนยันบันทึกทั้งหมด & ส่งแจ้งเตือน LINE</span>
+              </button>
+              <button
+                type="button"
+                onclick="handleStartAutoDraw(true)"
+                class="py-3 px-4 rounded-2xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-xs border border-amber-300 transition flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <i class="fa-solid fa-rotate"></i>
+                <span>สุ่มใหม่ทั้งชุด</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -337,6 +510,10 @@
     let employeesMap = {}; // { empId: { empId, empName, department, branch, uid, pictureUrl } }
     let currentFilter = 'all';
     let currentMatchedEmployee = null;
+    let currentEntryMode = 'manual'; // 'manual' | 'auto'
+    const selectedDrawRowIndices = new Set();
+    let pendingDrawList = [];
+    const roundSkippedEmpIds = new Set();
 
     // ตรวจสอบว่าข้อมูล Gviz ที่ได้มาจาก Sheet "Register" จริงหรือไม่ (คอลัมน์ F ต้องเป็น LINE UID ไม่ใช่แผ่นงานแบบฟอร์มแรก)
     function isValidRegisterGvizTable(gvizObj) {
@@ -520,6 +697,7 @@
           const runner = google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
           if (payload.action === 'getRewardInitData') runner.getRewardInitData();
           else if (payload.action === 'saveReward') runner.saveRewardRecord(payload);
+          else if (payload.action === 'saveBatchRewards') runner.saveBatchRewards(payload);
           else if (payload.action === 'deleteReward') runner.deleteRewardRecord(payload);
           else runner.checkRegisteredEmployeeById(payload.empId);
         });
@@ -538,7 +716,8 @@
         const params = new URLSearchParams();
         Object.keys(payload).forEach(k => {
           if (payload[k] !== undefined && payload[k] !== null) {
-            params.append(k, String(payload[k]));
+            const val = typeof payload[k] === 'object' ? JSON.stringify(payload[k]) : String(payload[k]);
+            params.append(k, val);
           }
         });
         const getRes = await fetch(`${GAS_WEB_APP_URL}?${params.toString()}`, {
@@ -576,6 +755,7 @@
 
       if (rewardsList.length === 0) {
         select.innerHTML = '<option value="">-- ไม่มีรายการรางวัล --</option>';
+        renderAutoDrawPrizeList();
         return;
       }
 
@@ -585,6 +765,7 @@
       if (unassignedList.length === 0) {
         select.innerHTML = '<option value="">-- แจกรางวัลครบทุกรายการแล้ว --</option>';
         validateSaveButton();
+        renderAutoDrawPrizeList();
         return;
       }
 
@@ -605,6 +786,7 @@
         select.value = unassignedList[0].rowIndex;
       }
       validateSaveButton();
+      renderAutoDrawPrizeList();
     }
 
     // เมื่อเปลี่ยนรางวัลใน Dropdown
@@ -832,6 +1014,13 @@
           showConfirmButton: false,
           timer: 2000
         });
+        return;
+      }
+
+      if (currentEntryMode === 'auto') {
+        selectedDrawRowIndices.add(Number(rowIndex));
+        renderAutoDrawPrizeList();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
 
@@ -1067,6 +1256,511 @@
 
     function escapeJs(str) {
       return String(str || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
+    }
+
+    // ==========================================
+    // ระบบสุ่มผู้โชคดีอัตโนมัติ (Admin Batch Lucky Draw)
+    // ==========================================
+    function switchEntryMode(mode) {
+      currentEntryMode = mode === 'auto' ? 'auto' : 'manual';
+      const manualSec = document.getElementById('manualEntrySection');
+      const autoSec = document.getElementById('autoDrawSection');
+      const btnManual = document.getElementById('modeBtnManual');
+      const btnAuto = document.getElementById('modeBtnAuto');
+      const titleEl = document.getElementById('formModeTitle');
+
+      const activeTabCls = 'px-3.5 py-1.5 rounded-full bg-white text-rose-700 shadow-xs transition flex items-center gap-1.5 cursor-pointer';
+      const idleTabCls = 'px-3.5 py-1.5 rounded-full text-slate-600 hover:text-rose-700 transition flex items-center gap-1.5 cursor-pointer';
+
+      if (currentEntryMode === 'auto') {
+        if (manualSec) manualSec.classList.add('hidden');
+        if (autoSec) autoSec.classList.remove('hidden');
+        if (btnManual) btnManual.className = idleTabCls;
+        if (btnAuto) btnAuto.className = activeTabCls;
+        if (titleEl) titleEl.innerText = 'เลือกรางวัล 1 หรือหลายรายการ แล้วกดสุ่ม (กันคนซ้ำอัตโนมัติ)';
+        renderAutoDrawPrizeList();
+        updateOneClickToggleUI();
+      } else {
+        if (manualSec) manualSec.classList.remove('hidden');
+        if (autoSec) autoSec.classList.add('hidden');
+        if (btnManual) btnManual.className = activeTabCls;
+        if (btnAuto) btnAuto.className = idleTabCls;
+        if (titleEl) titleEl.innerText = 'เลือกของรางวัล + พิมพ์รหัสพนักงาน';
+      }
+    }
+
+    function getUnassignedRewards() {
+      return rewardsList.filter(r => !r.empId || r.empId.trim() === '');
+    }
+
+    function getEligibleEmployees({ requireUid = false, extraExcludedIds = null } = {}) {
+      const wonIds = new Set(
+        rewardsList
+          .filter(r => r.empId && r.empId.trim() !== '')
+          .map(r => String(r.empId).trim())
+      );
+      if (extraExcludedIds) {
+        extraExcludedIds.forEach(id => wonIds.add(String(id).trim()));
+      }
+
+      return Object.values(employeesMap).filter(emp => {
+        const cleanId = String(emp.empId || '').trim();
+        if (!cleanId || wonIds.has(cleanId)) return false;
+        if (requireUid && (!emp.uid || emp.uid.trim() === '' || emp.uid === 'TEST_USER')) return false;
+        return true;
+      });
+    }
+
+    function updateAutoDrawPoolSummary() {
+      const allEligible = getEligibleEmployees({ requireUid: false });
+      const uidEligible = allEligible.filter(e => e.uid && e.uid.trim() !== '' && e.uid !== 'TEST_USER');
+      const countEl = document.getElementById('autoEligibleCount');
+      const uidCountEl = document.getElementById('autoEligibleUidCount');
+
+      if (countEl) countEl.innerText = allEligible.length;
+      if (uidCountEl) uidCountEl.innerText = uidEligible.length;
+      updateAutoDrawActionButton();
+    }
+
+    function updateOneClickToggleUI() {
+      const sw = document.getElementById('autoOneClickSwitch');
+      const label = document.getElementById('autoOneClickLabel');
+      const isOneClick = Boolean(sw && sw.checked);
+
+      if (label) {
+        label.innerText = isOneClick
+          ? '⚡ โหมด 1-Click: สุ่มแล้วบันทึก & ส่ง LINE ทันที'
+          : '🛡️ สุ่มโชว์ชื่อก่อน → กดยืนยันเพื่อบันทึก';
+        label.className = isOneClick
+          ? 'text-xs font-bold text-amber-700'
+          : 'text-xs font-bold text-rose-700';
+      }
+      updateAutoDrawActionButton();
+    }
+
+    function updateAutoDrawActionButton() {
+      const badge = document.getElementById('autoSelectedCountBadge');
+      const btn = document.getElementById('btnRunAutoDraw');
+      const btnText = document.getElementById('btnRunAutoDrawText');
+      const sw = document.getElementById('autoOneClickSwitch');
+      const selectedCount = selectedDrawRowIndices.size;
+      const isOneClick = Boolean(sw && sw.checked);
+
+      if (badge) {
+        badge.innerText = `เลือก ${selectedCount} รายการ`;
+      }
+      if (!btn || !btnText) return;
+
+      if (selectedCount === 0) {
+        btn.disabled = true;
+        btnText.innerText = 'กรุณาเลือกรางวัลที่ต้องการสุ่ม';
+        return;
+      }
+
+      btn.disabled = false;
+      if (isOneClick) {
+        btn.className = 'flex-1 py-3 px-5 rounded-2xl bg-gradient-to-r from-amber-500 via-orange-500 to-rose-500 hover:from-amber-600 hover:to-rose-600 disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed text-white font-bold text-sm border-2 border-white shadow-lg shadow-amber-500/20 active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer';
+        btnText.innerText = `⚡ สุ่มและบันทึก + แจ้ง LINE ทันที (${selectedCount} รางวัล)`;
+      } else {
+        btn.className = 'flex-1 py-3 px-5 rounded-2xl bg-gradient-to-r from-rose-500 via-red-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed text-white font-bold text-sm border-2 border-white shadow-lg shadow-rose-500/20 active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer';
+        btnText.innerText = `🎲 สุ่มรายชื่อผู้โชคดี (${selectedCount} รางวัล) — โชว์ผลก่อนบันทึก`;
+      }
+    }
+
+    function renderAutoDrawPrizeList() {
+      const container = document.getElementById('autoPrizeCheckboxList');
+      if (!container) return;
+
+      const unassigned = getUnassignedRewards();
+      const validRowSet = new Set(unassigned.map(r => Number(r.rowIndex)));
+      Array.from(selectedDrawRowIndices).forEach(rIdx => {
+        if (!validRowSet.has(rIdx)) selectedDrawRowIndices.delete(rIdx);
+      });
+
+      const keyword = ((document.getElementById('autoPrizeFilterInput') || {}).value || '').trim().toLowerCase();
+      const visibleList = keyword
+        ? unassigned.filter(r => String(r.rewardName || '').toLowerCase().includes(keyword))
+        : unassigned;
+
+      if (unassigned.length === 0) {
+        container.innerHTML = '<div class="col-span-full py-4 text-center text-xs text-emerald-700 font-bold bg-emerald-50/70 rounded-xl border border-emerald-200">🎉 แจกรางวัลครบทุกรายการแล้ว!</div>';
+      } else if (visibleList.length === 0) {
+        container.innerHTML = '<div class="col-span-full py-4 text-center text-xs text-slate-400">ไม่พบรางวัลที่ตรงกับคำค้นหา</div>';
+      } else {
+        container.innerHTML = visibleList.map(item => {
+          const rIdx = Number(item.rowIndex);
+          const checked = selectedDrawRowIndices.has(rIdx);
+          return `
+            <label class="flex items-center gap-2 px-3 py-2 rounded-xl border text-xs cursor-pointer transition select-none ${checked ? 'bg-rose-50 border-rose-400 text-rose-800 font-bold shadow-2xs' : 'bg-slate-50/60 border-slate-200 text-slate-700 hover:bg-rose-50/40'}">
+              <input
+                type="checkbox"
+                ${checked ? 'checked' : ''}
+                onchange="toggleAutoPrizeSelection(${rIdx}, this.checked)"
+                class="accent-rose-500 rounded cursor-pointer shrink-0"
+              />
+              <span class="truncate" title="${escapeHtml(item.rewardName)}">${escapeHtml(item.rewardName)}</span>
+            </label>
+          `;
+        }).join('');
+      }
+
+      updateAutoDrawPoolSummary();
+    }
+
+    function toggleAutoPrizeSelection(rowIndex, isChecked) {
+      const idx = Number(rowIndex);
+      if (isChecked) selectedDrawRowIndices.add(idx);
+      else selectedDrawRowIndices.delete(idx);
+      renderAutoDrawPrizeList();
+    }
+
+    function autoSelectBatchCount(count) {
+      const unassigned = getUnassignedRewards();
+      const keyword = ((document.getElementById('autoPrizeFilterInput') || {}).value || '').trim().toLowerCase();
+      const pool = keyword
+        ? unassigned.filter(r => String(r.rewardName || '').toLowerCase().includes(keyword))
+        : unassigned;
+
+      selectedDrawRowIndices.clear();
+      pool.slice(0, count).forEach(r => selectedDrawRowIndices.add(Number(r.rowIndex)));
+      renderAutoDrawPrizeList();
+    }
+
+    function autoSelectAllRemaining() {
+      const unassigned = getUnassignedRewards();
+      const keyword = ((document.getElementById('autoPrizeFilterInput') || {}).value || '').trim().toLowerCase();
+      const pool = keyword
+        ? unassigned.filter(r => String(r.rewardName || '').toLowerCase().includes(keyword))
+        : unassigned;
+
+      pool.forEach(r => selectedDrawRowIndices.add(Number(r.rowIndex)));
+      renderAutoDrawPrizeList();
+    }
+
+    function autoClearSelectedPrizes() {
+      selectedDrawRowIndices.clear();
+      renderAutoDrawPrizeList();
+    }
+
+    // สุ่มตัวเลขแบบ Unbiased Cryptographically Secure Random
+    function getCryptoRandomInt(max) {
+      if (max <= 1) return 0;
+      if (window.crypto && window.crypto.getRandomValues) {
+        const range = 0x100000000;
+        const limit = Math.floor(range / max) * max;
+        const arr = new Uint32Array(1);
+        let val = 0;
+        do {
+          window.crypto.getRandomValues(arr);
+          val = arr[0];
+        } while (val >= limit);
+        return val % max;
+      }
+      return Math.floor(Math.random() * max);
+    }
+
+    function pickFairRandomWinners(eligiblePool, count) {
+      const arr = eligiblePool.slice();
+      const picked = [];
+      const pickCount = Math.min(count, arr.length);
+      for (let i = 0; i < pickCount; i++) {
+        const j = i + getCryptoRandomInt(arr.length - i);
+        const temp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = temp;
+        picked.push(arr[i]);
+      }
+      return picked;
+    }
+
+    async function handleStartAutoDraw(isRerollAll = false) {
+      const btn = document.getElementById('btnRunAutoDraw');
+      const btnText = document.getElementById('btnRunAutoDrawText');
+      if (btn) btn.disabled = true;
+      if (btnText) btnText.innerText = 'กำลังซิงค์รายชื่อล่าสุด & สุ่มรางวัล...';
+
+      try {
+        // ซิงค์ข้อมูลล่าสุดจาก Sheet Register & gift เสมอก่อนสุ่ม เพื่อรวมคนที่เพิ่งลงทะเบียนหน้างาน
+        await loadAllData(false);
+
+        const prizesToDraw = isRerollAll && pendingDrawList.length > 0
+          ? pendingDrawList
+              .map(p => getUnassignedRewards().find(r => Number(r.rowIndex) === Number(p.rowIndex)))
+              .filter(Boolean)
+          : getUnassignedRewards().filter(r => selectedDrawRowIndices.has(Number(r.rowIndex)));
+
+        if (prizesToDraw.length === 0) {
+          Swal.fire({
+            icon: 'info',
+            title: 'ไม่มีรางวัลที่พร้อมสุ่ม',
+            text: 'กรุณาเลือกรางวัลที่ยังไม่ได้แจกอย่างน้อย 1 รายการ',
+            confirmButtonColor: '#f43f5e'
+          });
+          return;
+        }
+
+        const requireUid = Boolean((document.getElementById('autoRequireUidCheck') || {}).checked);
+        const eligible = getEligibleEmployees({ requireUid });
+
+        if (eligible.length < prizesToDraw.length) {
+          Swal.fire({
+            icon: 'warning',
+            title: 'จำนวนผู้มีสิทธิ์ไม่เพียงพอ',
+            html: `เลือกรางวัลไว้ <b>${prizesToDraw.length}</b> รายการ แต่มีผู้มีสิทธิ์สุ่มเหลือ <b>${eligible.length}</b> คน${requireUid ? ' (ตามตัวกรองเฉพาะผู้มี LINE UID)' : ''}`,
+            confirmButtonColor: '#f43f5e'
+          });
+          return;
+        }
+
+        const winners = pickFairRandomWinners(eligible, prizesToDraw.length);
+        roundSkippedEmpIds.clear();
+        const drawnItems = prizesToDraw.map((prize, idx) => ({
+          rowIndex: Number(prize.rowIndex),
+          rewardName: prize.rewardName,
+          emp: winners[idx]
+        }));
+
+        const isOneClick = !isRerollAll && Boolean((document.getElementById('autoOneClickSwitch') || {}).checked);
+        if (isOneClick) {
+          await commitBatchDrawToServer(drawnItems);
+        } else {
+          pendingDrawList = drawnItems;
+          renderPendingDrawList();
+        }
+      } finally {
+        updateAutoDrawActionButton();
+      }
+    }
+
+    function renderPendingDrawList() {
+      const box = document.getElementById('autoPendingBox');
+      const listEl = document.getElementById('autoPendingList');
+      const countEl = document.getElementById('autoPendingCountText');
+      const confirmText = document.getElementById('btnConfirmPendingText');
+
+      if (!box || !listEl) return;
+      if (pendingDrawList.length === 0) {
+        box.classList.add('hidden');
+        listEl.innerHTML = '';
+        return;
+      }
+
+      box.classList.remove('hidden');
+      if (countEl) countEl.innerText = pendingDrawList.length;
+      if (confirmText) confirmText.innerText = `ยืนยันบันทึกทั้งหมด & ส่งแจ้งเตือน LINE (${pendingDrawList.length} รายการ)`;
+
+      listEl.innerHTML = pendingDrawList.map((item, idx) => {
+        const emp = item.emp || {};
+        const hasUid = Boolean(emp.uid && emp.uid.trim() !== '' && emp.uid !== 'TEST_USER');
+        return `
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 p-2.5 rounded-xl bg-white border border-amber-200 text-xs shadow-2xs">
+            <div class="min-w-0 flex-1 space-y-0.5">
+              <div class="flex items-center gap-1.5 font-bold text-rose-700">
+                <span class="px-1.5 py-0.5 rounded bg-amber-100 text-amber-800 text-[10px]">#${idx + 1}</span>
+                <span class="truncate">${escapeHtml(item.rewardName)}</span>
+              </div>
+              <div class="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-slate-700">
+                <span class="px-2 py-0.5 rounded-full bg-rose-100 text-rose-700 font-bold text-[11px]">${escapeHtml(emp.empId)}</span>
+                <span class="font-bold">${escapeHtml(emp.empName || '-')}</span>
+                <span class="text-slate-400 text-[11px]">${escapeHtml(emp.department || '-')} (${escapeHtml(emp.branch || '-')})</span>
+                ${hasUid
+                  ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-semibold"><i class="fa-brands fa-line mr-1"></i>พร้อมส่ง LINE</span>'
+                  : '<span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">ไม่มี LINE UID</span>'}
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onclick="rerollPendingItem(${idx})"
+                class="px-2.5 py-1 rounded-full bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-300 font-bold text-[11px] transition cursor-pointer flex items-center gap-1"
+                title="สุ่มใหม่เฉพาะรางวัลนี้ (กรณีไม่แสดงตัว/สละสิทธิ์)"
+              >
+                <i class="fa-solid fa-dice"></i>
+                <span>สุ่มใหม่</span>
+              </button>
+              <button
+                type="button"
+                onclick="removePendingItem(${idx})"
+                class="w-7 h-7 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 flex items-center justify-center text-xs transition cursor-pointer"
+                title="เอาออกจากรายการรอบันทึกนี้"
+              >
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function rerollPendingItem(idx) {
+      const target = pendingDrawList[idx];
+      if (!target) return;
+
+      if (target.emp && target.emp.empId) {
+        roundSkippedEmpIds.add(String(target.emp.empId).trim());
+      }
+
+      const requireUid = Boolean((document.getElementById('autoRequireUidCheck') || {}).checked);
+      const excluded = new Set(roundSkippedEmpIds);
+      pendingDrawList.forEach((item, i) => {
+        if (i !== idx && item.emp && item.emp.empId) {
+          excluded.add(String(item.emp.empId).trim());
+        }
+      });
+
+      const eligible = getEligibleEmployees({ requireUid, extraExcludedIds: excluded });
+      if (eligible.length === 0) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ไม่มีรายชื่อเหลือให้สุ่มใหม่แล้ว',
+          text: 'รายชื่อผู้มีสิทธิ์ที่เหลือถูกสุ่มครบหมดแล้วครับ',
+          confirmButtonColor: '#f43f5e'
+        });
+        return;
+      }
+
+      const [replacement] = pickFairRandomWinners(eligible, 1);
+      pendingDrawList[idx] = {
+        ...target,
+        emp: replacement
+      };
+      renderPendingDrawList();
+    }
+
+    function removePendingItem(idx) {
+      pendingDrawList.splice(idx, 1);
+      renderPendingDrawList();
+    }
+
+    function cancelPendingDraw() {
+      pendingDrawList = [];
+      roundSkippedEmpIds.clear();
+      renderPendingDrawList();
+    }
+
+    async function handleConfirmPendingDraw() {
+      if (pendingDrawList.length === 0) return;
+      const itemsToCommit = pendingDrawList.slice();
+      await commitBatchDrawToServer(itemsToCommit);
+    }
+
+    async function commitBatchDrawToServer(itemsToCommit) {
+      const confirmBtn = document.getElementById('btnConfirmPendingDraw');
+      const runBtn = document.getElementById('btnRunAutoDraw');
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>กำลังบันทึก & ส่งแจ้งเตือน LINE...</span>';
+      }
+      if (runBtn) runBtn.disabled = true;
+
+      try {
+        const res = await callGasApi({
+          action: 'saveBatchRewards',
+          items: itemsToCommit.map(item => ({
+            rowIndex: item.rowIndex,
+            rewardName: item.rewardName,
+            empId: item.emp.empId
+          }))
+        });
+
+        if (res && res.status === 'success') {
+          const results = Array.isArray(res.results) ? res.results : [];
+          const successRows = results.filter(r => r.status === 'success');
+          const failedRows = results.filter(r => r.status !== 'success');
+
+          successRows.forEach(saved => {
+            const rIdx = rewardsList.findIndex(r => Number(r.rowIndex) === Number(saved.rowIndex));
+            if (rIdx !== -1) {
+              rewardsList[rIdx] = {
+                ...rewardsList[rIdx],
+                empId: saved.empId,
+                empName: saved.empName,
+                department: saved.department,
+                branch: saved.branch,
+                uid: saved.uid || ''
+              };
+            }
+            selectedDrawRowIndices.delete(Number(saved.rowIndex));
+          });
+
+          cancelPendingDraw();
+          updateStatsAndDropdown();
+          renderRewardsTable();
+
+          if (res.permissionRequired) {
+            Swal.fire({
+              icon: 'warning',
+              title: `บันทึกรางวัลสำเร็จ ${res.savedCount} รายการ! (แต่ยังไม่ได้อนุมัติสิทธิ์ส่ง LINE)`,
+              html: `
+                <div class="text-left text-xs space-y-2 bg-amber-50 p-3.5 rounded-xl border border-amber-300 text-gray-700">
+                  <p class="font-bold text-red-700">วิธีเปิดสิทธิ์ส่งข้อความ LINE (ทำครั้งเดียวใน Google Apps Script):</p>
+                  <ol class="list-decimal pl-4 space-y-1">
+                    <li>เปิดหน้า <b>Google Apps Script Editor</b></li>
+                    <li>เลือกฟังก์ชัน <b><code>initRegisterSheetHeaders</code></b> หรือ <b><code>setupAndAuthorize</code></b> แล้วกด <b>Run</b></li>
+                    <li>กด <b>Review permissions &gt; Allow</b> และ Deploy เวอร์ชันใหม่</li>
+                  </ol>
+                </div>
+              `,
+              confirmButtonText: 'รับทราบ',
+              confirmButtonColor: '#f43f5e'
+            });
+            return;
+          }
+
+          const summaryLines = successRows.slice(0, 12).map((r, i) => `
+            <div class="flex items-center justify-between gap-2 py-1 border-b border-rose-100 last:border-0 text-xs">
+              <span class="truncate font-semibold text-rose-700">${i + 1}. ${escapeHtml(r.rewardName)}</span>
+              <span class="shrink-0 text-slate-700 font-bold">${escapeHtml(r.empId)} ${escapeHtml(r.empName)} ${r.lineSent ? '✅' : ''}</span>
+            </div>
+          `).join('');
+          const moreNote = successRows.length > 12
+            ? `<p class="text-[11px] text-slate-500 pt-1">... และอีก ${successRows.length - 12} รายการ</p>`
+            : '';
+          const errNote = failedRows.length > 0
+            ? `<p class="text-[11px] text-rose-600 font-semibold pt-2">⚠️ ข้าม ${failedRows.length} รายการ: ${escapeHtml(failedRows[0].message || '')}</p>`
+            : '';
+
+          Swal.fire({
+            icon: failedRows.length > 0 ? 'warning' : 'success',
+            title: `สุ่มและบันทึกรางวัลสำเร็จ ${res.savedCount} รายการ! 🎉`,
+            html: `
+              <div class="text-left space-y-1.5 mt-2">
+                <p class="text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl px-3 py-2">
+                  <i class="fa-brands fa-line mr-1"></i>ส่ง LINE Flex Message แจ้งเตือนแล้ว ${res.lineSentCount || 0} / ${res.savedCount} คน
+                </p>
+                <div class="max-h-56 overflow-y-auto bg-rose-50/40 border border-rose-100 rounded-xl p-2.5">
+                  ${summaryLines}
+                  ${moreNote}
+                </div>
+                ${errNote}
+              </div>
+            `,
+            confirmButtonText: 'ตกลง',
+            confirmButtonColor: '#10b981'
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'ไม่สามารถบันทึกรางวัลได้',
+            text: (res && res.message) || 'เกิดข้อผิดพลาดในการบันทึกแบบชุด',
+            confirmButtonColor: '#f43f5e'
+          });
+          await loadAllData(false);
+        }
+      } catch (err) {
+        Swal.fire({
+          icon: 'error',
+          title: 'เกิดข้อผิดพลาด',
+          text: err.message,
+          confirmButtonColor: '#f43f5e'
+        });
+      } finally {
+        if (confirmBtn) {
+          confirmBtn.disabled = false;
+          confirmBtn.innerHTML = `<i class="fa-solid fa-circle-check"></i><span id="btnConfirmPendingText">ยืนยันบันทึกทั้งหมด & ส่งแจ้งเตือน LINE (${pendingDrawList.length} รายการ)</span>`;
+        }
+        updateAutoDrawActionButton();
+      }
     }
 
     function createRewardSnowflakes() {
