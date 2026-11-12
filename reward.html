@@ -22,87 +22,157 @@
   <style>
     body {
       font-family: 'Prompt', sans-serif;
-      background: radial-gradient(circle at top, #7f1d1d 0%, #450a0a 50%, #052e16 100%);
+      background:
+        radial-gradient(circle at 12% 10%, rgba(254, 205, 211, 0.55) 0%, transparent 40%),
+        radial-gradient(circle at 88% 12%, rgba(167, 243, 208, 0.45) 0%, transparent 42%),
+        radial-gradient(circle at 50% 90%, rgba(253, 230, 138, 0.35) 0%, transparent 45%),
+        linear-gradient(160deg, #fff5f7 0%, #fffdf9 48%, #f0fdf4 100%);
+      background-attachment: fixed;
       min-height: 100vh;
+      overflow-x: hidden;
     }
 
     .glass-panel {
-      background: rgba(255, 255, 255, 0.97);
-      backdrop-filter: blur(12px);
-      border: 2px solid rgba(250, 204, 21, 0.6);
+      background: rgba(255, 255, 255, 0.96);
+      backdrop-filter: blur(14px);
+      border: 2.5px solid rgba(251, 113, 133, 0.45);
+      box-shadow: 0 20px 45px -12px rgba(244, 63, 94, 0.16);
+    }
+
+    .cute-candy-strip {
+      background: repeating-linear-gradient(
+        135deg,
+        #fb7185 0px,
+        #fb7185 12px,
+        #ffffff 12px,
+        #ffffff 24px,
+        #34d399 24px,
+        #34d399 36px,
+        #ffffff 36px,
+        #ffffff 48px
+      );
+    }
+
+    .cute-title-gradient {
+      background: linear-gradient(90deg, #e11d48 0%, #f97316 35%, #10b981 70%, #e11d48 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: candyShimmer 5s linear infinite;
+    }
+
+    .cute-logo-frame {
+      background: linear-gradient(135deg, #fecdd3 0%, #fde68a 50%, #a7f3d0 100%);
+    }
+
+    @keyframes candyShimmer {
+      0% { background-position: 0% center; }
+      100% { background-position: 200% center; }
+    }
+
+    .snowflake {
+      position: fixed;
+      top: -20px;
+      color: rgba(244, 114, 182, 0.52);
+      text-shadow: 0 2px 6px rgba(255, 255, 255, 0.95), 0 0 8px rgba(125, 211, 252, 0.45);
+      user-select: none;
+      z-index: 0;
+      pointer-events: none;
+      animation-name: snowfall;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+    }
+
+    @keyframes snowfall {
+      0% {
+        transform: translateY(-10vh) translateX(0) rotate(0deg);
+        opacity: 0.95;
+      }
+      100% {
+        transform: translateY(105vh) translateX(25px) rotate(360deg);
+        opacity: 0.25;
+      }
     }
   </style>
 </head>
-<body class="p-3 sm:p-6 text-gray-800">
+<body class="relative p-3 sm:p-6 text-slate-700 selection:bg-rose-200 selection:text-rose-900">
 
-  <!-- Top Christmas Accent Bar -->
-  <div class="fixed top-0 left-0 right-0 h-2 bg-gradient-to-r from-red-600 via-yellow-400 to-green-600 z-30 shadow"></div>
+  <!-- Snowflakes Layer -->
+  <div id="snowflakesContainer" class="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true"></div>
 
-  <div class="max-w-5xl mx-auto space-y-5 pt-2 pb-10">
+  <!-- Top Cute Candy Cane Accent Bar -->
+  <div class="fixed top-0 left-0 right-0 h-2 cute-candy-strip z-30 shadow-sm"></div>
 
-    <!-- Header Card -->
-    <header class="glass-panel rounded-3xl shadow-xl overflow-hidden">
-      <div class="bg-gradient-to-r from-red-800 via-red-700 to-green-900 px-6 py-5 text-white flex flex-col sm:flex-row items-center justify-between gap-4">
+  <div class="relative z-10 max-w-5xl mx-auto space-y-5 pt-2 pb-10">
+
+    <!-- Header Card (Cute Cozy Christmas Style) -->
+    <header class="glass-panel rounded-[2rem] overflow-hidden">
+      <div class="relative bg-gradient-to-br from-rose-100 via-[#fff7f9] to-emerald-100 px-6 py-5 text-slate-800 border-b-2 border-dashed border-rose-200 flex flex-col lg:flex-row items-center justify-between gap-4 overflow-hidden">
         <div class="flex items-center gap-4">
-          <div class="bg-white p-2 rounded-2xl shadow border-2 border-yellow-400 shrink-0">
-            <img
-              src="https://lh5.googleusercontent.com/d/1rzj7RdJ76nk5OccBPZ-kj-qxDp_Rg_Yk"
-              alt="Logo"
-              class="h-12 w-12 object-contain rounded-xl"
-              referrerpolicy="no-referrer"
-              loading="eager"
-              onerror="this.outerHTML='<i class=\'fa-solid fa-gift text-red-700 text-2xl px-2\'></i>'"
-            />
+          <div class="cute-logo-frame p-1.5 rounded-2xl shadow-md shrink-0">
+            <div class="bg-white p-1.5 rounded-xl border border-rose-100">
+              <img
+                src="https://lh5.googleusercontent.com/d/1rzj7RdJ76nk5OccBPZ-kj-qxDp_Rg_Yk"
+                alt="Logo"
+                class="h-12 w-12 object-contain rounded-lg"
+                referrerpolicy="no-referrer"
+                loading="eager"
+                onerror="this.outerHTML='<span class=\'text-2xl px-2\'>🎁</span>'"
+              />
+            </div>
           </div>
           <div>
-            <div class="inline-flex items-center gap-1.5 text-yellow-300 text-xs font-semibold tracking-wider uppercase">
-              <i class="fa-solid fa-trophy"></i>
+            <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/90 border border-rose-200 text-rose-600 text-[11px] font-bold tracking-wider uppercase mb-1 shadow-2xs">
+              <span>🏆</span>
               <span>CM PARTY LUCKY DRAW</span>
+              <span>🎄</span>
             </div>
-            <h1 class="text-xl sm:text-2xl font-bold">ระบบบันทึกและจัดการผู้ได้รับรางวัล</h1>
+            <h1 class="text-xl sm:text-2xl font-extrabold cute-title-gradient">
+              ระบบบันทึกและจัดการผู้ได้รับรางวัล 🎁
+            </h1>
           </div>
         </div>
 
         <!-- Summary Counters -->
-        <div class="flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-          <div class="bg-blue-500/25 backdrop-blur px-3 py-2 rounded-xl border border-blue-300/30 text-center" title="จำนวนผู้ลงทะเบียนจาก Sheet Register">
-            <span class="block text-[11px] text-blue-100">ผู้ลงทะเบียน (Register)</span>
-            <span id="statRegistered" class="font-bold text-lg text-blue-200">0</span>
+        <div class="flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm">
+          <div class="bg-sky-50/90 backdrop-blur px-3 py-2 rounded-2xl border-2 border-sky-200 text-center shadow-2xs" title="จำนวนผู้ลงทะเบียนจาก Sheet Register">
+            <span class="block text-[11px] font-semibold text-sky-600">ผู้ลงทะเบียน (Register)</span>
+            <span id="statRegistered" class="font-extrabold text-lg text-sky-700">0</span>
           </div>
-          <div class="bg-white/15 backdrop-blur px-3 py-2 rounded-xl border border-white/20 text-center">
-            <span class="block text-[11px] text-red-100">รางวัลทั้งหมด</span>
-            <span id="statTotal" class="font-bold text-lg text-white">0</span>
+          <div class="bg-rose-50/90 backdrop-blur px-3 py-2 rounded-2xl border-2 border-rose-200 text-center shadow-2xs">
+            <span class="block text-[11px] font-semibold text-rose-600">รางวัลทั้งหมด</span>
+            <span id="statTotal" class="font-extrabold text-lg text-rose-700">0</span>
           </div>
-          <div class="bg-green-500/25 backdrop-blur px-3 py-2 rounded-xl border border-green-300/30 text-center">
-            <span class="block text-[11px] text-green-100">แจกแล้ว</span>
-            <span id="statAssigned" class="font-bold text-lg text-green-300">0</span>
+          <div class="bg-emerald-50/90 backdrop-blur px-3 py-2 rounded-2xl border-2 border-emerald-200 text-center shadow-2xs">
+            <span class="block text-[11px] font-semibold text-emerald-600">แจกแล้ว</span>
+            <span id="statAssigned" class="font-extrabold text-lg text-emerald-700">0</span>
           </div>
-          <div class="bg-amber-500/25 backdrop-blur px-3 py-2 rounded-xl border border-amber-300/30 text-center">
-            <span class="block text-[11px] text-amber-100">คงเหลือ</span>
-            <span id="statRemaining" class="font-bold text-lg text-yellow-300">0</span>
+          <div class="bg-amber-50/90 backdrop-blur px-3 py-2 rounded-2xl border-2 border-amber-200 text-center shadow-2xs">
+            <span class="block text-[11px] font-semibold text-amber-600">คงเหลือ</span>
+            <span id="statRemaining" class="font-extrabold text-lg text-amber-700">0</span>
           </div>
           <a
             href="gallery.html"
-            class="bg-amber-400/20 hover:bg-amber-400/30 backdrop-blur px-3 py-2 rounded-xl border border-amber-300/40 text-center font-bold text-amber-200 transition flex items-center gap-1.5"
+            class="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 px-3.5 py-2.5 rounded-2xl border-2 border-white text-center font-bold text-white shadow-md shadow-rose-500/20 transition flex items-center gap-1.5"
             title="ดูแกลเลอรีภาพกิจกรรม"
           >
-            <i class="fa-solid fa-camera-retro text-amber-300"></i>
+            <i class="fa-solid fa-camera-retro text-amber-200"></i>
             <span class="text-xs">ภาพกิจกรรม</span>
           </a>
         </div>
       </div>
 
-      <!-- Quick Entry Form (คีย์ด่วน กระทัดรัด) -->
-      <div class="p-5 sm:p-6 bg-gradient-to-b from-amber-50/50 to-white border-b border-gray-200">
-        <div class="flex items-center justify-between mb-3">
-          <h2 class="text-sm font-bold text-red-800 uppercase tracking-wide flex items-center gap-2">
-            <i class="fa-solid fa-bolt text-amber-500"></i>
+      <!-- Quick Entry Form (คีย์ด่วน กระทัดรัด Cute Christmas Style) -->
+      <div class="p-5 sm:p-6 bg-gradient-to-b from-rose-50/40 to-white border-b border-rose-100">
+        <div class="flex flex-wrap items-center justify-between gap-2 mb-3">
+          <h2 class="text-sm font-extrabold text-rose-700 uppercase tracking-wide flex items-center gap-2">
+            <span>✨</span>
             <span id="formModeTitle">คีย์ผู้ได้รับรางวัลด่วน (เลือกของรางวัล + พิมพ์รหัสพนักงาน)</span>
           </h2>
           <button
             type="button"
             onclick="openNewPrizeModal()"
-            class="text-xs font-semibold text-green-700 hover:text-green-800 bg-green-50 hover:bg-green-100 border border-green-300 px-3 py-1.5 rounded-xl transition flex items-center gap-1.5"
+            class="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border-2 border-emerald-200 px-3.5 py-1.5 rounded-full transition flex items-center gap-1.5 cursor-pointer shadow-2xs"
           >
             <i class="fa-solid fa-plus"></i>
             <span>เพิ่มชื่อรางวัลใหม่</span>
@@ -112,13 +182,13 @@
         <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-start">
           <!-- 1. เลือกรางวัล -->
           <div class="md:col-span-5">
-            <label class="block text-xs font-semibold text-gray-600 mb-1">
-              <i class="fa-solid fa-gift text-red-600 mr-1"></i>รายการรางวัล (คลิกเลือกจากตารางด้านล่างได้)
+            <label class="block text-xs font-bold text-rose-700/85 mb-1">
+              <i class="fa-solid fa-gift text-rose-500 mr-1"></i>รายการรางวัล (คลิกเลือกจากตารางด้านล่างได้)
             </label>
             <select
               id="rewardSelect"
               onchange="handleSelectRewardDropdown()"
-              class="w-full px-3.5 py-2.5 rounded-xl border border-gray-300 focus:border-red-600 focus:ring-2 focus:ring-red-500/20 outline-none text-sm font-semibold bg-white"
+              class="w-full px-3.5 py-2.5 rounded-2xl border-2 border-rose-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-300/30 outline-none text-sm font-semibold bg-white text-slate-700 cursor-pointer"
             >
               <option value="">-- กำลังโหลดรายการรางวัล... --</option>
             </select>
@@ -126,8 +196,8 @@
 
           <!-- 2. กรอกรหัสพนักงาน (ดึงจาก Sheet Register) -->
           <div class="md:col-span-3">
-            <label class="block text-xs font-semibold text-gray-600 mb-1">
-              <i class="fa-solid fa-id-card text-red-600 mr-1"></i>รหัสพนักงาน (Sheet Register)
+            <label class="block text-xs font-bold text-rose-700/85 mb-1">
+              <i class="fa-solid fa-id-card text-rose-500 mr-1"></i>รหัสพนักงาน (Sheet Register)
             </label>
             <div class="relative">
               <input
@@ -137,10 +207,10 @@
                 list="registeredEmployeesDatalist"
                 autocomplete="off"
                 placeholder="พิมพ์รหัสผู้ลงทะเบียน..."
-                class="w-full pl-3.5 pr-9 py-2.5 rounded-xl border border-gray-300 focus:border-red-600 focus:ring-2 focus:ring-red-500/20 outline-none text-sm font-bold text-red-700"
+                class="w-full pl-3.5 pr-9 py-2.5 rounded-2xl border-2 border-rose-200 focus:border-rose-400 focus:ring-2 focus:ring-rose-300/30 outline-none text-sm font-bold text-rose-600 bg-rose-50/30 focus:bg-white"
               />
               <datalist id="registeredEmployeesDatalist"></datalist>
-              <span id="empMatchIcon" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-green-600">
+              <span id="empMatchIcon" class="hidden absolute inset-y-0 right-0 pr-3 flex items-center text-emerald-500">
                 <i class="fa-solid fa-circle-check"></i>
               </span>
             </div>
@@ -153,7 +223,7 @@
               id="btnSaveReward"
               onclick="handleQuickSave()"
               disabled
-              class="flex-1 py-2.5 px-4 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-700 hover:to-amber-700 disabled:from-gray-300 disabled:to-gray-400 disabled:cursor-not-allowed text-white font-bold text-sm shadow-md hover:shadow-lg active:scale-95 transition flex items-center justify-center gap-2"
+              class="flex-1 py-2.5 px-4 rounded-2xl bg-gradient-to-r from-rose-500 via-red-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed text-white font-bold text-sm border-2 border-white/80 shadow-md shadow-rose-500/20 hover:shadow-lg active:scale-95 transition flex items-center justify-center gap-2 cursor-pointer"
             >
               <i class="fa-solid fa-paper-plane"></i>
               <span>บันทึก & แจ้งเตือน LINE</span>
@@ -162,7 +232,7 @@
               type="button"
               onclick="resetQuickForm()"
               title="ล้างช่องกรอก"
-              class="py-2.5 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-600 font-semibold text-sm transition"
+              class="py-2.5 px-3.5 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 font-semibold text-sm transition cursor-pointer"
             >
               <i class="fa-solid fa-rotate-left"></i>
             </button>
@@ -170,38 +240,38 @@
         </div>
 
         <!-- แถบแสดงข้อมูลพนักงานที่ดึงมาอัตโนมัติ (0ms) -->
-        <div id="empPreviewBox" class="mt-3 p-3 rounded-2xl bg-white border border-gray-200 flex flex-wrap items-center justify-between gap-2 text-xs">
+        <div id="empPreviewBox" class="mt-3 p-3.5 rounded-2xl bg-rose-50/40 border-2 border-dashed border-rose-200 flex flex-wrap items-center justify-between gap-2 text-xs">
           <div class="flex flex-wrap items-center gap-x-5 gap-y-1">
             <div>
-              <span class="text-gray-400">ชื่อ-สกุล:</span>
-              <span id="previewName" class="font-bold text-gray-800 ml-1">-</span>
+              <span class="text-slate-400">ชื่อ-สกุล:</span>
+              <span id="previewName" class="font-bold text-slate-800 ml-1">-</span>
             </div>
             <div>
-              <span class="text-gray-400">แผนก:</span>
-              <span id="previewDept" class="font-semibold text-gray-700 ml-1">-</span>
+              <span class="text-slate-400">แผนก:</span>
+              <span id="previewDept" class="font-semibold text-slate-700 ml-1">-</span>
             </div>
             <div>
-              <span class="text-gray-400">สาขา:</span>
-              <span id="previewBranch" class="font-semibold text-green-700 ml-1">-</span>
+              <span class="text-slate-400">สาขา:</span>
+              <span id="previewBranch" class="font-semibold text-emerald-600 ml-1">-</span>
             </div>
           </div>
-          <div id="previewUidBadge" class="text-[11px] px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium">
-            <i class="fa-brands fa-line mr-1"></i><span>รอตรวจสอบรหัสพนักงาน</span>
+          <div id="previewUidBadge" class="text-[11px] px-3 py-0.5 rounded-full bg-white text-slate-500 border border-rose-200 font-medium">
+            <i class="fa-brands fa-line mr-1 text-emerald-500"></i><span>รอตรวจสอบรหัสพนักงาน</span>
           </div>
         </div>
       </div>
 
       <!-- Filter & Search Bar -->
-      <div class="p-4 sm:px-6 bg-gray-50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+      <div class="p-4 sm:px-6 bg-rose-50/45 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
         <!-- Filter Tabs -->
-        <div class="inline-flex rounded-xl bg-gray-200/80 p-1 text-xs font-semibold">
-          <button type="button" onclick="setFilter('all')" id="tabAll" class="px-3.5 py-1.5 rounded-lg bg-white text-gray-800 shadow-sm transition">
+        <div class="inline-flex rounded-full bg-white/90 p-1 border border-rose-200 text-xs font-bold shadow-2xs">
+          <button type="button" onclick="setFilter('all')" id="tabAll" class="px-4 py-1.5 rounded-full bg-rose-500 text-white shadow-xs transition cursor-pointer">
             ทั้งหมด
           </button>
-          <button type="button" onclick="setFilter('unassigned')" id="tabUnassigned" class="px-3.5 py-1.5 rounded-lg text-gray-600 hover:text-gray-800 transition">
+          <button type="button" onclick="setFilter('unassigned')" id="tabUnassigned" class="px-4 py-1.5 rounded-full text-slate-600 hover:text-rose-600 transition cursor-pointer">
             ยังไม่แจก
           </button>
-          <button type="button" onclick="setFilter('assigned')" id="tabAssigned" class="px-3.5 py-1.5 rounded-lg text-gray-600 hover:text-gray-800 transition">
+          <button type="button" onclick="setFilter('assigned')" id="tabAssigned" class="px-4 py-1.5 rounded-full text-slate-600 hover:text-rose-600 transition cursor-pointer">
             แจกแล้ว
           </button>
         </div>
@@ -209,21 +279,21 @@
         <!-- Search Box + Refresh -->
         <div class="flex items-center gap-2">
           <div class="relative flex-1 sm:w-64">
-            <i class="fa-solid fa-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+            <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-rose-400 text-xs"></i>
             <input
               type="text"
               id="searchInput"
               oninput="renderRewardsTable()"
               placeholder="ค้นหาชื่อรางวัล / รหัส / ชื่อพนักงาน..."
-              class="w-full pl-8 pr-3 py-1.5 rounded-xl border border-gray-300 text-xs focus:border-red-600 outline-none bg-white"
+              class="w-full pl-9 pr-3 py-2 rounded-full border-2 border-rose-200 text-xs focus:border-rose-400 outline-none bg-white"
             />
           </div>
           <button
             type="button"
             onclick="loadAllData(true)"
-            class="px-3 py-1.5 rounded-xl bg-white border border-gray-300 hover:bg-gray-100 text-xs font-semibold text-gray-700 flex items-center gap-1.5 shadow-sm transition"
+            class="px-3.5 py-2 rounded-full bg-white border-2 border-rose-200 hover:bg-rose-50 text-xs font-bold text-rose-700 flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
           >
-            <i id="refreshIcon" class="fa-solid fa-arrows-rotate"></i>
+            <i id="refreshIcon" class="fa-solid fa-arrows-rotate text-rose-500"></i>
             <span>รีเฟรช</span>
           </button>
         </div>
@@ -233,7 +303,7 @@
       <div class="overflow-x-auto">
         <table class="w-full text-left border-collapse">
           <thead>
-            <tr class="bg-gray-100 text-gray-600 text-xs uppercase border-y border-gray-200">
+            <tr class="bg-rose-50/80 text-rose-700 text-xs uppercase border-y border-rose-200/80">
               <th class="py-3 px-4 w-12 text-center">#</th>
               <th class="py-3 px-4">ชื่อรางวัล</th>
               <th class="py-3 px-4">ผู้ได้รับรางวัล</th>
@@ -241,9 +311,9 @@
               <th class="py-3 px-4 text-center w-28">จัดการ</th>
             </tr>
           </thead>
-          <tbody id="rewardsTableBody" class="divide-y divide-gray-100 text-sm">
+          <tbody id="rewardsTableBody" class="divide-y divide-rose-100 text-sm">
             <tr>
-              <td colspan="5" class="py-10 text-center text-gray-400">
+              <td colspan="5" class="py-10 text-center text-rose-400 font-medium">
                 <i class="fa-solid fa-spinner fa-spin mr-2"></i>กำลังโหลดข้อมูลรางวัล...
               </td>
             </tr>
@@ -560,9 +630,9 @@
         nameEl.innerText = '-';
         deptEl.innerText = '-';
         branchEl.innerText = '-';
-        previewBox.className = 'mt-3 p-3 rounded-2xl bg-white border border-gray-200 flex flex-wrap items-center justify-between gap-2 text-xs';
-        uidBadge.className = 'text-[11px] px-2.5 py-0.5 rounded-full bg-gray-100 text-gray-500 font-medium';
-        uidBadge.innerHTML = '<i class="fa-brands fa-line mr-1"></i><span>รอตรวจสอบรหัสพนักงาน</span>';
+        previewBox.className = 'mt-3 p-3.5 rounded-2xl bg-rose-50/40 border-2 border-dashed border-rose-200 flex flex-wrap items-center justify-between gap-2 text-xs';
+        uidBadge.className = 'text-[11px] px-3 py-0.5 rounded-full bg-white text-slate-500 border border-rose-200 font-medium';
+        uidBadge.innerHTML = '<i class="fa-brands fa-line mr-1 text-emerald-500"></i><span>รอตรวจสอบรหัสพนักงาน</span>';
         validateSaveButton();
         return;
       }
@@ -653,7 +723,7 @@
             </div>
           `,
           confirmButtonText: 'ตกลง',
-          confirmButtonColor: '#b91c1c'
+          confirmButtonColor: '#f43f5e'
         });
         validateSaveButton();
         return;
@@ -712,7 +782,7 @@
                 </div>
               `,
               confirmButtonText: 'รับทราบ',
-              confirmButtonColor: '#b91c1c'
+              confirmButtonColor: '#f43f5e'
             });
           } else {
             Swal.fire({
@@ -732,7 +802,7 @@
             icon: isDuplicate ? 'warning' : 'error',
             title: isDuplicate ? 'รหัสนี้ได้รับรางวัลไปแล้ว โปรดตรวจสอบใหม่อีกครั้ง' : 'บันทึกไม่สำเร็จ',
             text: errMsg,
-            confirmButtonColor: '#b91c1c'
+            confirmButtonColor: '#f43f5e'
           });
         }
       } catch (err) {
@@ -740,7 +810,7 @@
           icon: 'error',
           title: 'เกิดข้อผิดพลาด',
           text: err.message,
-          confirmButtonColor: '#b91c1c'
+          confirmButtonColor: '#f43f5e'
         });
       } finally {
         btn.innerHTML = '<i class="fa-solid fa-paper-plane"></i><span>บันทึก & แจ้งเตือน LINE</span>';
@@ -783,7 +853,7 @@
         showCancelButton: true,
         confirmButtonText: 'ใช่, ล้างข้อมูล',
         cancelButtonText: 'ยกเลิก',
-        confirmButtonColor: '#b91c1c'
+        confirmButtonColor: '#f43f5e'
       });
 
       if (!confirm.isConfirmed) return;
@@ -830,7 +900,7 @@
         showCancelButton: true,
         confirmButtonText: 'เพิ่มรางวัล',
         cancelButtonText: 'ยกเลิก',
-        confirmButtonColor: '#15803d',
+        confirmButtonColor: '#10b981',
         inputValidator: (value) => {
           if (!value || !value.trim()) {
             return 'กรุณาระบุชื่อรางวัล';
@@ -885,9 +955,9 @@
 
       Object.keys(tabs).forEach(k => {
         if (k === filterType) {
-          tabs[k].className = 'px-3.5 py-1.5 rounded-lg bg-white text-gray-800 shadow-sm transition';
+          tabs[k].className = 'px-4 py-1.5 rounded-full bg-rose-500 text-white shadow-xs transition cursor-pointer';
         } else {
-          tabs[k].className = 'px-3.5 py-1.5 rounded-lg text-gray-600 hover:text-gray-800 transition';
+          tabs[k].className = 'px-4 py-1.5 rounded-full text-slate-600 hover:text-rose-600 transition cursor-pointer';
         }
       });
 
@@ -914,7 +984,7 @@
       if (filtered.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="5" class="py-10 text-center text-gray-400">
+            <td colspan="5" class="py-10 text-center text-rose-400 font-medium">
               <i class="fa-solid fa-box-open mr-1.5"></i>ไม่พบรายการรางวัลตามเงื่อนไขที่เลือก
             </td>
           </tr>
@@ -927,34 +997,34 @@
         const hasUid = Boolean(item.uid && item.uid.trim() !== '');
 
         return `
-          <tr class="hover:bg-amber-50/40 transition ${hasWinner ? 'bg-green-50/20' : ''}">
-            <td class="py-3 px-4 text-center text-xs font-semibold text-gray-400">${idx + 1}</td>
+          <tr class="hover:bg-rose-50/50 transition ${hasWinner ? 'bg-emerald-50/35' : ''}">
+            <td class="py-3 px-4 text-center text-xs font-bold text-rose-300">${idx + 1}</td>
             <td class="py-3 px-4">
-              <div class="font-bold text-gray-800 flex items-center gap-2">
-                <i class="fa-solid fa-gift ${hasWinner ? 'text-green-600' : 'text-red-600'}"></i>
+              <div class="font-bold text-slate-800 flex items-center gap-2">
+                <i class="fa-solid fa-gift ${hasWinner ? 'text-emerald-500' : 'text-rose-500'}"></i>
                 <span>${escapeHtml(item.rewardName)}</span>
               </div>
-              <div class="sm:hidden text-xs text-gray-500 mt-0.5">
+              <div class="sm:hidden text-xs text-slate-500 mt-0.5">
                 ${hasWinner ? `${escapeHtml(item.department)} (${escapeHtml(item.branch)})` : ''}
               </div>
             </td>
             <td class="py-3 px-4">
               ${hasWinner ? `
                 <div class="flex items-center gap-2">
-                  <span class="px-2 py-0.5 rounded-md bg-red-100 text-red-800 font-bold text-xs">${escapeHtml(item.empId)}</span>
-                  <span class="font-bold text-gray-800">${escapeHtml(item.empName)}</span>
-                  ${hasUid ? `<i class="fa-brands fa-line text-green-600" title="มี LINE UID พร้อมแจ้งเตือน"></i>` : ''}
+                  <span class="px-2.5 py-0.5 rounded-full bg-rose-100 text-rose-700 font-bold text-xs border border-rose-200">${escapeHtml(item.empId)}</span>
+                  <span class="font-bold text-slate-800">${escapeHtml(item.empName)}</span>
+                  ${hasUid ? `<i class="fa-brands fa-line text-emerald-500" title="มี LINE UID พร้อมแจ้งเตือน"></i>` : ''}
                 </div>
               ` : `
-                <span class="inline-flex items-center gap-1 text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
+                <span class="inline-flex items-center gap-1 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-0.5 rounded-full">
                   <i class="fa-regular fa-clock"></i> รอการแจกรางวัล
                 </span>
               `}
             </td>
-            <td class="py-3 px-4 hidden sm:table-cell text-xs text-gray-600">
+            <td class="py-3 px-4 hidden sm:table-cell text-xs text-slate-600">
               ${hasWinner ? `
-                <div class="font-medium text-gray-700">${escapeHtml(item.department || '-')}</div>
-                <div class="text-green-700 font-semibold">${escapeHtml(item.branch || '-')}</div>
+                <div class="font-medium text-slate-700">${escapeHtml(item.department || '-')}</div>
+                <div class="text-emerald-600 font-bold">${escapeHtml(item.branch || '-')}</div>
               ` : '-'}
             </td>
             <td class="py-3 px-4 text-center">
@@ -963,18 +1033,18 @@
                   <button
                     type="button"
                     onclick="selectRowForEdit(${item.rowIndex})"
-                    class="px-2.5 py-1.5 rounded-lg bg-green-600 text-white hover:bg-green-700 text-xs font-semibold transition flex items-center gap-1"
+                    class="px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 text-white hover:from-emerald-600 hover:to-teal-600 text-xs font-bold shadow-xs transition flex items-center gap-1 cursor-pointer"
                     title="คลิกเลือกรางวัลนี้เพื่อคีย์รหัสพนักงาน"
                   >
                     <i class="fa-solid fa-hand-pointer"></i>
                     <span>เลือก</span>
                   </button>
                 ` : `
-                  <span class="text-[11px] text-green-700 bg-green-100 font-semibold px-2 py-0.5 rounded-md">รับแล้ว</span>
+                  <span class="text-[11px] text-emerald-700 bg-emerald-100 border border-emerald-200 font-bold px-2.5 py-0.5 rounded-full">รับแล้ว</span>
                   <button
                     type="button"
                     onclick="handleClearWinner(${item.rowIndex}, '${escapeJs(item.rewardName)}', '${escapeJs(item.empName)}')"
-                    class="p-1.5 rounded-lg bg-red-100 text-red-700 hover:bg-red-200 text-xs transition"
+                    class="p-1.5 rounded-full bg-rose-100 text-rose-600 hover:bg-rose-200 text-xs transition cursor-pointer"
                     title="ล้างผู้รับรางวัลเพื่อให้รางวัลกลับเข้ามาในตัวเลือก"
                   >
                     <i class="fa-solid fa-trash-can"></i>
@@ -999,7 +1069,23 @@
       return String(str || '').replace(/'/g, "\\'").replace(/"/g, '\\"');
     }
 
+    function createRewardSnowflakes() {
+      const container = document.getElementById('snowflakesContainer');
+      if (!container) return;
+      container.innerHTML = '';
+      for (let i = 0; i < 18; i++) {
+        const flake = document.createElement('i');
+        flake.className = 'fa-regular fa-snowflake snowflake';
+        flake.style.left = Math.random() * 100 + 'vw';
+        flake.style.animationDuration = (Math.random() * 5 + 7) + 's';
+        flake.style.animationDelay = (Math.random() * 4) + 's';
+        flake.style.fontSize = (Math.random() * 9 + 10) + 'px';
+        container.appendChild(flake);
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
+      createRewardSnowflakes();
       loadAllData();
 
       const empInput = document.getElementById('empIdInput');
@@ -1035,7 +1121,7 @@
                 </div>
               `,
               confirmButtonText: 'ตกลง',
-              confirmButtonColor: '#b91c1c'
+              confirmButtonColor: '#f43f5e'
             });
             return;
           }
