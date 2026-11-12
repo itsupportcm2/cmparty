@@ -2060,9 +2060,26 @@ function handleTextMessage(event) {
   const props = PropertiesService.getScriptProperties();
   const stateKey = 'WAIT_REWARD_EMP_' + userId;
 
-  // 1. หากผู้ใช้กดปุ่มหรือพิมพ์ขอดูรูปกิจกรรมในงาน
-  const galleryKeywords = ['ดูรูปกิจกรรม', 'ดูรูปกิจกรรมในงาน', 'ดูภาพกิจกรรม', 'รูปกิจกรรม', 'ภาพกิจกรรม', 'ดูรูป', 'แกลเลอรี', 'ดูแกลเลอรี', 'gallery'];
-  if (galleryKeywords.indexOf(lowerCommand) !== -1) {
+  // 1. หากผู้ใช้กดปุ่มหรือพิมพ์ขอดูรูป/ภาพกิจกรรมในงาน
+  const galleryKeywords = [
+    'ภาพกิจกรรมในงาน',
+    'ดูภาพกิจกรรมในงาน',
+    'ดูรูปกิจกรรม',
+    'ดูรูปกิจกรรมในงาน',
+    'ดูภาพกิจกรรม',
+    'รูปกิจกรรม',
+    'ภาพกิจกรรม',
+    'ดูรูป',
+    'แกลเลอรี',
+    'ดูแกลเลอรี',
+    'gallery'
+  ];
+  const isGalleryRequest =
+    galleryKeywords.indexOf(lowerCommand) !== -1 ||
+    lowerCommand.indexOf('ภาพกิจกรรม') !== -1 ||
+    lowerCommand.indexOf('รูปกิจกรรม') !== -1;
+
+  if (isGalleryRequest) {
     cache.remove(stateKey);
     props.deleteProperty(stateKey);
 
