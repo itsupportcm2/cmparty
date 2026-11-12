@@ -17,6 +17,9 @@ const REWARD_SHEET_GID = 195154721;
 // บัญชีแอดมินสำหรับจัดการเปิด-ปิดระบบลงทะเบียน
 const ADMIN_UID = 'U1dcbd47c6981745c2f41c5691cde7ff3';
 
+// ลิงก์หน้าลงทะเบียน LIFF
+const LIFF_REGISTER_URL = 'https://liff.line.me/2012486224-eFJTgFwr';
+
 /**
  * แปลง Date/Time String (เช่น "2026-12-25T09:00") เป็น Timestamp (ms) ตามเวลาประเทศไทย (UTC+7)
  */
@@ -3120,7 +3123,7 @@ function createWelcomeFlexMessage(profile) {
                   },
                   {
                     type: 'text',
-                    text: 'ส่งรูปภาพมาที่แชทนี้เพื่ออัปโหลดขึ้น Drive หรือพิมพ์ "ตรวจสอบรางวัล" เพื่อเช็คผลรางวัล!',
+                    text: 'กดปุ่ม "ลงทะเบียนร่วมงาน" ด้านล่าง, ส่งรูปภาพมาที่แชทนี้เพื่ออัปโหลดขึ้น Drive หรือพิมพ์ "ตรวจสอบรางวัล" เพื่อเช็คผลรางวัล!',
                     color: '#06C755',
                     weight: 'bold',
                     size: 'xs',
@@ -3130,6 +3133,26 @@ function createWelcomeFlexMessage(profile) {
                 ]
               }
             ]
+          }
+        ]
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        paddingAll: '16px',
+        paddingTop: '0px',
+        spacing: 'sm',
+        contents: [
+          {
+            type: 'button',
+            style: 'primary',
+            color: '#06C755',
+            height: 'md',
+            action: {
+              type: 'uri',
+              label: 'ลงทะเบียนร่วมงาน',
+              uri: LIFF_REGISTER_URL
+            }
           }
         ]
       }
