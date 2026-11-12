@@ -17,8 +17,9 @@ const REWARD_SHEET_GID = 195154721;
 // บัญชีแอดมินสำหรับจัดการเปิด-ปิดระบบลงทะเบียน
 const ADMIN_UID = 'U1dcbd47c6981745c2f41c5691cde7ff3';
 
-// ลิงก์หน้าลงทะเบียน LIFF
+// ลิงก์หน้าลงทะเบียน LIFF และหน้าแกลเลอรีภาพกิจกรรม
 const LIFF_REGISTER_URL = 'https://liff.line.me/2012486224-eFJTgFwr';
+const GALLERY_WEB_URL = 'https://cmparty.vercel.app/gallery.html';
 
 /**
  * แปลง Date/Time String (เช่น "2026-12-25T09:00") เป็น Timestamp (ms) ตามเวลาประเทศไทย (UTC+7)
@@ -2044,6 +2045,7 @@ function handleLineWebhookPost(e) {
 
 /**
  * จัดการข้อความ Text จาก LINE Chat:
+ * - เมื่อพิมพ์/กด "ดูรูปกิจกรรม" -> บอทส่ง Flex Message พร้อมปุ่ม "ดูรูปกิจกรรมในงาน" พาไปยังหน้าแกลเลอรี
  * - เมื่อพิมพ์ "ตรวจสอบรางวัล" -> บอทตอบกลับ "กรุณาพิมพ์รหัสพนักงานของท่าน" และบันทึกสถานะรอรหัสพนักงาน
  * - เมื่อพิมพ์รหัสพนักงานเข้ามา -> บอทค้นหารหัสพนักงานใน Sheet "gift" คอลัมน์ B2:B แล้วแจ้งผลการได้รับรางวัล
  */
@@ -2052,12 +2054,28 @@ function handleTextMessage(event) {
   const userId = (event.source && (event.source.userId || event.source.groupId || event.source.roomId)) || 'anon';
   const rawText = String((event.message && event.message.text) || '').trim();
   const normalizedCommand = rawText.replace(/\s+/g, '');
+  const lowerCommand = normalizedCommand.toLowerCase();
 
   const cache = CacheService.getScriptCache();
   const props = PropertiesService.getScriptProperties();
   const stateKey = 'WAIT_REWARD_EMP_' + userId;
 
-  // 1. หากผู้ใช้พิมพ์คำว่า "ตรวจสอบรางวัล" (หรือ "ตรวจสอบ รางวัล")
+  // 1. หากผู้ใช้กดปุ่มหรือพิมพ์ขอดูรูปกิจกรรมในงาน
+  const galleryKeywords = ['ดูรูปกิจกรรม', 'ดูรูปกิจกรรมในงาน', 'ดูภาพกิจกรรม', 'รูปกิจกรรม', 'ภาพกิจกรรม', 'ดูรูป', 'แกลเลอรี', 'ดูแกลเลอรี', 'gallery'];
+  if (galleryKeywords.indexOf(lowerCommand) !== -1) {
+    cache.remove(stateKey);
+    props.deleteProperty(stateKey);
+
+    if (event.source && event.source.userId) {
+      startLoadingAnimation(event.source.userId, 5);
+    }
+
+    const galleryFlex = createGalleryFlexMessage();
+    replyLineMessage(replyToken, [galleryFlex]);
+    return;
+  }
+
+  // 2. หากผู้ใช้พิมพ์คำว่า "ตรวจสอบรางวัล" (หรือ "ตรวจสอบ รางวัล")
   if (normalizedCommand === 'ตรวจสอบรางวัล') {
     cache.put(stateKey, 'WAITING', 600); // จำสถานะรอรับรหัสพนักงานเป็นเวลา 10 นาที
     props.setProperty(stateKey, String(Date.now()));
@@ -3153,6 +3171,279 @@ function createWelcomeFlexMessage(profile) {
               label: 'ลงทะเบียนร่วมงาน',
               uri: LIFF_REGISTER_URL
             }
+          }
+        ]
+      }
+    }
+  };
+}
+
+/**
+ * สร้าง Flex Message สวยหรูสำหรับเข้าดูแกลเลอรีภาพความประทับใจในงาน CM Party 2026
+ */
+function createGalleryFlexMessage() {
+  let cachedCountText = 'รวมภาพบรรยากาศและความประทับใจในงาน CM Party 2026';
+  try {
+    const cachedJson = CacheService.getScriptCache().get('GALLERY_IMAGES_CACHE');
+    if (cachedJson) {
+      const parsed = JSON.parse(cachedJson);
+      if (parsed && typeof parsed.total === 'number' && parsed.total > 0) {
+        cachedCountText = `อัปเดตล่าสุดทั้งหมด ${parsed.total} ภาพในแกลเลอรี`;
+      }
+    }
+  } catch (e) {}
+
+  return {
+    type: 'flex',
+    altText: '📸 ภาพความประทับใจในงาน CM Party 2026 - กดเพื่อดูรูปกิจกรรมในงาน',
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      header: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#7F1D1D',
+        background: {
+          type: 'linearGradient',
+          angle: '135deg',
+          startColor: '#991B1B',
+          endColor: '#450A0A'
+        },
+        paddingAll: '20px',
+        contents: [
+          {
+            type: 'box',
+            layout: 'horizontal',
+            alignItems: 'center',
+            contents: [
+              {
+                type: 'box',
+                layout: 'vertical',
+                backgroundColor: '#FBBF24',
+                cornerRadius: '20px',
+                paddingStart: '10px',
+                paddingEnd: '10px',
+                paddingTop: '4px',
+                paddingBottom: '4px',
+                flex: 0,
+                contents: [
+                  {
+                    type: 'text',
+                    text: 'CM GALLERY 2026',
+                    color: '#78350F',
+                    size: 'xxs',
+                    weight: 'bold'
+                  }
+                ]
+              },
+              {
+                type: 'text',
+                text: '🎄 CHRISTMAS PARTY',
+                color: '#FDE68A',
+                size: 'xxs',
+                weight: 'bold',
+                align: 'end'
+              }
+            ]
+          },
+          {
+            type: 'box',
+            layout: 'horizontal',
+            alignItems: 'center',
+            spacing: 'md',
+            margin: 'lg',
+            contents: [
+              {
+                type: 'box',
+                layout: 'vertical',
+                width: '60px',
+                height: '60px',
+                cornerRadius: '30px',
+                borderWidth: '2px',
+                borderColor: '#FBBF24',
+                flex: 0,
+                contents: [
+                  {
+                    type: 'image',
+                    url: 'https://lh5.googleusercontent.com/d/1rzj7RdJ76nk5OccBPZ-kj-qxDp_Rg_Yk',
+                    size: 'full',
+                    aspectMode: 'cover',
+                    aspectRatio: '1:1'
+                  }
+                ]
+              },
+              {
+                type: 'box',
+                layout: 'vertical',
+                spacing: 'xs',
+                flex: 1,
+                contents: [
+                  {
+                    type: 'text',
+                    text: '📸 ภาพความประทับใจในงาน',
+                    color: '#FFFFFF',
+                    size: 'lg',
+                    weight: 'bold',
+                    wrap: true
+                  },
+                  {
+                    type: 'text',
+                    text: 'CM Party 2026 Photo Gallery',
+                    color: '#FDE68A',
+                    size: 'xs',
+                    weight: 'bold'
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#FFFFFF',
+        paddingAll: '20px',
+        spacing: 'md',
+        contents: [
+          {
+            type: 'box',
+            layout: 'vertical',
+            backgroundColor: '#FFFBEB',
+            borderColor: '#FDE68A',
+            borderWidth: '1px',
+            cornerRadius: '12px',
+            paddingAll: '12px',
+            alignItems: 'center',
+            contents: [
+              {
+                type: 'text',
+                text: '✨ ' + cachedCountText,
+                color: '#B45309',
+                size: 'xs',
+                weight: 'bold',
+                align: 'center',
+                wrap: true
+              }
+            ]
+          },
+          {
+            type: 'box',
+            layout: 'vertical',
+            backgroundColor: '#FEF2F2',
+            borderColor: '#FECACA',
+            borderWidth: '1px',
+            cornerRadius: '14px',
+            paddingAll: '14px',
+            spacing: 'sm',
+            contents: [
+              {
+                type: 'text',
+                text: '🎄 ชมภาพความสนุก รอยยิ้ม และบรรยากาศภายในงาน',
+                color: '#7F1D1D',
+                size: 'xs',
+                weight: 'bold',
+                wrap: true
+              },
+              {
+                type: 'text',
+                text: '🎬 รองรับโหมดสไลด์โชว์และอัปเดตรูปใหม่แบบเรียลไทม์',
+                color: '#374151',
+                size: 'xs',
+                wrap: true
+              },
+              {
+                type: 'text',
+                text: '📱 ส่งรูปภาพเข้าแชทนี้เพื่อร่วมแบ่งปันโมเมนต์สวย ๆ ได้เลย!',
+                color: '#15803D',
+                size: 'xs',
+                weight: 'bold',
+                wrap: true
+              }
+            ]
+          }
+        ]
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#14532D',
+        paddingAll: '16px',
+        spacing: 'sm',
+        contents: [
+          {
+            type: 'box',
+            layout: 'horizontal',
+            backgroundColor: '#F59E0B',
+            background: {
+              type: 'linearGradient',
+              angle: '135deg',
+              startColor: '#FEF08A',
+              centerColor: '#F59E0B',
+              centerPosition: '50%',
+              endColor: '#D97706'
+            },
+            borderColor: '#FEF9C3',
+            borderWidth: '2px',
+            cornerRadius: '28px',
+            paddingTop: '13px',
+            paddingBottom: '13px',
+            paddingStart: '18px',
+            paddingEnd: '18px',
+            alignItems: 'center',
+            justifyContent: 'center',
+            action: {
+              type: 'uri',
+              label: 'ดูรูปกิจกรรมในงาน',
+              uri: GALLERY_WEB_URL
+            },
+            contents: [
+              {
+                type: 'text',
+                text: '📸',
+                size: 'md',
+                flex: 0
+              },
+              {
+                type: 'text',
+                text: 'ดูรูปกิจกรรมในงาน',
+                color: '#450A0A',
+                size: 'md',
+                weight: 'bold',
+                margin: 'sm',
+                flex: 0
+              },
+              {
+                type: 'box',
+                layout: 'vertical',
+                backgroundColor: '#991B1B',
+                cornerRadius: '14px',
+                paddingStart: '9px',
+                paddingEnd: '9px',
+                paddingTop: '3px',
+                paddingBottom: '3px',
+                margin: 'md',
+                flex: 0,
+                contents: [
+                  {
+                    type: 'text',
+                    text: 'เปิดดู →',
+                    color: '#FEF08A',
+                    size: 'xxs',
+                    weight: 'bold'
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            type: 'text',
+            text: 'แตะปุ่มด้านบนเพื่อเปิดดูแกลเลอรีภาพกิจกรรม CM Party 2026',
+            color: '#BBF7D0',
+            size: 'xxs',
+            align: 'center',
+            margin: 'xs',
+            wrap: true
           }
         ]
       }
