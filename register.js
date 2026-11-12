@@ -2093,20 +2093,28 @@ function handleTextMessage(event) {
   }
 
   // 2. หากผู้ใช้พิมพ์คำว่า "ตรวจสอบรางวัล" (หรือ "ตรวจสอบ รางวัล")
+  const userQuoteToken = (event.message && event.message.quoteToken) ? String(event.message.quoteToken).trim() : '';
+
   if (normalizedCommand === 'ตรวจสอบรางวัล') {
     cache.put(stateKey, 'WAITING', 600); // จำสถานะรอรับรหัสพนักงานเป็นเวลา 10 นาที
     props.setProperty(stateKey, String(Date.now()));
 
+    if (event.source && event.source.userId) {
+      startLoadingAnimation(event.source.userId, 5);
+    }
+
+    const myEmpId = findRegisteredEmpIdByUidCached(event.source && event.source.userId);
+    const promptText = myEmpId
+      ? '🎁 กรุณาพิมพ์รหัสพนักงานของท่าน\n(หรือแตะปุ่ม Quick Reply ด้านล่างเพื่อตรวจสอบทันทีค่ะ)'
+      : '🎁 กรุณาพิมพ์รหัสพนักงานของท่านเพื่อตรวจสอบรางวัลค่ะ';
+
     replyLineMessage(replyToken, [
-      {
-        type: 'text',
-        text: 'กรุณาพิมพ์รหัสพนักงานของท่าน'
-      }
+      buildQuotedRewardTextMessage(promptText, userQuoteToken, buildRewardPromptQuickReply(myEmpId))
     ]);
     return;
   }
 
-  // 2. ตรวจสอบว่าผู้ใช้อยู่ในสถานะรอกรอกรหัสพนักงานหลังจากพิมพ์ "ตรวจสอบรางวัล" หรือไม่
+  // 3. ตรวจสอบว่าผู้ใช้อยู่ในสถานะรอกรอกรหัสพนักงานหลังจากพิมพ์ "ตรวจสอบรางวัล" หรือไม่
   let isWaitingForEmpId = cache.get(stateKey) === 'WAITING';
   if (!isWaitingForEmpId) {
     const savedTime = props.getProperty(stateKey);
@@ -2115,9 +2123,19 @@ function handleTextMessage(event) {
     }
   }
 
+  // กรณีผู้ใช้กด Quick Reply ยกเลิกการตรวจสอบรางวัล
+  if (isWaitingForEmpId && (normalizedCommand === 'ยกเลิกตรวจสอบรางวัล' || normalizedCommand === 'ยกเลิก')) {
+    cache.remove(stateKey);
+    props.deleteProperty(stateKey);
+    replyLineMessage(replyToken, [
+      buildQuotedRewardTextMessage('❌ ยกเลิกการตรวจสอบรางวัลเรียบร้อยแล้วค่ะ', userQuoteToken, null)
+    ]);
+    return;
+  }
+
   // รองรับกรณีพิมพ์ "ตรวจสอบรางวัล 672002" ในบรรทัดเดียวกันด้วย
   let empIdToSearch = '';
-  if (rawText.indexOf('ตรวจสอบรางวัล') === 0 && normalizedCommand !== 'ตรวจสอบรางวัล') {
+  if (/^ตรวจสอบ\s*รางวัล\s+/i.test(rawText) || (rawText.indexOf('ตรวจสอบรางวัล') === 0 && normalizedCommand !== 'ตรวจสอบรางวัล')) {
     empIdToSearch = rawText.replace(/^ตรวจสอบ\s*รางวัล\s*/i, '').trim();
   } else if (isWaitingForEmpId) {
     empIdToSearch = rawText;
@@ -2135,12 +2153,24 @@ function handleTextMessage(event) {
     startLoadingAnimation(event.source.userId, 5);
   }
 
+  const myEmpId = findRegisteredEmpIdByUidCached(event.source && event.source.userId);
+  const resultQuickReply = buildRewardResultQuickReply(empIdToSearch, myEmpId);
+
   // ค้นหาข้อมูลจาก Sheet "gift" โดยตรวจสอบรหัสพนักงานในคอลัมน์ B2:B
   const checkResult = checkGiftRewardByEmpId(empIdToSearch);
 
   if (checkResult.found && checkResult.rewards.length > 0) {
     const rewardFlex = createGiftCheckFlexMessage(empIdToSearch, checkResult.rewards);
-    replyLineMessage(replyToken, [rewardFlex]);
+    rewardFlex.quickReply = resultQuickReply;
+
+    const replyMessages = [];
+    if (userQuoteToken) {
+      replyMessages.push(
+        buildQuotedRewardTextMessage(`🎉 ผลการตรวจสอบรางวัล รหัส ${empIdToSearch}: ยินดีด้วยค่ะ คุณได้รับรางวัล!`, userQuoteToken, null)
+      );
+    }
+    replyMessages.push(rewardFlex);
+    replyLineMessage(replyToken, replyMessages);
   } else {
     let empInfo = null;
     try {
@@ -2159,8 +2189,138 @@ function handleTextMessage(event) {
     }
 
     const noRewardFlex = createNoRewardFlexMessage(empIdToSearch, empInfo);
-    replyLineMessage(replyToken, [noRewardFlex]);
+    noRewardFlex.quickReply = resultQuickReply;
+
+    const replyMessages = [];
+    if (userQuoteToken) {
+      replyMessages.push(
+        buildQuotedRewardTextMessage(`📋 ผลการตรวจสอบรางวัล รหัส ${empIdToSearch}: ท่านไม่ได้รางวัลค่ะ`, userQuoteToken, null)
+      );
+    }
+    replyMessages.push(noRewardFlex);
+    replyLineMessage(replyToken, replyMessages);
   }
+}
+
+/**
+ * สร้างข้อความ Text พร้อมแนบ quoteToken (อ้างอิงข้อความผู้ใช้) และ quickReply สำหรับระบบตรวจสอบรางวัล
+ */
+function buildQuotedRewardTextMessage(text, quoteToken, quickReply) {
+  const msg = {
+    type: 'text',
+    text: String(text || '')
+  };
+  if (quoteToken) {
+    msg.quoteToken = quoteToken;
+  }
+  if (quickReply && Array.isArray(quickReply.items) && quickReply.items.length > 0) {
+    msg.quickReply = quickReply;
+  }
+  return msg;
+}
+
+/**
+ * ค้นหารหัสพนักงานของผู้ใช้ที่ลงทะเบียนไว้ใน Sheet "Register" จาก LINE UID (ใช้ Cache ช่วยลดการอ่านซ้ำ)
+ */
+function findRegisteredEmpIdByUidCached(uid) {
+  if (!uid || uid === 'anon') return '';
+  try {
+    const cache = CacheService.getScriptCache();
+    const cacheKey = 'REG_EMP_BY_UID_' + uid;
+    const cached = cache.get(cacheKey);
+    if (cached === '__NONE__') return '';
+    if (cached) return cached;
+
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const { employeesMap } = getRegisteredEmployeesFromRegisterSheet(ss);
+    const entries = Object.values(employeesMap || {});
+    for (let i = 0; i < entries.length; i++) {
+      if (entries[i] && entries[i].uid === uid && entries[i].empId) {
+        cache.put(cacheKey, entries[i].empId, 600);
+        return entries[i].empId;
+      }
+    }
+
+    cache.put(cacheKey, '__NONE__', 30);
+  } catch (err) {
+    console.warn('findRegisteredEmpIdByUidCached warning:', err);
+  }
+  return '';
+}
+
+/**
+ * สร้าง Quick Reply สำหรับขั้นตอนขอรับรหัสพนักงานเพื่อตรวจสอบรางวัล
+ */
+function buildRewardPromptQuickReply(myEmpId) {
+  const items = [];
+  if (myEmpId) {
+    items.push({
+      type: 'action',
+      action: {
+        type: 'message',
+        label: ('เช็ครหัสฉัน: ' + myEmpId).slice(0, 20),
+        text: String(myEmpId)
+      }
+    });
+  }
+  items.push({
+    type: 'action',
+    action: {
+      type: 'message',
+      label: '❌ ยกเลิก',
+      text: 'ยกเลิกตรวจสอบรางวัล'
+    }
+  });
+  return { items: items };
+}
+
+/**
+ * สร้าง Quick Reply สำหรับขั้นตอนหลังแสดงผลการตรวจสอบรางวัล
+ */
+function buildRewardResultQuickReply(checkedEmpId, myEmpId) {
+  const items = [
+    {
+      type: 'action',
+      action: {
+        type: 'message',
+        label: '🔍 ตรวจรหัสอื่น',
+        text: 'ตรวจสอบรางวัล'
+      }
+    }
+  ];
+
+  if (myEmpId && String(myEmpId) !== String(checkedEmpId)) {
+    items.push({
+      type: 'action',
+      action: {
+        type: 'message',
+        label: ('เช็ครหัสฉัน: ' + myEmpId).slice(0, 20),
+        text: 'ตรวจสอบรางวัล ' + myEmpId
+      }
+    });
+  }
+
+  items.push({
+    type: 'action',
+    action: {
+      type: 'message',
+      label: '🔄 เช็ครหัสเดิมอีก',
+      text: 'ตรวจสอบรางวัล ' + checkedEmpId
+    }
+  });
+
+  if (checkedEmpId) {
+    items.push({
+      type: 'action',
+      action: {
+        type: 'clipboard',
+        label: ('คัดลอกรหัส ' + checkedEmpId).slice(0, 20),
+        clipboardText: String(checkedEmpId)
+      }
+    });
+  }
+
+  return { items: items };
 }
 
 /**
