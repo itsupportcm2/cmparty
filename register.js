@@ -916,6 +916,7 @@ function getGalleryImages(bypassCache) {
   try {
     const cache = CacheService.getScriptCache();
     const cacheKey = 'GALLERY_IMAGES_CACHE';
+    const sharedCacheKey = 'GALLERY_SHARED_FILE_IDS';
 
     if (!bypassCache) {
       const cachedData = cache.get(cacheKey);
@@ -925,6 +926,19 @@ function getGalleryImages(bypassCache) {
         } catch (cErr) {}
       }
     }
+
+    // โหลดรายชื่อ File ID ที่เคยตั้งค่าแชร์สาธารณะแล้ว เพื่อลดเวลาสแกน Drive ระหว่างซิงค์อัตโนมัติ
+    const sharedIdsSet = {};
+    let sharedCacheDirty = false;
+    try {
+      const cachedSharedJson = cache.get(sharedCacheKey);
+      if (cachedSharedJson) {
+        const parsedIds = JSON.parse(cachedSharedJson);
+        if (Array.isArray(parsedIds)) {
+          parsedIds.forEach(id => { sharedIdsSet[id] = true; });
+        }
+      }
+    } catch (sharedReadErr) {}
 
     const folderId = (typeof LINE_DRIVE_FOLDER_ID !== 'undefined' && LINE_DRIVE_FOLDER_ID)
       ? LINE_DRIVE_FOLDER_ID.trim()
@@ -957,12 +971,16 @@ function getGalleryImages(bypassCache) {
         if (isImageMime || isImageExt) {
           const fileId = file.getId();
 
-          // พยายามตั้งค่าแชร์ไฟล์เป็นสาธารณะ (Anyone with link view) เพื่อให้ lh5 โหลดภาพได้
-          try {
-            if (file.getSharingAccess() !== DriveApp.Access.ANYONE_WITH_LINK) {
-              file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-            }
-          } catch (shareErr) {}
+          // พยายามตั้งค่าแชร์ไฟล์เป็นสาธารณะ (Anyone with link view) เฉพาะไฟล์ที่ยังไม่เคยเช็ค เพื่อให้ lh5 โหลดภาพได้และซิงค์เร็วขึ้น
+          if (!sharedIdsSet[fileId]) {
+            try {
+              if (file.getSharingAccess() !== DriveApp.Access.ANYONE_WITH_LINK) {
+                file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+              }
+              sharedIdsSet[fileId] = true;
+              sharedCacheDirty = true;
+            } catch (shareErr) {}
+          }
 
           const createdDate = file.getDateCreated();
           const formattedDate = createdDate
@@ -993,6 +1011,15 @@ function getGalleryImages(bypassCache) {
 
     collectImagesFromFolder(folder);
 
+    if (sharedCacheDirty) {
+      try {
+        const sharedIdsJson = JSON.stringify(Object.keys(sharedIdsSet));
+        if (sharedIdsJson.length < 95000) {
+          cache.put(sharedCacheKey, sharedIdsJson, 1800);
+        }
+      } catch (sharedWriteErr) {}
+    }
+
     // เรียงลำดับจากรูปล่าสุดไปหารูปแรกสุด (ใหม่สุดอยู่บน)
     images.sort((a, b) => b.timestamp - a.timestamp);
 
@@ -1003,14 +1030,15 @@ function getGalleryImages(bypassCache) {
       folderName: folder.getName(),
       folderUrl: `https://drive.google.com/drive/folders/${folder.getId()}?usp=sharing`,
       images: images,
-      fetchedAt: Utilities.formatDate(new Date(), 'Asia/Bangkok', 'dd/MM/yyyy HH:mm:ss')
+      fetchedAt: Utilities.formatDate(new Date(), 'Asia/Bangkok', 'dd/MM/yyyy HH:mm:ss'),
+      serverTimestamp: Date.now()
     };
 
-    // จำผลลัพธ์ลง Cache 30 วินาทีเพื่อความรวดเร็ว
+    // จำผลลัพธ์ลง Cache 10 วินาทีเพื่อรองรับคนดูจำนวนมากพร้อมอัปเดตรูปใหม่ได้รวดเร็ว
     try {
       const jsonStr = JSON.stringify(result);
       if (jsonStr.length < 95000) {
-        cache.put(cacheKey, jsonStr, 30);
+        cache.put(cacheKey, jsonStr, 10);
       }
     } catch (cachePutErr) {}
 
@@ -2714,6 +2742,11 @@ function handleImageMessage(event) {
     const file = folder.createFile(imageBlob);
 
     file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+    // ล้างแคชรายการรูปภาพทันที เพื่อให้สไลด์โชว์และแกลเลอรีดึงภาพใหม่ได้ทันที
+    try {
+      CacheService.getScriptCache().remove('GALLERY_IMAGES_CACHE');
+    } catch (cacheClearErr) {}
 
     replyLineMessage(replyToken, [
       {

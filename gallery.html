@@ -141,6 +141,15 @@
       0% { opacity: 0; transform: perspective(800px) rotateY(30deg) scale(0.92); }
       100% { opacity: 1; transform: perspective(800px) rotateY(0deg) scale(1.0); }
     }
+
+    @keyframes ssNewBadgePop {
+      0% { opacity: 0; transform: translate(-50%, -14px) scale(0.85); }
+      60% { opacity: 1; transform: translate(-50%, 3px) scale(1.05); }
+      100% { opacity: 1; transform: translate(-50%, 0) scale(1); }
+    }
+    .ss-new-badge-pop {
+      animation: ssNewBadgePop 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+    }
   </style>
 </head>
 <body class="relative min-h-screen pb-16 flex flex-col justify-between selection:bg-amber-400 selection:text-amber-950">
@@ -266,6 +275,11 @@
             <i class="fa-solid fa-clock text-amber-400/80 text-[10px]"></i>
             <span id="lastUpdatedText">-</span>
           </div>
+
+          <span id="galleryLiveSyncPill" class="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-400/30">
+            <span id="galleryLiveSyncDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span id="galleryLiveSyncText">ซิงค์อัตโนมัติ</span>
+          </span>
         </div>
 
         <!-- Action Buttons & Refresh & Slideshow -->
@@ -459,6 +473,10 @@
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
             <span id="ssStatusText">กำลังฉาย</span>
           </span>
+          <span id="ssLiveSyncBadge" class="hidden sm:inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-400/30">
+            <i class="fa-solid fa-rss text-[9px] text-emerald-400"></i>
+            <span id="ssLiveSyncText">อัปเดตอัตโนมัติ</span>
+          </span>
         </div>
         <!-- Progress Bar for Next Slide -->
         <div class="w-32 sm:w-48 h-1 bg-white/20 rounded-full overflow-hidden">
@@ -468,6 +486,17 @@
 
       <!-- Right: Action Buttons & Settings Drawer Toggle -->
       <div class="flex items-center gap-1.5 sm:gap-2">
+        <!-- Manual Sync New Photos Inside Slideshow -->
+        <button
+          type="button"
+          id="ssRefreshBtn"
+          onclick="syncGalleryImages({ manual: true, fromSlideshow: true }); event.stopPropagation();"
+          class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/25 text-emerald-300 flex items-center justify-center transition border border-white/20 cursor-pointer"
+          title="เช็คภาพใหม่เดี๋ยวนี้ (R)"
+        >
+          <i id="ssRefreshIcon" class="fa-solid fa-rotate text-xs"></i>
+        </button>
+
         <!-- Settings Pop-up Toggle -->
         <button
           type="button"
@@ -521,6 +550,15 @@
       >
         <i class="fa-solid fa-chevron-right text-lg"></i>
       </button>
+
+      <!-- New Photo Celebration Badge -->
+      <div
+        id="ssNewPhotoBadge"
+        class="hidden absolute top-4 left-1/2 -translate-x-1/2 z-30 px-4 py-1.5 rounded-full bg-gradient-to-r from-red-600 via-amber-500 to-emerald-600 text-white text-xs sm:text-sm font-bold shadow-[0_0_25px_rgba(245,158,11,0.7)] border border-amber-200/70 flex items-center gap-2 pointer-events-none"
+      >
+        <i class="fa-solid fa-sparkles text-yellow-200"></i>
+        <span id="ssNewPhotoBadgeText">ภาพใหม่เพิ่งอัปโหลด!</span>
+      </div>
 
       <!-- Center Slide Image Display with transition wrapper -->
       <div id="ssImageContainer" class="relative max-w-full max-h-full flex items-center justify-center overflow-hidden rounded-2xl">
@@ -689,8 +727,41 @@
         </label>
       </div>
 
+      <!-- 4. การอัปเดตรูปใหม่อัตโนมัติ (Live Auto-Refresh) -->
+      <div class="pt-2 border-t border-white/15 space-y-2">
+        <label class="flex items-center justify-between cursor-pointer">
+          <span class="flex items-center gap-1.5 text-emerald-300 font-semibold">
+            <i class="fa-solid fa-rotate text-emerald-400 text-xs"></i>
+            <span>รีเฟรชอัตโนมัติเมื่อมีรูปใหม่</span>
+          </span>
+          <input type="checkbox" id="ssToggleAutoRefresh" checked onchange="toggleAutoRefresh(this.checked)" class="accent-emerald-500 cursor-pointer w-4 h-4" />
+        </label>
+
+        <label class="flex items-center justify-between cursor-pointer">
+          <span class="flex items-center gap-1.5 text-gray-300">
+            <i class="fa-solid fa-bolt text-amber-400 text-xs"></i>
+            <span>แสดงภาพใหม่ทันทีเมื่อพบ</span>
+          </span>
+          <input type="checkbox" id="ssToggleJumpNew" checked onchange="toggleJumpToNewPhoto(this.checked)" class="accent-amber-500 cursor-pointer w-4 h-4" />
+        </label>
+
+        <div class="flex items-center justify-between gap-2 pt-0.5">
+          <span class="text-gray-400">ความถี่ในการเช็คภาพใหม่:</span>
+          <select
+            id="ssSyncIntervalSelect"
+            onchange="setAutoRefreshInterval(this.value)"
+            class="px-2 py-1 rounded-lg bg-white/10 border border-white/20 text-[11px] text-amber-200 font-medium focus:outline-none focus:border-amber-400 cursor-pointer"
+          >
+            <option value="5000" class="bg-gray-900 text-white">ทุก 5 วินาที (เร็วสุด)</option>
+            <option value="10000" class="bg-gray-900 text-white" selected>ทุก 10 วินาที (แนะนำ)</option>
+            <option value="15000" class="bg-gray-900 text-white">ทุก 15 วินาที</option>
+            <option value="30000" class="bg-gray-900 text-white">ทุก 30 วินาที</option>
+          </select>
+        </div>
+      </div>
+
       <div class="pt-2 text-center text-[10px] text-gray-400 border-t border-white/10">
-        กด <kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white font-mono">Space</kbd> เพื่อเล่น/หยุด, <kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white font-mono">F</kbd> เต็มจอ, <kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white font-mono">ESC</kbd> ออก
+        กด <kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white font-mono">Space</kbd> เล่น/หยุด, <kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white font-mono">R</kbd> เช็คภาพใหม่, <kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white font-mono">F</kbd> เต็มจอ
       </div>
     </div>
   </div>
@@ -905,6 +976,17 @@
     let ssUserActivityTimer = null;
     let kenBurnsToggle = 1;
 
+    // สถานะระบบซิงค์และรีเฟรชภาพใหม่อัตโนมัติ (Live Auto-Sync State)
+    let knownImageIds = new Set();
+    let priorityNewPhotoIds = [];
+    let autoRefreshEnabled = true;
+    let jumpToNewPhotoInSlideshow = true;
+    let autoRefreshIntervalMs = 10000;
+    let isGallerySyncing = false;
+    let backgroundSyncTimer = null;
+    let lastGallerySyncAt = 0;
+    let newPhotoBadgeTimer = null;
+
     // สร้างหิมะตกบนหน้าหลัก
     function createSnowflakes() {
       const container = document.getElementById('snowflakesContainer');
@@ -954,6 +1036,45 @@
       }
     }
 
+    // ดึงรายการรูปภาพจาก Google Apps Script Backend
+    async function fetchGalleryDataFromApi(forceRefresh = false) {
+      let result = null;
+
+      // 1. หากเปิดผ่าน GAS HtmlService โดยตรง
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        try {
+          result = await new Promise((resolve, reject) => {
+            google.script.run
+              .withSuccessHandler(resolve)
+              .withFailureHandler(reject)
+              .getGalleryImages(forceRefresh);
+          });
+        } catch (gasErr) {
+          console.warn('google.script.run getGalleryImages failed, fallback to Web App URL:', gasErr);
+        }
+      }
+
+      // 2. เรียกผ่าน GAS Web App URL
+      if (!result || result.status !== 'success') {
+        const urlsToTry = [GAS_WEB_APP_URL, BACKUP_GAS_WEB_APP_URL].filter(Boolean);
+        for (const apiUrl of urlsToTry) {
+          try {
+            const url = `${apiUrl}?action=getGalleryImages&nocache=${forceRefresh ? '1' : '0'}&t=${Date.now()}`;
+            const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+            const json = await res.json();
+            if (json && json.status === 'success') {
+              result = json;
+              break;
+            }
+          } catch (fetchErr) {
+            console.warn('Fetch getGalleryImages error:', fetchErr);
+          }
+        }
+      }
+
+      return result;
+    }
+
     // โหลดรูปภาพจากระบบ Google Apps Script Backend (ดึงไฟล์จาก Drive Folder แปลงเป็น lh5)
     async function loadGalleryImages(forceRefresh = false) {
       const refreshBtn = document.getElementById('btnRefreshGallery');
@@ -964,42 +1085,13 @@
       renderSkeletons(allImages.length > 0 ? Math.min(allImages.length, 12) : 8);
 
       try {
-        let result = null;
-
-        // 1. หากเปิดผ่าน GAS HtmlService โดยตรง
-        if (typeof google !== 'undefined' && google.script && google.script.run) {
-          try {
-            result = await new Promise((resolve, reject) => {
-              google.script.run
-                .withSuccessHandler(resolve)
-                .withFailureHandler(reject)
-                .getGalleryImages(forceRefresh);
-            });
-          } catch (gasErr) {
-            console.warn('google.script.run getGalleryImages failed, fallback to Web App URL:', gasErr);
-          }
-        }
-
-        // 2. เรียกผ่าน GAS Web App URL
-        if (!result || result.status !== 'success') {
-          const urlsToTry = [GAS_WEB_APP_URL, BACKUP_GAS_WEB_APP_URL].filter(Boolean);
-          for (const apiUrl of urlsToTry) {
-            try {
-              const url = `${apiUrl}?action=getGalleryImages&nocache=${forceRefresh ? '1' : '0'}&t=${Date.now()}`;
-              const res = await fetch(url, { method: 'GET', redirect: 'follow' });
-              const json = await res.json();
-              if (json && json.status === 'success') {
-                result = json;
-                break;
-              }
-            } catch (fetchErr) {
-              console.warn('Fetch getGalleryImages error:', fetchErr);
-            }
-          }
-        }
+        const result = await fetchGalleryDataFromApi(forceRefresh);
 
         if (result && result.status === 'success' && Array.isArray(result.images)) {
           allImages = result.images;
+          knownImageIds = new Set(allImages.map(img => img.id));
+          lastGallerySyncAt = Date.now();
+
           document.getElementById('totalPhotosCount').innerText = allImages.length;
           document.getElementById('lastUpdatedText').innerText = result.fetchedAt ? `อัปเดต: ${result.fetchedAt}` : 'อัปเดตล่าสุด';
 
@@ -1030,6 +1122,327 @@
       } finally {
         if (refreshIcon) refreshIcon.classList.remove('fa-spin');
         if (refreshBtn) refreshBtn.disabled = false;
+        startAutoSyncTimer();
+      }
+    }
+
+    // โหลดภาพใหม่ล่วงหน้าพร้อมลอง URL สำรอง เพื่อให้เปลี่ยนภาพในสไลด์โชว์ได้ลื่นไหล
+    function resolveWorkingImageUrl(photo) {
+      const candidates = [photo.url, photo.fallbackUrl, photo.driveThumbnailUrl].filter(Boolean);
+      return new Promise((resolve) => {
+        let idx = 0;
+        function tryNext() {
+          if (idx >= candidates.length) {
+            resolve(photo.url || '');
+            return;
+          }
+          const testSrc = candidates[idx++];
+          const preloader = new Image();
+          let settled = false;
+          const finish = (ok) => {
+            if (settled) return;
+            settled = true;
+            if (ok) {
+              photo._resolvedUrl = testSrc;
+              resolve(testSrc);
+            } else {
+              tryNext();
+            }
+          };
+          preloader.onload = () => finish(true);
+          preloader.onerror = () => finish(false);
+          setTimeout(() => finish(true), 4000);
+          preloader.src = testSrc;
+        }
+        tryNext();
+      });
+    }
+
+    function updateLiveSyncBadges(state, label) {
+      const ssBadge = document.getElementById('ssLiveSyncBadge');
+      const ssText = document.getElementById('ssLiveSyncText');
+      const galleryPill = document.getElementById('galleryLiveSyncPill');
+      const galleryDot = document.getElementById('galleryLiveSyncDot');
+      const galleryText = document.getElementById('galleryLiveSyncText');
+
+      if (!autoRefreshEnabled) {
+        if (ssText) ssText.innerText = 'ปิดซิงค์อัตโนมัติ';
+        if (ssBadge) ssBadge.className = 'hidden sm:inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-900/80 text-gray-400 border border-white/15';
+        if (galleryText) galleryText.innerText = 'ปิดซิงค์อัตโนมัติ';
+        if (galleryDot) galleryDot.className = 'w-1.5 h-1.5 rounded-full bg-gray-500';
+        if (galleryPill) galleryPill.className = 'inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full bg-gray-900/80 text-gray-400 border border-white/15';
+        return;
+      }
+
+      if (state === 'checking') {
+        if (ssText) ssText.innerText = label || 'กำลังเช็คภาพใหม่...';
+        if (ssBadge) ssBadge.className = 'hidden sm:inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-950/90 text-amber-300 border border-amber-400/40';
+        if (galleryText) galleryText.innerText = 'กำลังซิงค์...';
+      } else if (state === 'found') {
+        if (ssText) ssText.innerText = label || 'พบภาพใหม่!';
+        if (ssBadge) ssBadge.className = 'hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500 text-amber-950 border border-amber-200 shadow';
+        if (galleryText) galleryText.innerText = label || 'อัปเดตภาพใหม่แล้ว!';
+      } else {
+        const sec = Math.round(autoRefreshIntervalMs / 1000);
+        if (ssText) ssText.innerText = `ซิงค์ทุก ${sec}s`;
+        if (ssBadge) ssBadge.className = 'hidden sm:inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-400/30';
+        if (galleryText) galleryText.innerText = 'ซิงค์อัตโนมัติ';
+        if (galleryDot) galleryDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
+        if (galleryPill) galleryPill.className = 'inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-400/30';
+      }
+    }
+
+    function showNewPhotoSpotlight(newCount = 1) {
+      const badge = document.getElementById('ssNewPhotoBadge');
+      const badgeText = document.getElementById('ssNewPhotoBadgeText');
+      if (!badge) return;
+
+      if (badgeText) {
+        badgeText.innerText = newCount > 1
+          ? `ภาพใหม่เพิ่งอัปโหลด! (+${newCount} ภาพ)`
+          : 'ภาพใหม่เพิ่งอัปโหลด!';
+      }
+
+      badge.classList.remove('hidden', 'ss-new-badge-pop');
+      void badge.offsetWidth;
+      badge.classList.add('ss-new-badge-pop');
+
+      clearTimeout(newPhotoBadgeTimer);
+      newPhotoBadgeTimer = setTimeout(() => {
+        badge.classList.add('hidden');
+      }, Math.max(4000, slideshowSpeedMs));
+    }
+
+    function hideNewPhotoSpotlight() {
+      clearTimeout(newPhotoBadgeTimer);
+      const badge = document.getElementById('ssNewPhotoBadge');
+      if (badge) badge.classList.add('hidden');
+    }
+
+    // เช็คและซิงค์ภาพใหม่แบบเงียบในพื้นหลัง (ไม่กระพริบหน้าจอ)
+    async function syncGalleryImages({ manual = false, fromSlideshow = false } = {}) {
+      if (isGallerySyncing) return;
+      isGallerySyncing = true;
+      lastGallerySyncAt = Date.now();
+
+      const ssRefreshIcon = document.getElementById('ssRefreshIcon');
+      if (ssRefreshIcon && (fromSlideshow || isSlideshowActive)) {
+        ssRefreshIcon.classList.add('fa-spin');
+      }
+      updateLiveSyncBadges('checking');
+
+      try {
+        const forceFresh = manual || fromSlideshow || isSlideshowActive;
+        const result = await fetchGalleryDataFromApi(forceFresh);
+
+        if (!result || result.status !== 'success' || !Array.isArray(result.images)) {
+          updateLiveSyncBadges('idle');
+          return;
+        }
+
+        const incomingImages = result.images;
+        const incomingIds = new Set(incomingImages.map(img => img.id));
+        const newPhotos = knownImageIds.size === 0 && allImages.length === 0
+          ? incomingImages
+          : incomingImages.filter(img => !knownImageIds.has(img.id));
+
+        const listChanged =
+          newPhotos.length > 0 ||
+          incomingIds.size !== allImages.length ||
+          allImages.some(img => !incomingIds.has(img.id));
+
+        knownImageIds = incomingIds;
+
+        const updatedTextEl = document.getElementById('lastUpdatedText');
+        if (updatedTextEl && result.fetchedAt) {
+          updatedTextEl.innerText = `อัปเดต: ${result.fetchedAt}`;
+        }
+
+        if (!listChanged) {
+          updateLiveSyncBadges('idle');
+          if (manual) {
+            Swal.fire({
+              toast: true,
+              position: 'top-end',
+              icon: 'info',
+              title: `ยังไม่มีภาพใหม่ (${incomingImages.length} ภาพ)`,
+              showConfirmButton: false,
+              timer: 1600
+            });
+          }
+          return;
+        }
+
+        // จำ ID ภาพที่กำลังแสดงก่อนอัปเดตรายการ เพื่อรักษาลำดับไม่ให้เพี้ยน
+        const prevSlideshowList = filteredImages.length > 0 ? filteredImages : allImages;
+        const prevSlideshowPhotoId = (isSlideshowActive && prevSlideshowList[slideshowIndex])
+          ? prevSlideshowList[slideshowIndex].id
+          : null;
+
+        const lightboxModal = document.getElementById('lightboxModal');
+        const isLightboxOpen = lightboxModal && !lightboxModal.classList.contains('hidden');
+        const prevLightboxPhotoId = (isLightboxOpen && currentLightboxIndex >= 0 && filteredImages[currentLightboxIndex])
+          ? filteredImages[currentLightboxIndex].id
+          : null;
+
+        // อัปเดตชุดข้อมูลและ Grid เบื้องหลัง
+        allImages = incomingImages;
+        const countEl = document.getElementById('totalPhotosCount');
+        if (countEl) countEl.innerText = allImages.length;
+
+        applyFilterAndSort();
+
+        // รักษาลำดับ Lightbox หากกำลังเปิดดูรูปอยู่
+        if (isLightboxOpen && prevLightboxPhotoId) {
+          const restoredLbIdx = filteredImages.findIndex(item => item.id === prevLightboxPhotoId);
+          if (restoredLbIdx !== -1) {
+            currentLightboxIndex = restoredLbIdx;
+            const lbCounter = document.getElementById('lbCounter');
+            if (lbCounter) lbCounter.innerText = `ภาพที่ ${currentLightboxIndex + 1} จาก ${filteredImages.length}`;
+          }
+        }
+
+        if (newPhotos.length > 0) {
+          updateLiveSyncBadges('found', `พบภาพใหม่ +${newPhotos.length}`);
+          setTimeout(() => updateLiveSyncBadges('idle'), 3500);
+        } else {
+          updateLiveSyncBadges('idle');
+        }
+
+        // อัปเดตในส่วนของสไลด์โชว์ทันทีเมื่อพบการเปลี่ยนแปลง
+        if (isSlideshowActive) {
+          await handleSlideshowLiveUpdate(newPhotos, prevSlideshowPhotoId);
+        } else if (newPhotos.length > 0) {
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: `พบภาพใหม่ ${newPhotos.length} ภาพ! อัปเดตแกลเลอรีแล้ว`,
+            showConfirmButton: false,
+            timer: 2200
+          });
+        }
+      } catch (syncErr) {
+        console.warn('Silent gallery sync error:', syncErr);
+        updateLiveSyncBadges('idle');
+      } finally {
+        isGallerySyncing = false;
+        if (ssRefreshIcon) ssRefreshIcon.classList.remove('fa-spin');
+      }
+    }
+
+    async function handleSlideshowLiveUpdate(newPhotos, prevSlideshowPhotoId) {
+      const list = filteredImages.length > 0 ? filteredImages : allImages;
+
+      if (list.length === 0) {
+        closeSlideshowModal();
+        return;
+      }
+
+      if (newPhotos.length > 0) {
+        const matchingNew = newPhotos.filter(np => list.some(item => item.id === np.id));
+
+        if (matchingNew.length > 0) {
+          // พรีโหลดภาพใหม่ใบแรก (และภาพถัดไป) ก่อนเปลี่ยนหน้าจอเพื่อไม่ให้เกิดเฟรมว่าง
+          await resolveWorkingImageUrl(matchingNew[0]);
+          matchingNew.slice(1, 4).forEach(extraPhoto => resolveWorkingImageUrl(extraPhoto));
+
+          if (!isSlideshowActive) return;
+
+          const latestList = filteredImages.length > 0 ? filteredImages : allImages;
+          const matchingIdsInLatest = matchingNew
+            .map(np => np.id)
+            .filter(id => latestList.some(item => item.id === id));
+
+          if (jumpToNewPhotoInSlideshow && isSlideshowPlaying && matchingIdsInLatest.length > 0) {
+            const firstNewId = matchingIdsInLatest[0];
+            const remainingNewIds = matchingIdsInLatest.slice(1);
+            priorityNewPhotoIds = [
+              ...remainingNewIds,
+              ...priorityNewPhotoIds.filter(id => id !== firstNewId && !remainingNewIds.includes(id))
+            ];
+
+            const targetIdx = latestList.findIndex(item => item.id === firstNewId);
+            if (targetIdx !== -1) {
+              slideshowIndex = targetIdx;
+              updateSlideshowDisplay(true, matchingIdsInLatest.length);
+              restartSlideshowTimer();
+              return;
+            }
+          } else if (matchingIdsInLatest.length > 0) {
+            priorityNewPhotoIds = [
+              ...matchingIdsInLatest,
+              ...priorityNewPhotoIds.filter(id => !matchingIdsInLatest.includes(id))
+            ];
+            Swal.fire({
+              toast: true,
+              position: 'top-end',
+              icon: 'info',
+              title: `พบภาพใหม่ ${matchingIdsInLatest.length} ภาพ (เพิ่มเข้าคิวถัดไปแล้ว)`,
+              showConfirmButton: false,
+              timer: 2200
+            });
+          }
+        }
+      }
+
+      if (prevSlideshowPhotoId) {
+        const preservedIdx = list.findIndex(item => item.id === prevSlideshowPhotoId);
+        if (preservedIdx !== -1) {
+          slideshowIndex = preservedIdx;
+          document.getElementById('ssCounter').innerText = `${slideshowIndex + 1} / ${list.length}`;
+          return;
+        }
+      }
+
+      slideshowIndex = Math.max(0, Math.min(slideshowIndex, list.length - 1));
+      updateSlideshowDisplay(false);
+    }
+
+    function startAutoSyncTimer() {
+      stopAutoSyncTimer();
+      updateLiveSyncBadges('idle');
+      if (!autoRefreshEnabled) return;
+
+      const interval = isSlideshowActive ? autoRefreshIntervalMs : Math.max(autoRefreshIntervalMs, 20000);
+      backgroundSyncTimer = setInterval(() => {
+        if (document.hidden) return;
+        syncGalleryImages({
+          manual: false,
+          fromSlideshow: isSlideshowActive
+        });
+      }, interval);
+    }
+
+    function stopAutoSyncTimer() {
+      if (backgroundSyncTimer) {
+        clearInterval(backgroundSyncTimer);
+        backgroundSyncTimer = null;
+      }
+    }
+
+    function toggleAutoRefresh(enabled) {
+      autoRefreshEnabled = enabled;
+      if (enabled) {
+        startAutoSyncTimer();
+        if (isSlideshowActive) {
+          syncGalleryImages({ manual: false, fromSlideshow: true });
+        }
+      } else {
+        stopAutoSyncTimer();
+        updateLiveSyncBadges('off');
+      }
+    }
+
+    function toggleJumpToNewPhoto(enabled) {
+      jumpToNewPhotoInSlideshow = enabled;
+    }
+
+    function setAutoRefreshInterval(msVal) {
+      const parsed = parseInt(msVal, 10);
+      if (!isNaN(parsed) && parsed >= 3000) {
+        autoRefreshIntervalMs = parsed;
+        startAutoSyncTimer();
       }
     }
 
@@ -1163,23 +1576,40 @@
       isSlideshowActive = true;
       slideshowIndex = Math.max(0, Math.min(startIndex, list.length - 1));
       isSlideshowPlaying = true;
+      priorityNewPhotoIds = [];
+      hideNewPhotoSpotlight();
+
+      const playIcon = document.getElementById('ssPlayPauseIcon');
+      const statusBadge = document.getElementById('ssStatusBadge');
+      const statusText = document.getElementById('ssStatusText');
+      if (playIcon) playIcon.className = 'fa-solid fa-pause text-base';
+      if (statusBadge) statusBadge.className = 'text-[11px] font-semibold text-emerald-400 flex items-center gap-1.5';
+      if (statusText) statusText.innerText = 'กำลังฉาย';
 
       const modal = document.getElementById('slideshowModal');
       modal.classList.remove('hidden');
       modal.focus();
 
       createSlideshowSnowflakes();
-      updateSlideshowDisplay();
+      updateSlideshowDisplay(false);
       startSlideshowAutoTimer();
+      startAutoSyncTimer();
 
       // Setup Mouse Activity Tracker for Auto-hiding Controls
       document.addEventListener('mousemove', resetSlideshowControlsActivity);
       resetSlideshowControlsActivity();
+
+      // เช็คภาพล่าสุดทันทีหากเว้นระยะมานานกว่า 4 วินาที
+      if (autoRefreshEnabled && Date.now() - lastGallerySyncAt > 4000) {
+        syncGalleryImages({ manual: false, fromSlideshow: true });
+      }
     }
 
     function closeSlideshowModal() {
       isSlideshowActive = false;
       stopSlideshowAutoTimer();
+      hideNewPhotoSpotlight();
+      priorityNewPhotoIds = [];
 
       const modal = document.getElementById('slideshowModal');
       modal.classList.add('hidden');
@@ -1190,9 +1620,10 @@
 
       document.removeEventListener('mousemove', resetSlideshowControlsActivity);
       closeSlideshowSettings();
+      startAutoSyncTimer();
     }
 
-    function updateSlideshowDisplay() {
+    function updateSlideshowDisplay(isNewArrival = false, newArrivalCount = 1) {
       const list = filteredImages.length > 0 ? filteredImages : allImages;
       if (list.length === 0) return;
 
@@ -1220,9 +1651,23 @@
         mainImg.classList.add('ss-effect-flip');
       }
 
-      mainImg.src = photo.url;
+      const displayUrl = photo._resolvedUrl || photo.url;
+      delete mainImg.dataset.triedFallback;
+      delete mainImg.dataset.triedThumb;
+      mainImg.onerror = () => handleImgError(mainImg, photo.fallbackUrl, photo.driveThumbnailUrl);
+      mainImg.src = displayUrl;
+
       if (showAmbientGlow) {
-        ambientBg.src = photo.url;
+        delete ambientBg.dataset.triedFallback;
+        delete ambientBg.dataset.triedThumb;
+        ambientBg.onerror = () => handleImgError(ambientBg, photo.fallbackUrl, photo.driveThumbnailUrl);
+        ambientBg.src = displayUrl;
+      }
+
+      if (isNewArrival) {
+        showNewPhotoSpotlight(newArrivalCount);
+      } else {
+        hideNewPhotoSpotlight();
       }
     }
 
@@ -1230,17 +1675,30 @@
       const list = filteredImages.length > 0 ? filteredImages : allImages;
       if (list.length === 0) return;
 
-      if (isShuffle) {
-        let randIndex = Math.floor(Math.random() * list.length);
-        if (randIndex === slideshowIndex && list.length > 1) {
-          randIndex = (randIndex + 1) % list.length;
+      let jumpedFromQueue = false;
+      while (priorityNewPhotoIds.length > 0) {
+        const queuedId = priorityNewPhotoIds.shift();
+        const queuedIdx = list.findIndex(item => item.id === queuedId);
+        if (queuedIdx !== -1 && queuedIdx !== slideshowIndex) {
+          slideshowIndex = queuedIdx;
+          jumpedFromQueue = true;
+          break;
         }
-        slideshowIndex = randIndex;
-      } else {
-        slideshowIndex = (slideshowIndex + 1) % list.length;
       }
 
-      updateSlideshowDisplay();
+      if (!jumpedFromQueue) {
+        if (isShuffle) {
+          let randIndex = Math.floor(Math.random() * list.length);
+          if (randIndex === slideshowIndex && list.length > 1) {
+            randIndex = (randIndex + 1) % list.length;
+          }
+          slideshowIndex = randIndex;
+        } else {
+          slideshowIndex = (slideshowIndex + 1) % list.length;
+        }
+      }
+
+      updateSlideshowDisplay(jumpedFromQueue, 1);
       if (isSlideshowPlaying) {
         restartSlideshowTimer();
       }
@@ -1585,6 +2043,8 @@
           nextSlide();
         } else if (e.key === 'f' || e.key === 'F') {
           toggleFullscreen();
+        } else if (e.key === 'r' || e.key === 'R') {
+          syncGalleryImages({ manual: true, fromSlideshow: true });
         }
         return;
       }
@@ -1605,6 +2065,12 @@
         } else if (e.key === '0') {
           resetZoom();
         }
+      }
+    });
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden && autoRefreshEnabled && Date.now() - lastGallerySyncAt >= autoRefreshIntervalMs) {
+        syncGalleryImages({ manual: false, fromSlideshow: isSlideshowActive });
       }
     });
 
