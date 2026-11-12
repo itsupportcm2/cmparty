@@ -22,21 +22,49 @@
   <style>
     body {
       font-family: 'Prompt', sans-serif;
-      background: radial-gradient(circle at top, #7f1d1d 0%, #3f0708 45%, #052e16 100%);
+      background:
+        radial-gradient(circle at 12% 10%, rgba(254, 205, 211, 0.55) 0%, transparent 40%),
+        radial-gradient(circle at 88% 12%, rgba(167, 243, 208, 0.45) 0%, transparent 42%),
+        radial-gradient(circle at 50% 90%, rgba(253, 230, 138, 0.35) 0%, transparent 45%),
+        linear-gradient(160deg, #fff5f7 0%, #fffdf9 45%, #f0fdf4 100%);
+      background-attachment: fixed;
       min-height: 100vh;
       overflow-x: hidden;
-      color: #f3f4f6;
+      color: #4a2c35;
     }
 
     .font-cursive {
       font-family: 'Great Vibes', cursive;
     }
 
-    /* เอฟเฟกต์หิมะตก */
+    /* แถบลาย Candy Cane น่ารักด้านบน */
+    .cute-candy-strip {
+      background: repeating-linear-gradient(
+        135deg,
+        #fb7185 0px,
+        #fb7185 10px,
+        #ffffff 10px,
+        #ffffff 20px,
+        #34d399 20px,
+        #34d399 30px,
+        #ffffff 30px,
+        #ffffff 40px
+      );
+    }
+
+    /* หัวข้อไล่สีพาสเทลคริสต์มาสน่ารัก */
+    .cute-gallery-title {
+      background: linear-gradient(90deg, #e11d48 0%, #f43f5e 32%, #059669 68%, #d97706 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* เอฟเฟกต์หิมะตกน่ารัก (Snowflakes บนพื้นหลังพาสเทลสว่าง) */
     .snowflake {
       position: fixed;
       top: -20px;
-      color: rgba(255, 255, 255, 0.75);
+      color: rgba(244, 114, 182, 0.55);
+      text-shadow: 0 2px 6px rgba(255, 255, 255, 0.95), 0 0 8px rgba(125, 211, 252, 0.45);
       user-select: none;
       z-index: 0;
       pointer-events: none;
@@ -48,17 +76,17 @@
     @keyframes snowfall {
       0% {
         transform: translateY(-10vh) translateX(0) rotate(0deg);
-        opacity: 1;
+        opacity: 0.95;
       }
       100% {
         transform: translateY(105vh) translateX(50px) rotate(360deg);
-        opacity: 0.2;
+        opacity: 0.25;
       }
     }
 
-    /* การ์ดและ Shimmer Skeleton */
+    /* การ์ดและ Shimmer Skeleton สไตล์คริสต์มาสพาสเทล */
     .shimmer-placeholder {
-      background: linear-gradient(90deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.05) 100%);
+      background: linear-gradient(90deg, #ffe4e6 0%, #fff5f7 50%, #ecfdf5 100%);
       background-size: 200% 100%;
       animation: shimmer 1.5s infinite;
     }
@@ -68,28 +96,28 @@
       100% { background-position: 200% 0; }
     }
 
-    /* Scrollbar สไตล์พรีเมียม */
+    /* Scrollbar น่ารัก */
     ::-webkit-scrollbar {
       width: 8px;
       height: 8px;
     }
     ::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.3);
+      background: #fff1f2;
     }
     ::-webkit-scrollbar-thumb {
-      background: rgba(234, 179, 8, 0.4);
-      border-radius: 4px;
+      background: rgba(244, 63, 94, 0.4);
+      border-radius: 9999px;
     }
     ::-webkit-scrollbar-thumb:hover {
-      background: rgba(234, 179, 8, 0.7);
+      background: rgba(225, 29, 72, 0.65);
     }
 
     .gallery-img-card {
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     }
     .gallery-img-card:hover {
-      transform: translateY(-4px) scale(1.015);
-      box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.6), 0 0 20px rgba(234, 179, 8, 0.25);
+      transform: translateY(-5px) scale(1.02) rotate(-0.5deg);
+      box-shadow: 0 18px 34px -10px rgba(244, 63, 94, 0.25), 0 0 0 3px rgba(251, 113, 133, 0.25);
     }
 
     /* CSS Animations สำหรับสไลด์โชว์ (ลูกเล่นการเปลี่ยนภาพ) */
@@ -152,31 +180,35 @@
     }
   </style>
 </head>
-<body class="relative min-h-screen pb-16 flex flex-col justify-between selection:bg-amber-400 selection:text-amber-950">
+<body class="relative min-h-screen pb-16 flex flex-col justify-between selection:bg-rose-300 selection:text-rose-950">
 
   <!-- Snowflakes Layer -->
   <div id="snowflakesContainer" class="fixed inset-0 pointer-events-none z-0 overflow-hidden" aria-hidden="true"></div>
 
-  <!-- Header Navigation Bar -->
-  <header class="relative z-10 w-full border-b border-amber-500/20 bg-black/30 backdrop-blur-md sticky top-0 px-4 py-3">
-    <div class="max-w-7xl mx-auto flex items-center justify-between gap-3">
+  <!-- Header Navigation Bar (Cute Christmas Frosted) -->
+  <header class="relative z-10 w-full sticky top-0 bg-white/85 backdrop-blur-md border-b-2 border-rose-200/80 shadow-sm">
+    <!-- แถบ Candy Cane บางๆ ด้านบนสุด -->
+    <div class="h-1.5 w-full cute-candy-strip"></div>
+    <div class="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
       <!-- Logo & Brand -->
       <a href="index.html" class="flex items-center gap-3 group">
-        <div class="w-10 h-10 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 via-red-500 to-emerald-500 shadow-md flex items-center justify-center overflow-hidden">
-          <img
-            src="https://lh5.googleusercontent.com/d/1rzj7RdJ76nk5OccBPZ-kj-qxDp_Rg_Yk"
-            alt="CM Party Logo"
-            class="w-full h-full object-cover rounded-full group-hover:scale-110 transition duration-300"
-          />
+        <div class="w-11 h-11 rounded-2xl p-1 bg-gradient-to-tr from-rose-300 via-amber-200 to-emerald-300 shadow-md flex items-center justify-center overflow-hidden">
+          <div class="w-full h-full bg-white rounded-xl overflow-hidden flex items-center justify-center">
+            <img
+              src="https://lh5.googleusercontent.com/d/1rzj7RdJ76nk5OccBPZ-kj-qxDp_Rg_Yk"
+              alt="CM Party Logo"
+              class="w-full h-full object-cover rounded-xl group-hover:scale-110 transition duration-300"
+            />
+          </div>
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <span class="font-bold text-sm tracking-wide text-amber-200">CM PARTY 2026</span>
-            <span class="text-[10px] bg-red-700/80 text-amber-100 px-2 py-0.5 rounded-full border border-amber-400/30 font-semibold">
-              <i class="fa-solid fa-snowflake text-[9px] mr-1 text-amber-300"></i>Gallery
+            <span class="font-extrabold text-sm tracking-wide text-rose-700">CM PARTY 2026</span>
+            <span class="text-[10px] bg-gradient-to-r from-rose-100 to-pink-100 text-rose-700 px-2.5 py-0.5 rounded-full border border-rose-200 font-bold shadow-xs">
+              🎄 Gallery
             </span>
           </div>
-          <p class="text-[11px] text-gray-300">ภาพความประทับใจในงาน CM Party 2026</p>
+          <p class="text-[11px] text-slate-600 font-medium">ภาพความประทับใจในงาน CM Party 2026</p>
         </div>
       </a>
 
@@ -186,10 +218,10 @@
         <button
           type="button"
           onclick="openSlideshowModal()"
-          class="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white border border-amber-300/40 shadow-lg active:scale-95 transition flex items-center gap-1.5 cursor-pointer"
+          class="px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-rose-500 via-red-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white border-2 border-white shadow-md shadow-rose-500/20 active:scale-95 transition flex items-center gap-1.5 cursor-pointer"
           title="เปิดโหมดสไลด์โชว์สำหรับฉายบนจอใหญ่"
         >
-          <i class="fa-solid fa-play text-yellow-300 text-[11px]"></i>
+          <i class="fa-solid fa-play text-amber-200 text-[11px]"></i>
           <span>สไลด์โชว์</span>
         </button>
 
@@ -197,7 +229,7 @@
           href="https://drive.google.com/drive/folders/1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L?usp=sharing"
           target="_blank"
           rel="noopener noreferrer"
-          class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-amber-950 shadow-md transition"
+          class="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white border-2 border-white shadow-md shadow-emerald-500/20 transition"
           title="เปิดโฟลเดอร์ Google Drive"
         >
           <i class="fa-brands fa-google-drive text-sm"></i>
@@ -211,73 +243,76 @@
   <!-- Main Container -->
   <main class="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 w-full flex-1">
 
-    <!-- Hero Title Banner (Christmas Luxury Style) -->
+    <!-- Hero Title Banner (Cute Cozy Christmas Style) -->
     <section class="text-center mb-8 relative">
-      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gradient-to-r from-red-900/80 via-amber-900/60 to-emerald-900/80 border border-amber-400/40 text-amber-200 text-xs font-semibold shadow-lg mb-3">
-        <i class="fa-solid fa-star text-yellow-400 text-xs"></i>
+      <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/90 border-2 border-rose-200 text-rose-600 text-xs font-bold shadow-sm mb-3">
+        <span>🎅🏻</span>
         <span>CHRISTMAS & NEW YEAR CELEBRATION 2026</span>
-        <i class="fa-solid fa-star text-yellow-400 text-xs"></i>
+        <span>🎄</span>
       </div>
 
-      <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-yellow-300 to-amber-100 tracking-tight drop-shadow-md">
+      <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold cute-gallery-title tracking-tight drop-shadow-xs py-1">
         📸 ภาพความประทับใจในงาน CM Party 2026
       </h1>
-      <p class="font-cursive text-2xl sm:text-3xl text-amber-300/90 mt-1">
+      <p class="font-cursive text-3xl sm:text-4xl text-rose-500 mt-1">
         Memories of CM Party
       </p>
-      <p class="text-xs sm:text-sm text-gray-300 max-w-2xl mx-auto mt-2 leading-relaxed">
-        รวมทุกภาพบรรยากาศ รอยยิ้ม และความอบอุ่นในค่ำคืนงานเลี้ยงสังสรรค์แห่งความสุข พร้อมระบบสไลด์โชว์สำหรับฉายบนเวทีจอใหญ่และดาวน์โหลดภาพความทรงจำ
+      <p class="text-xs sm:text-sm text-slate-600 max-w-2xl mx-auto mt-2 leading-relaxed font-medium">
+        รวมทุกภาพบรรยากาศ รอยยิ้ม และความอบอุ่นในค่ำคืนงานเลี้ยงสังสรรค์แห่งความสุข พร้อมระบบสไลด์โชว์สำหรับฉายบนเวทีจอใหญ่และดาวน์โหลดภาพความทรงจำ ❄️✨
       </p>
 
       <!-- Tip Banner: ส่งรูปทาง LINE + ปุ่มเริ่มสไลด์โชว์ -->
-      <div class="mt-4 max-w-xl mx-auto p-3 rounded-2xl bg-emerald-950/60 border border-emerald-500/30 backdrop-blur-sm text-xs text-emerald-200 flex items-center justify-between gap-3 shadow-md">
-        <div class="flex items-center gap-2.5 text-left">
-          <span class="w-8 h-8 rounded-full bg-emerald-800 text-emerald-200 flex items-center justify-center shrink-0 border border-emerald-400/30">
-            <i class="fa-brands fa-line text-lg"></i>
+      <div class="mt-5 max-w-xl mx-auto p-3.5 rounded-3xl bg-white/90 border-2 border-dashed border-emerald-300 backdrop-blur-sm text-xs text-emerald-800 flex items-center justify-between gap-3 shadow-md shadow-emerald-500/10">
+        <div class="flex items-center gap-3 text-left">
+          <span class="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-500 text-white flex items-center justify-center shrink-0 shadow-sm">
+            <i class="fa-brands fa-line text-xl"></i>
           </span>
           <div>
-            <p class="font-bold text-emerald-100">ส่งรูปภาพร่วมสนุกผ่าน LINE</p>
-            <p class="text-[11px] text-emerald-300/90">ส่งภาพเข้าห้องแชทบอท LINE รูปจะขึ้นแสดงในแกลเลอรีนี้โดยอัตโนมัติ</p>
+            <p class="font-bold text-emerald-800 flex items-center gap-1">
+              <span>ส่งรูปภาพร่วมสนุกผ่าน LINE</span>
+              <span>🎁</span>
+            </p>
+            <p class="text-[11px] text-slate-600">ส่งภาพเข้าห้องแชทบอท LINE รูปจะขึ้นแสดงในแกลเลอรีนี้โดยอัตโนมัติ</p>
           </div>
         </div>
 
         <button
           type="button"
           onclick="openSlideshowModal()"
-          class="shrink-0 px-3.5 py-2 rounded-xl bg-gradient-to-r from-red-600 via-rose-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white font-bold text-xs shadow-md border border-amber-300/40 transition flex items-center gap-1.5 active:scale-95 cursor-pointer"
+          class="shrink-0 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-rose-500 via-red-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold text-xs shadow-md shadow-rose-500/20 border-2 border-white transition flex items-center gap-1.5 active:scale-95 cursor-pointer"
           title="เปิดโหมดสไลด์โชว์เต็มจอ"
         >
-          <i class="fa-solid fa-play text-yellow-300 text-xs"></i>
+          <i class="fa-solid fa-play text-amber-200 text-xs"></i>
           <span>ฉายสไลด์โชว์</span>
         </button>
       </div>
     </section>
 
-    <!-- Controls & Filter Toolbar -->
-    <section class="mb-6 bg-black/40 backdrop-blur-md rounded-2xl p-4 border border-amber-500/20 shadow-xl space-y-3">
+    <!-- Controls & Filter Toolbar (Cute Pastel Frost Card) -->
+    <section class="mb-6 bg-white/85 backdrop-blur-md rounded-3xl p-4 border-2 border-rose-200/80 shadow-[0_12px_30px_-10px_rgba(244,63,94,0.14)] space-y-3">
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-3">
         <!-- Live Stats Counters -->
         <div class="flex flex-wrap items-center gap-2 text-xs">
-          <div class="px-3 py-1.5 rounded-xl bg-red-950/70 border border-red-500/30 text-red-200 flex items-center gap-2">
-            <i class="fa-solid fa-images text-amber-300"></i>
+          <div class="px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 flex items-center gap-2 font-medium shadow-2xs">
+            <i class="fa-solid fa-images text-rose-500"></i>
             <span>ทั้งหมด:</span>
-            <b id="totalPhotosCount" class="text-white font-bold text-sm">0</b>
+            <b id="totalPhotosCount" class="text-rose-800 font-extrabold text-sm">0</b>
             <span>ภาพ</span>
           </div>
 
-          <div class="px-3 py-1.5 rounded-xl bg-emerald-950/70 border border-emerald-500/30 text-emerald-200 flex items-center gap-2">
-            <i class="fa-solid fa-cloud-arrow-up text-emerald-400"></i>
+          <div class="px-3.5 py-1.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-2 font-medium shadow-2xs">
+            <i class="fa-solid fa-cloud-arrow-up text-emerald-500"></i>
             <span>โฟลเดอร์ Drive:</span>
-            <span class="text-white font-medium truncate max-w-[120px]" title="1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L">LINE_Bot_Uploads</span>
+            <span class="text-emerald-900 font-bold truncate max-w-[120px]" title="1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L">LINE_Bot_Uploads</span>
           </div>
 
-          <div id="lastUpdatedNotice" class="text-[11px] text-gray-400 flex items-center gap-1 hidden sm:flex">
-            <i class="fa-solid fa-clock text-amber-400/80 text-[10px]"></i>
+          <div id="lastUpdatedNotice" class="text-[11px] text-slate-500 flex items-center gap-1 hidden sm:flex font-medium">
+            <i class="fa-solid fa-clock text-rose-400 text-[10px]"></i>
             <span id="lastUpdatedText">-</span>
           </div>
 
-          <span id="galleryLiveSyncPill" class="inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-400/30">
-            <span id="galleryLiveSyncDot" class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span id="galleryLiveSyncPill" class="inline-flex items-center gap-1.5 text-[10px] font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300">
+            <span id="galleryLiveSyncDot" class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
             <span id="galleryLiveSyncText">ซิงค์อัตโนมัติ</span>
           </span>
         </div>
@@ -288,10 +323,10 @@
           <button
             type="button"
             onclick="openSlideshowModal()"
-            class="px-3.5 py-2 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 active:scale-95 text-white font-bold text-xs shadow-md border border-amber-300/40 transition flex items-center gap-1.5 cursor-pointer"
+            class="px-4 py-2 rounded-2xl bg-gradient-to-r from-rose-500 via-red-500 to-amber-500 hover:from-rose-600 hover:to-amber-600 active:scale-95 text-white font-bold text-xs shadow-md shadow-rose-500/20 border-2 border-white transition flex items-center gap-1.5 cursor-pointer"
             title="เปิดโหมดสไลด์โชว์สำหรับฉายบนจอใหญ่ในงานเลี้ยง"
           >
-            <i class="fa-solid fa-play text-yellow-300 text-xs"></i>
+            <i class="fa-solid fa-play text-amber-200 text-xs"></i>
             <span>เปิดสไลด์โชว์</span>
           </button>
 
@@ -300,10 +335,10 @@
             type="button"
             id="btnRefreshGallery"
             onclick="loadGalleryImages(true)"
-            class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-gray-200 font-semibold text-xs border border-white/20 transition flex items-center gap-1.5 cursor-pointer"
+            class="px-3.5 py-2 rounded-2xl bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 font-bold text-xs border border-rose-200 transition flex items-center gap-1.5 cursor-pointer"
             title="รีเฟรชรูปภาพจาก Google Drive ทันที"
           >
-            <i id="refreshIcon" class="fa-solid fa-rotate"></i>
+            <i id="refreshIcon" class="fa-solid fa-rotate text-rose-500"></i>
             <span class="hidden sm:inline">รีเฟรช</span>
           </button>
 
@@ -312,32 +347,32 @@
             href="https://drive.google.com/drive/folders/1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L?usp=sharing"
             target="_blank"
             rel="noopener noreferrer"
-            class="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 active:scale-95 text-gray-200 text-xs font-semibold border border-white/20 transition flex items-center gap-1.5"
+            class="px-3.5 py-2 rounded-2xl bg-amber-50 hover:bg-amber-100 active:scale-95 text-amber-800 text-xs font-bold border border-amber-200 transition flex items-center gap-1.5"
             title="เปิดโฟลเดอร์ต้นฉบับบน Google Drive"
           >
-            <i class="fa-solid fa-folder-open text-amber-300"></i>
+            <i class="fa-solid fa-folder-open text-amber-500"></i>
             <span class="hidden md:inline">Drive</span>
           </a>
         </div>
       </div>
 
       <!-- Search & Layout Controls Row -->
-      <div class="pt-2 border-t border-white/10 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
+      <div class="pt-3 border-t border-rose-100 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
         <!-- Search Box -->
         <div class="relative flex-1 max-w-md">
-          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+          <i class="fa-solid fa-magnifying-glass absolute left-3.5 top-1/2 -translate-y-1/2 text-rose-400 text-xs"></i>
           <input
             type="text"
             id="gallerySearchInput"
             placeholder="ค้นหาตามชื่อไฟล์ วันที่ เช่น 202611, LINE_..."
             oninput="handleSearchPhotos()"
-            class="w-full pl-9 pr-8 py-2 rounded-xl bg-black/40 border border-white/20 text-xs text-white placeholder-gray-400 focus:outline-none focus:border-amber-400 transition"
+            class="w-full pl-9 pr-8 py-2 rounded-2xl bg-rose-50/70 border border-rose-200 text-xs text-slate-700 placeholder-rose-400/80 focus:outline-none focus:bg-white focus:border-rose-400 transition"
           />
           <button
             type="button"
             id="clearSearchBtn"
             onclick="clearSearch()"
-            class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white text-xs"
+            class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 text-rose-400 hover:text-rose-600 text-xs cursor-pointer"
           >
             <i class="fa-solid fa-circle-xmark"></i>
           </button>
@@ -350,36 +385,36 @@
             <select
               id="sortOrderSelect"
               onchange="handleSortChange()"
-              class="appearance-none pl-3 pr-8 py-2 rounded-xl bg-black/40 border border-white/20 text-xs text-amber-200 font-medium focus:outline-none focus:border-amber-400 cursor-pointer"
+              class="appearance-none pl-3.5 pr-8 py-2 rounded-2xl bg-rose-50/70 border border-rose-200 text-xs text-rose-800 font-bold focus:outline-none focus:bg-white focus:border-rose-400 cursor-pointer"
             >
-              <option value="newest" class="bg-gray-900 text-white">🕒 ใหม่สุดก่อน</option>
-              <option value="oldest" class="bg-gray-900 text-white">⌛ เก่าสุดก่อน</option>
-              <option value="name" class="bg-gray-900 text-white">🔤 ตามชื่อไฟล์</option>
+              <option value="newest" class="bg-white text-slate-800">🕒 ใหม่สุดก่อน</option>
+              <option value="oldest" class="bg-white text-slate-800">⌛ เก่าสุดก่อน</option>
+              <option value="name" class="bg-white text-slate-800">🔤 ตามชื่อไฟล์</option>
             </select>
-            <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-[10px] pointer-events-none"></i>
+            <i class="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-rose-400 text-[10px] pointer-events-none"></i>
           </div>
 
           <!-- Grid Columns Selector -->
-          <div class="hidden sm:flex items-center bg-black/40 rounded-xl p-1 border border-white/15 text-xs text-gray-300">
+          <div class="hidden sm:flex items-center bg-rose-50 rounded-2xl p-1 border border-rose-200 text-xs text-rose-700 font-semibold">
             <button
               type="button"
               onclick="setGridColumns(2)"
               id="colBtn2"
-              class="px-2.5 py-1 rounded-lg hover:text-white transition"
+              class="px-2.5 py-1 rounded-xl hover:bg-white/80 hover:text-rose-700 transition cursor-pointer"
               title="2 คอลัมน์"
             >2</button>
             <button
               type="button"
               onclick="setGridColumns(3)"
               id="colBtn3"
-              class="px-2.5 py-1 rounded-lg bg-amber-500 text-amber-950 font-bold transition"
+              class="px-2.5 py-1 rounded-xl bg-rose-500 text-white font-bold shadow-xs transition cursor-pointer"
               title="3 คอลัมน์ (แนะนำ)"
             >3</button>
             <button
               type="button"
               onclick="setGridColumns(4)"
               id="colBtn4"
-              class="px-2.5 py-1 rounded-lg hover:text-white transition"
+              class="px-2.5 py-1 rounded-xl hover:bg-white/80 hover:text-rose-700 transition cursor-pointer"
               title="4 คอลัมน์"
             >4</button>
           </div>
@@ -395,20 +430,20 @@
       <!-- Skeletons will appear here on initial load -->
     </div>
 
-    <!-- Empty State Container -->
-    <div id="galleryEmptyState" class="hidden text-center py-16 px-4 bg-black/30 rounded-3xl border border-white/10 my-8">
-      <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-tr from-amber-500/20 via-red-500/20 to-emerald-500/20 border-2 border-amber-400/40 flex items-center justify-center text-amber-300 mb-4 shadow-lg">
+    <!-- Empty State Container (Cute Cozy Pastel Card) -->
+    <div id="galleryEmptyState" class="hidden text-center py-16 px-4 bg-white/85 backdrop-blur-md rounded-3xl border-2 border-dashed border-rose-200 my-8 shadow-md">
+      <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-tr from-rose-100 via-pink-50 to-emerald-100 border-2 border-rose-300 flex items-center justify-center text-rose-500 mb-4 shadow-sm">
         <i class="fa-solid fa-camera-retro text-3xl"></i>
       </div>
-      <h3 class="text-xl font-bold text-amber-200">ยังไม่พบรูปภาพในโฟลเดอร์</h3>
-      <p class="text-xs text-gray-300 max-w-md mx-auto mt-1 leading-relaxed">
+      <h3 class="text-xl font-extrabold text-rose-700">ยังไม่พบรูปภาพในโฟลเดอร์ ⛄</h3>
+      <p class="text-xs text-slate-600 max-w-md mx-auto mt-1.5 leading-relaxed font-medium">
         ส่งรูปภาพผ่านห้องแชท LINE cmparty2026 เพื่ออัปโหลดภาพกิจกรรม หรือกดปุ่มรีเฟรชเพื่อโหลดภาพใหม่อีกครั้ง
       </p>
-      <div class="mt-4 flex items-center justify-center gap-2">
+      <div class="mt-5 flex items-center justify-center gap-2.5">
         <button
           type="button"
           onclick="loadGalleryImages(true)"
-          class="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 font-bold text-xs shadow-md transition flex items-center gap-1.5"
+          class="px-4 py-2 rounded-2xl bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold text-xs shadow-md transition flex items-center gap-1.5 cursor-pointer"
         >
           <i class="fa-solid fa-rotate"></i>
           <span>ลองรีเฟรชอีกครั้ง</span>
@@ -417,7 +452,7 @@
           href="https://drive.google.com/drive/folders/1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L?usp=sharing"
           target="_blank"
           rel="noopener noreferrer"
-          class="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-gray-200 font-semibold text-xs border border-white/20 transition flex items-center gap-1.5"
+          class="px-4 py-2 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-xs border border-emerald-200 transition flex items-center gap-1.5"
         >
           <i class="fa-brands fa-google-drive"></i>
           <span>เปิดดูใน Google Drive</span>
@@ -427,11 +462,11 @@
   </main>
 
   <!-- ============================================================ -->
-  <!-- 🎬 FULLSCREEN SLIDESHOW MODAL (โหมดสไลด์โชว์ ปรับแต่งลูกเล่นสุดหรู) -->
+  <!-- 🎬 FULLSCREEN SLIDESHOW MODAL (โหมดสไลด์โชว์ Cute Cozy Winter Christmas) -->
   <!-- ============================================================ -->
   <div
     id="slideshowModal"
-    class="fixed inset-0 z-50 bg-[#070102] text-white flex flex-col justify-between hidden select-none overflow-hidden"
+    class="fixed inset-0 z-50 bg-gradient-to-br from-[#231426] via-[#1c1a2e] to-[#122624] text-white flex flex-col justify-between hidden select-none overflow-hidden"
     tabindex="-1"
   >
     <!-- Background Ambient Glow (Blurred real-time image) -->
@@ -442,45 +477,47 @@
         alt=""
         class="w-full h-full object-cover blur-3xl opacity-35 scale-125 transition-all duration-1000 ease-in-out"
       />
-      <div class="absolute inset-0 bg-black/45"></div>
+      <div class="absolute inset-0 bg-[#1c1222]/55"></div>
     </div>
 
     <!-- Snowflakes Layer inside Slideshow -->
     <div id="ssSnowflakes" class="absolute inset-0 pointer-events-none z-10 overflow-hidden" aria-hidden="true"></div>
 
     <!-- Top Floating Bar (Header) -->
-    <div id="ssTopBar" class="relative z-20 flex items-center justify-between px-4 sm:px-6 py-3 bg-gradient-to-b from-black/85 via-black/40 to-transparent transition-opacity duration-300">
+    <div id="ssTopBar" class="relative z-20 flex items-center justify-between px-4 sm:px-6 py-3 bg-gradient-to-b from-[#1e1021]/90 via-[#1e1021]/45 to-transparent transition-opacity duration-300">
       <!-- Left: Logo & Event Title -->
       <div class="flex items-center gap-3">
-        <div class="w-9 h-9 rounded-full p-0.5 bg-gradient-to-tr from-amber-400 to-red-500 shadow flex items-center justify-center overflow-hidden">
-          <img src="https://lh5.googleusercontent.com/d/1rzj7RdJ76nk5OccBPZ-kj-qxDp_Rg_Yk" alt="Logo" class="w-full h-full object-cover rounded-full" />
+        <div class="w-10 h-10 rounded-2xl p-0.5 bg-gradient-to-tr from-rose-400 via-amber-200 to-emerald-400 shadow flex items-center justify-center overflow-hidden">
+          <div class="w-full h-full bg-white rounded-[14px] overflow-hidden">
+            <img src="https://lh5.googleusercontent.com/d/1rzj7RdJ76nk5OccBPZ-kj-qxDp_Rg_Yk" alt="Logo" class="w-full h-full object-cover rounded-[14px]" />
+          </div>
         </div>
         <div>
-          <span class="font-bold text-xs sm:text-sm text-amber-200 tracking-wide drop-shadow">CM PARTY 2026</span>
-          <span class="hidden sm:inline-block text-[10px] bg-red-700/80 text-amber-100 px-2 py-0.5 rounded-full ml-2 border border-amber-400/30">
-            SLIDESHOW
+          <span class="font-extrabold text-xs sm:text-sm text-rose-100 tracking-wide drop-shadow">CM PARTY 2026</span>
+          <span class="hidden sm:inline-block text-[10px] bg-rose-500/30 text-rose-100 px-2.5 py-0.5 rounded-full ml-2 border border-rose-300/40 font-bold">
+            🎄 SLIDESHOW
           </span>
         </div>
       </div>
 
       <!-- Center: Counter & Progress Timer -->
-      <div class="flex flex-col items-center gap-1">
+      <div class="flex flex-col items-center gap-1.5">
         <div class="flex items-center gap-2">
-          <span id="ssCounter" class="text-xs font-bold px-2.5 py-0.5 rounded-full bg-amber-500 text-amber-950 shadow">
+          <span id="ssCounter" class="text-xs font-extrabold px-3 py-0.5 rounded-full bg-gradient-to-r from-rose-400 to-pink-500 text-white shadow-md border border-white/40">
             1 / 1
           </span>
-          <span id="ssStatusBadge" class="text-[11px] font-semibold text-emerald-400 flex items-center gap-1.5">
+          <span id="ssStatusBadge" class="text-[11px] font-bold text-emerald-300 flex items-center gap-1.5">
             <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
             <span id="ssStatusText">กำลังฉาย</span>
           </span>
-          <span id="ssLiveSyncBadge" class="hidden sm:inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-400/30">
-            <i class="fa-solid fa-rss text-[9px] text-emerald-400"></i>
+          <span id="ssLiveSyncBadge" class="hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-200 border border-emerald-400/40">
+            <i class="fa-solid fa-rss text-[9px] text-emerald-300"></i>
             <span id="ssLiveSyncText">อัปเดตอัตโนมัติ</span>
           </span>
         </div>
         <!-- Progress Bar for Next Slide -->
-        <div class="w-32 sm:w-48 h-1 bg-white/20 rounded-full overflow-hidden">
-          <div id="ssProgressBar" class="h-full bg-gradient-to-r from-amber-400 to-yellow-300 w-0 transition-all duration-100 ease-linear"></div>
+        <div class="w-32 sm:w-48 h-1.5 bg-white/20 rounded-full overflow-hidden">
+          <div id="ssProgressBar" class="h-full bg-gradient-to-r from-rose-400 via-pink-300 to-emerald-400 w-0 transition-all duration-100 ease-linear rounded-full"></div>
         </div>
       </div>
 
@@ -491,7 +528,7 @@
           type="button"
           id="ssRefreshBtn"
           onclick="syncGalleryImages({ manual: true, fromSlideshow: true }); event.stopPropagation();"
-          class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/25 text-emerald-300 flex items-center justify-center transition border border-white/20 cursor-pointer"
+          class="w-9 h-9 rounded-2xl bg-white/15 hover:bg-white/25 text-emerald-200 flex items-center justify-center transition border border-white/25 cursor-pointer"
           title="เช็คภาพใหม่เดี๋ยวนี้ (R)"
         >
           <i id="ssRefreshIcon" class="fa-solid fa-rotate text-xs"></i>
@@ -501,10 +538,10 @@
         <button
           type="button"
           onclick="toggleSlideshowSettings()"
-          class="px-2.5 sm:px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/25 text-amber-300 text-xs font-semibold border border-white/20 transition flex items-center gap-1.5 cursor-pointer shadow"
+          class="px-3 py-1.5 rounded-2xl bg-white/15 hover:bg-white/25 text-rose-100 text-xs font-bold border border-white/25 transition flex items-center gap-1.5 cursor-pointer shadow"
           title="ปรับแต่งลูกเล่นสไลด์โชว์"
         >
-          <i class="fa-solid fa-sliders text-xs"></i>
+          <i class="fa-solid fa-sliders text-xs text-rose-300"></i>
           <span class="hidden md:inline">ปรับแต่งลูกเล่น</span>
         </button>
 
@@ -512,7 +549,7 @@
         <button
           type="button"
           onclick="toggleFullscreen()"
-          class="w-9 h-9 rounded-xl bg-white/10 hover:bg-white/25 text-white flex items-center justify-center transition border border-white/20 cursor-pointer"
+          class="w-9 h-9 rounded-2xl bg-white/15 hover:bg-white/25 text-white flex items-center justify-center transition border border-white/25 cursor-pointer"
           title="เปิด/ปิด เต็มจอ (F)"
         >
           <i id="ssFullscreenIcon" class="fa-solid fa-expand text-xs"></i>
@@ -522,7 +559,7 @@
         <button
           type="button"
           onclick="closeSlideshowModal()"
-          class="w-9 h-9 rounded-xl bg-red-600/80 hover:bg-red-600 text-white flex items-center justify-center transition border border-red-400/40 cursor-pointer shadow"
+          class="w-9 h-9 rounded-2xl bg-rose-500/85 hover:bg-rose-500 text-white flex items-center justify-center transition border border-rose-200/50 cursor-pointer shadow"
           title="ออกจากสไลด์โชว์ (ESC)"
         >
           <i class="fa-solid fa-xmark text-sm"></i>
@@ -536,7 +573,7 @@
       <button
         type="button"
         onclick="prevSlide(); event.stopPropagation();"
-        class="absolute left-3 sm:left-6 z-30 w-12 h-12 rounded-full bg-black/50 hover:bg-amber-500 hover:text-amber-950 text-white border border-white/20 flex items-center justify-center transition shadow-2xl cursor-pointer active:scale-90"
+        class="absolute left-3 sm:left-6 z-30 w-12 h-12 rounded-full bg-white/15 hover:bg-rose-400 hover:text-white text-white border-2 border-white/30 backdrop-blur-md flex items-center justify-center transition shadow-2xl cursor-pointer active:scale-90"
         title="ภาพก่อนหน้า (ลูกศรซ้าย)"
       >
         <i class="fa-solid fa-chevron-left text-lg"></i>
@@ -545,7 +582,7 @@
       <button
         type="button"
         onclick="nextSlide(); event.stopPropagation();"
-        class="absolute right-3 sm:right-6 z-30 w-12 h-12 rounded-full bg-black/50 hover:bg-amber-500 hover:text-amber-950 text-white border border-white/20 flex items-center justify-center transition shadow-2xl cursor-pointer active:scale-90"
+        class="absolute right-3 sm:right-6 z-30 w-12 h-12 rounded-full bg-white/15 hover:bg-rose-400 hover:text-white text-white border-2 border-white/30 backdrop-blur-md flex items-center justify-center transition shadow-2xl cursor-pointer active:scale-90"
         title="ภาพถัดไป (ลูกศรขวา)"
       >
         <i class="fa-solid fa-chevron-right text-lg"></i>
@@ -554,42 +591,43 @@
       <!-- New Photo Celebration Badge -->
       <div
         id="ssNewPhotoBadge"
-        class="hidden absolute top-4 left-1/2 -translate-x-1/2 z-30 px-4 py-1.5 rounded-full bg-gradient-to-r from-red-600 via-amber-500 to-emerald-600 text-white text-xs sm:text-sm font-bold shadow-[0_0_25px_rgba(245,158,11,0.7)] border border-amber-200/70 flex items-center gap-2 pointer-events-none"
+        class="hidden absolute top-4 left-1/2 -translate-x-1/2 z-30 px-4 py-1.5 rounded-full bg-gradient-to-r from-rose-500 via-pink-500 to-emerald-500 text-white text-xs sm:text-sm font-bold shadow-[0_0_25px_rgba(244,63,94,0.65)] border-2 border-white/80 flex items-center gap-2 pointer-events-none"
       >
-        <i class="fa-solid fa-sparkles text-yellow-200"></i>
+        <span>🎁</span>
         <span id="ssNewPhotoBadgeText">ภาพใหม่เพิ่งอัปโหลด!</span>
+        <span>✨</span>
       </div>
 
       <!-- Center Slide Image Display with transition wrapper -->
-      <div id="ssImageContainer" class="relative max-w-full max-h-full flex items-center justify-center overflow-hidden rounded-2xl">
+      <div id="ssImageContainer" class="relative max-w-full max-h-full flex items-center justify-center overflow-hidden rounded-3xl">
         <img
           id="ssMainImage"
           src=""
           alt="Slideshow"
-          class="max-w-full max-h-[78vh] object-contain rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] border-2 border-amber-400/40 select-none transition-all duration-700"
+          class="max-w-full max-h-[78vh] object-contain rounded-3xl shadow-[0_24px_60px_rgba(0,0,0,0.75)] border-4 border-white/95 select-none transition-all duration-700"
         />
       </div>
     </div>
 
     <!-- Bottom Floating Bar (Controls + Photo Caption) -->
-    <div id="ssBottomBar" class="relative z-20 flex flex-col items-center justify-center px-4 py-3 bg-gradient-to-t from-black/90 via-black/50 to-transparent transition-opacity duration-300 space-y-2">
+    <div id="ssBottomBar" class="relative z-20 flex flex-col items-center justify-center px-4 py-3 bg-gradient-to-t from-[#1c1020]/90 via-[#1c1020]/45 to-transparent transition-opacity duration-300 space-y-2">
       <!-- Photo Caption (Name & Upload Date) -->
       <div id="ssCaptionBox" class="text-center max-w-xl truncate px-3">
-        <p id="ssPhotoTitle" class="text-sm sm:text-base font-bold text-amber-200 truncate drop-shadow">
+        <p id="ssPhotoTitle" class="text-sm sm:text-base font-bold text-rose-100 truncate drop-shadow">
           -
         </p>
-        <p id="ssPhotoDate" class="text-xs text-gray-300 drop-shadow">
+        <p id="ssPhotoDate" class="text-xs text-rose-200/80 drop-shadow">
           -
         </p>
       </div>
 
       <!-- Controls Row: Play/Pause, Speed, Effect Indicator, Shuffle -->
-      <div class="flex items-center gap-2 sm:gap-3 bg-black/60 backdrop-blur-md px-4 py-2 rounded-2xl border border-white/15 shadow-xl">
+      <div class="flex items-center gap-2 sm:gap-3 bg-white/15 backdrop-blur-xl px-4 py-2 rounded-full border border-white/25 shadow-xl">
         <!-- Prev Button -->
         <button
           type="button"
           onclick="prevSlide()"
-          class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-gray-200 flex items-center justify-center transition"
+          class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition cursor-pointer"
           title="ภาพก่อนหน้า"
         >
           <i class="fa-solid fa-backward-step text-xs"></i>
@@ -600,7 +638,7 @@
           type="button"
           id="ssPlayPauseBtn"
           onclick="togglePlayPause()"
-          class="w-10 h-10 rounded-full bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-amber-950 font-bold flex items-center justify-center shadow-lg transition active:scale-95"
+          class="w-10 h-10 rounded-full bg-gradient-to-r from-rose-400 via-pink-500 to-rose-500 hover:from-rose-500 hover:to-pink-600 text-white font-bold flex items-center justify-center shadow-lg border-2 border-white/80 transition active:scale-95 cursor-pointer"
           title="เล่น / หยุดชั่วคราว (Space)"
         >
           <i id="ssPlayPauseIcon" class="fa-solid fa-pause text-base"></i>
@@ -610,31 +648,31 @@
         <button
           type="button"
           onclick="nextSlide()"
-          class="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 text-gray-200 flex items-center justify-center transition"
+          class="w-8 h-8 rounded-full bg-white/15 hover:bg-white/30 text-white flex items-center justify-center transition cursor-pointer"
           title="ภาพถัดไป"
         >
           <i class="fa-solid fa-forward-step text-xs"></i>
         </button>
 
-        <span class="w-px h-5 bg-white/20 mx-1"></span>
+        <span class="w-px h-5 bg-white/25 mx-1"></span>
 
         <!-- Quick Speed Selector -->
         <div class="flex items-center gap-1 text-[11px]">
-          <span class="text-gray-400 hidden sm:inline mr-1">ความเร็ว:</span>
-          <button type="button" onclick="setSlideshowSpeed(3000)" class="ss-speed-btn px-2 py-0.5 rounded-md hover:bg-white/20 text-gray-300" data-speed="3000">3s</button>
-          <button type="button" onclick="setSlideshowSpeed(5000)" class="ss-speed-btn px-2 py-0.5 rounded-md bg-amber-500 text-amber-950 font-bold" data-speed="5000">5s</button>
-          <button type="button" onclick="setSlideshowSpeed(8000)" class="ss-speed-btn px-2 py-0.5 rounded-md hover:bg-white/20 text-gray-300" data-speed="8000">8s</button>
-          <button type="button" onclick="setSlideshowSpeed(12000)" class="ss-speed-btn px-2 py-0.5 rounded-md hover:bg-white/20 text-gray-300 hidden sm:inline-block" data-speed="12000">12s</button>
+          <span class="text-rose-100/80 hidden sm:inline mr-1">ความเร็ว:</span>
+          <button type="button" onclick="setSlideshowSpeed(3000)" class="ss-speed-btn px-2.5 py-0.5 rounded-full hover:bg-white/20 text-rose-100 cursor-pointer" data-speed="3000">3s</button>
+          <button type="button" onclick="setSlideshowSpeed(5000)" class="ss-speed-btn px-2.5 py-0.5 rounded-full bg-rose-400 text-white font-bold shadow-xs cursor-pointer" data-speed="5000">5s</button>
+          <button type="button" onclick="setSlideshowSpeed(8000)" class="ss-speed-btn px-2.5 py-0.5 rounded-full hover:bg-white/20 text-rose-100 cursor-pointer" data-speed="8000">8s</button>
+          <button type="button" onclick="setSlideshowSpeed(12000)" class="ss-speed-btn px-2.5 py-0.5 rounded-full hover:bg-white/20 text-rose-100 hidden sm:inline-block cursor-pointer" data-speed="12000">12s</button>
         </div>
 
-        <span class="w-px h-5 bg-white/20 mx-1"></span>
+        <span class="w-px h-5 bg-white/25 mx-1"></span>
 
         <!-- Shuffle Button -->
         <button
           type="button"
           id="ssShuffleBtn"
           onclick="toggleShuffle()"
-          class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 text-xs transition flex items-center gap-1"
+          class="px-3 py-1 rounded-full bg-white/15 hover:bg-white/25 text-rose-100 text-xs transition flex items-center gap-1 cursor-pointer"
           title="สลับเป็นโหมดสุ่มภาพ"
         >
           <i class="fa-solid fa-shuffle text-xs"></i>
@@ -643,42 +681,42 @@
       </div>
     </div>
 
-    <!-- Settings Drawer / Modal (แผงปรับแต่งลูกเล่นสไลด์โชว์) -->
+    <!-- Settings Drawer / Modal (แผงปรับแต่งลูกเล่นสไลด์โชว์ Cute Christmas) -->
     <div
       id="ssSettingsModal"
-      class="hidden absolute right-4 top-16 z-40 w-80 max-w-[90vw] bg-black/90 backdrop-blur-xl border-2 border-amber-400/50 rounded-3xl p-4 shadow-2xl space-y-3.5 text-xs text-gray-200"
+      class="hidden absolute right-4 top-16 z-40 w-80 max-w-[90vw] bg-[#241528]/95 backdrop-blur-xl border-2 border-rose-300/60 rounded-3xl p-4 shadow-2xl space-y-3.5 text-xs text-rose-50"
     >
       <div class="flex items-center justify-between border-b border-white/15 pb-2">
-        <h4 class="font-bold text-amber-200 flex items-center gap-2 text-sm">
-          <i class="fa-solid fa-wand-magic-sparkles text-amber-400"></i>
+        <h4 class="font-bold text-rose-200 flex items-center gap-2 text-sm">
+          <span>🎄</span>
           <span>ปรับแต่งลูกเล่นสไลด์โชว์</span>
         </h4>
-        <button type="button" onclick="toggleSlideshowSettings()" class="text-gray-400 hover:text-white">
+        <button type="button" onclick="toggleSlideshowSettings()" class="text-rose-200 hover:text-white cursor-pointer">
           <i class="fa-solid fa-xmark text-base"></i>
         </button>
       </div>
 
       <!-- 1. เอฟเฟกต์การเปลี่ยนภาพ (Transition Effect) -->
       <div class="space-y-1.5">
-        <label class="font-semibold text-gray-300 block">ลูกเล่นการเปลี่ยนรูปภาพ (Transition):</label>
+        <label class="font-semibold text-rose-100 block">ลูกเล่นการเปลี่ยนรูปภาพ (Transition):</label>
         <select
           id="ssEffectSelect"
           onchange="changeSlideshowEffect(this.value)"
-          class="w-full px-3 py-2 rounded-xl bg-white/10 border border-white/20 text-white font-medium focus:outline-none focus:border-amber-400 cursor-pointer"
+          class="w-full px-3 py-2 rounded-2xl bg-white/10 border border-rose-200/30 text-white font-medium focus:outline-none focus:border-rose-300 cursor-pointer"
         >
-          <option value="kenburns" class="bg-gray-900 text-white" selected>🎬 Ken Burns (ซูมภาพยนตร์ นุ่มนวล แนะนำ)</option>
-          <option value="fade" class="bg-gray-900 text-white">✨ Crossfade (เฟดละมุน)</option>
-          <option value="zoom" class="bg-gray-900 text-white">🔍 Zoom In & Out (ซูมมิติเข้า-ออก)</option>
-          <option value="slide" class="bg-gray-900 text-white">↔️ Slide Horizontal (สไลด์ด้านข้าง)</option>
-          <option value="flip" class="bg-gray-900 text-white">🔄 3D Flip (หมุน 3 มิติ)</option>
+          <option value="kenburns" class="bg-[#241528] text-white" selected>🎬 Ken Burns (ซูมภาพยนตร์ นุ่มนวล แนะนำ)</option>
+          <option value="fade" class="bg-[#241528] text-white">✨ Crossfade (เฟดละมุน)</option>
+          <option value="zoom" class="bg-[#241528] text-white">🔍 Zoom In & Out (ซูมมิติเข้า-ออก)</option>
+          <option value="slide" class="bg-[#241528] text-white">↔️ Slide Horizontal (สไลด์ด้านข้าง)</option>
+          <option value="flip" class="bg-[#241528] text-white">🔄 3D Flip (หมุน 3 มิติ)</option>
         </select>
       </div>
 
       <!-- 2. ความเร็วในการเปลี่ยนภาพ -->
       <div class="space-y-1.5">
         <div class="flex items-center justify-between">
-          <label class="font-semibold text-gray-300">ระยะเวลาแสดงภาพแต่ละรูป:</label>
-          <span id="ssSpeedLabel" class="text-amber-300 font-bold">5 วินาที</span>
+          <label class="font-semibold text-rose-100">ระยะเวลาแสดงภาพแต่ละรูป:</label>
+          <span id="ssSpeedLabel" class="text-rose-300 font-bold">5 วินาที</span>
         </div>
         <input
           type="range"
@@ -688,9 +726,9 @@
           step="1"
           value="5"
           oninput="handleSpeedSlider(this.value)"
-          class="w-full accent-amber-500 cursor-pointer"
+          class="w-full accent-rose-400 cursor-pointer"
         />
-        <div class="flex justify-between text-[10px] text-gray-400">
+        <div class="flex justify-between text-[10px] text-rose-200/75">
           <span>เร็ว (2s)</span>
           <span>ปานกลาง (5s)</span>
           <span>ช้า (20s)</span>
@@ -701,29 +739,29 @@
       <div class="pt-2 border-t border-white/15 space-y-2">
         <!-- Ambient Glow Toggle -->
         <label class="flex items-center justify-between cursor-pointer">
-          <span class="flex items-center gap-1.5 text-gray-300">
-            <i class="fa-solid fa-lightbulb text-amber-400 text-xs"></i>
+          <span class="flex items-center gap-1.5 text-rose-100">
+            <i class="fa-solid fa-lightbulb text-amber-300 text-xs"></i>
             <span>แสงออร่าพื้นหลัง (Ambient Glow)</span>
           </span>
-          <input type="checkbox" id="ssToggleAmbient" checked onchange="toggleAmbientGlow(this.checked)" class="accent-amber-500 cursor-pointer w-4 h-4" />
+          <input type="checkbox" id="ssToggleAmbient" checked onchange="toggleAmbientGlow(this.checked)" class="accent-rose-400 cursor-pointer w-4 h-4" />
         </label>
 
         <!-- Snowflakes Toggle -->
         <label class="flex items-center justify-between cursor-pointer">
-          <span class="flex items-center gap-1.5 text-gray-300">
-            <i class="fa-regular fa-snowflake text-blue-300 text-xs"></i>
+          <span class="flex items-center gap-1.5 text-rose-100">
+            <i class="fa-regular fa-snowflake text-sky-300 text-xs"></i>
             <span>เกล็ดหิมะตกในสไลด์โชว์</span>
           </span>
-          <input type="checkbox" id="ssToggleSnow" checked onchange="toggleSlideshowSnow(this.checked)" class="accent-amber-500 cursor-pointer w-4 h-4" />
+          <input type="checkbox" id="ssToggleSnow" checked onchange="toggleSlideshowSnow(this.checked)" class="accent-rose-400 cursor-pointer w-4 h-4" />
         </label>
 
         <!-- Caption Toggle -->
         <label class="flex items-center justify-between cursor-pointer">
-          <span class="flex items-center gap-1.5 text-gray-300">
-            <i class="fa-solid fa-font text-emerald-400 text-xs"></i>
+          <span class="flex items-center gap-1.5 text-rose-100">
+            <i class="fa-solid fa-font text-emerald-300 text-xs"></i>
             <span>แสดงชื่อไฟล์และวันที่</span>
           </span>
-          <input type="checkbox" id="ssToggleCaption" checked onchange="toggleCaption(this.checked)" class="accent-amber-500 cursor-pointer w-4 h-4" />
+          <input type="checkbox" id="ssToggleCaption" checked onchange="toggleCaption(this.checked)" class="accent-rose-400 cursor-pointer w-4 h-4" />
         </label>
       </div>
 
@@ -731,36 +769,36 @@
       <div class="pt-2 border-t border-white/15 space-y-2">
         <label class="flex items-center justify-between cursor-pointer">
           <span class="flex items-center gap-1.5 text-emerald-300 font-semibold">
-            <i class="fa-solid fa-rotate text-emerald-400 text-xs"></i>
+            <i class="fa-solid fa-rotate text-emerald-300 text-xs"></i>
             <span>รีเฟรชอัตโนมัติเมื่อมีรูปใหม่</span>
           </span>
-          <input type="checkbox" id="ssToggleAutoRefresh" checked onchange="toggleAutoRefresh(this.checked)" class="accent-emerald-500 cursor-pointer w-4 h-4" />
+          <input type="checkbox" id="ssToggleAutoRefresh" checked onchange="toggleAutoRefresh(this.checked)" class="accent-emerald-400 cursor-pointer w-4 h-4" />
         </label>
 
         <label class="flex items-center justify-between cursor-pointer">
-          <span class="flex items-center gap-1.5 text-gray-300">
-            <i class="fa-solid fa-bolt text-amber-400 text-xs"></i>
+          <span class="flex items-center gap-1.5 text-rose-100">
+            <i class="fa-solid fa-bolt text-amber-300 text-xs"></i>
             <span>แสดงภาพใหม่ทันทีเมื่อพบ</span>
           </span>
-          <input type="checkbox" id="ssToggleJumpNew" checked onchange="toggleJumpToNewPhoto(this.checked)" class="accent-amber-500 cursor-pointer w-4 h-4" />
+          <input type="checkbox" id="ssToggleJumpNew" checked onchange="toggleJumpToNewPhoto(this.checked)" class="accent-rose-400 cursor-pointer w-4 h-4" />
         </label>
 
         <div class="flex items-center justify-between gap-2 pt-0.5">
-          <span class="text-gray-400">ความถี่ในการเช็คภาพใหม่:</span>
+          <span class="text-rose-200/80">ความถี่ในการเช็คภาพใหม่:</span>
           <select
             id="ssSyncIntervalSelect"
             onchange="setAutoRefreshInterval(this.value)"
-            class="px-2 py-1 rounded-lg bg-white/10 border border-white/20 text-[11px] text-amber-200 font-medium focus:outline-none focus:border-amber-400 cursor-pointer"
+            class="px-2 py-1 rounded-xl bg-white/10 border border-rose-200/30 text-[11px] text-rose-100 font-medium focus:outline-none focus:border-rose-300 cursor-pointer"
           >
-            <option value="5000" class="bg-gray-900 text-white">ทุก 5 วินาที (เร็วสุด)</option>
-            <option value="10000" class="bg-gray-900 text-white" selected>ทุก 10 วินาที (แนะนำ)</option>
-            <option value="15000" class="bg-gray-900 text-white">ทุก 15 วินาที</option>
-            <option value="30000" class="bg-gray-900 text-white">ทุก 30 วินาที</option>
+            <option value="5000" class="bg-[#241528] text-white">ทุก 5 วินาที (เร็วสุด)</option>
+            <option value="10000" class="bg-[#241528] text-white" selected>ทุก 10 วินาที (แนะนำ)</option>
+            <option value="15000" class="bg-[#241528] text-white">ทุก 15 วินาที</option>
+            <option value="30000" class="bg-[#241528] text-white">ทุก 30 วินาที</option>
           </select>
         </div>
       </div>
 
-      <div class="pt-2 text-center text-[10px] text-gray-400 border-t border-white/10">
+      <div class="pt-2 text-center text-[10px] text-rose-200/75 border-t border-white/15">
         กด <kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white font-mono">Space</kbd> เล่น/หยุด, <kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white font-mono">R</kbd> เช็คภาพใหม่, <kbd class="px-1.5 py-0.5 rounded bg-white/20 text-white font-mono">F</kbd> เต็มจอ
       </div>
     </div>
@@ -771,17 +809,17 @@
   <!-- ============================================================ -->
   <div
     id="lightboxModal"
-    class="fixed inset-0 z-50 bg-black/95 backdrop-blur-md flex flex-col justify-between hidden transition-opacity duration-200"
+    class="fixed inset-0 z-50 bg-[#1e1222]/95 backdrop-blur-md flex flex-col justify-between hidden transition-opacity duration-200"
     role="dialog"
     aria-modal="true"
   >
     <!-- Lightbox Header Bar -->
-    <div class="flex items-center justify-between px-4 py-3 bg-black/60 border-b border-white/10 text-white z-10">
+    <div class="flex items-center justify-between px-4 py-3 bg-[#241528]/80 border-b border-rose-200/20 text-white z-10">
       <div class="flex items-center gap-2 truncate pr-2">
-        <span id="lbCounter" class="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500 text-amber-950">
+        <span id="lbCounter" class="text-xs font-extrabold px-3 py-1 rounded-full bg-gradient-to-r from-rose-400 to-pink-500 text-white border border-white/40">
           ภาพที่ 1 / 1
         </span>
-        <span id="lbFileName" class="text-xs text-gray-300 font-medium truncate max-w-xs sm:max-w-md">
+        <span id="lbFileName" class="text-xs text-rose-100 font-medium truncate max-w-xs sm:max-w-md">
           -
         </span>
       </div>
@@ -791,10 +829,10 @@
         <button
           type="button"
           onclick="startSlideshowFromCurrentLightbox()"
-          class="px-3 py-1.5 rounded-xl bg-gradient-to-r from-red-600 to-amber-600 hover:from-red-500 hover:to-amber-500 text-white text-xs font-bold border border-amber-300/40 transition flex items-center gap-1.5"
+          class="px-3 py-1.5 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white text-xs font-bold border border-white/40 transition flex items-center gap-1.5 cursor-pointer"
           title="เริ่มสไลด์โชว์ต่อจากภาพนี้"
         >
-          <i class="fa-solid fa-play text-xs text-yellow-300"></i>
+          <i class="fa-solid fa-play text-xs text-amber-200"></i>
           <span class="hidden sm:inline">เล่นสไลด์โชว์</span>
         </button>
 
@@ -802,7 +840,7 @@
         <button
           type="button"
           onclick="copyCurrentPhotoLink()"
-          class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-amber-300 text-xs font-medium border border-white/15 transition flex items-center gap-1.5"
+          class="px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 text-rose-100 text-xs font-medium border border-white/20 transition flex items-center gap-1.5 cursor-pointer"
           title="คัดลอกลิงก์รูปภาพ"
         >
           <i class="fa-solid fa-link text-xs"></i>
@@ -815,7 +853,7 @@
           href="#"
           target="_blank"
           download
-          class="px-3 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-gray-200 text-xs font-medium border border-white/15 transition flex items-center gap-1.5"
+          class="px-3 py-1.5 rounded-full bg-white/15 hover:bg-white/25 text-white text-xs font-medium border border-white/20 transition flex items-center gap-1.5"
           title="ดาวน์โหลดรูปภาพ"
         >
           <i class="fa-solid fa-download text-xs"></i>
@@ -828,7 +866,7 @@
           href="#"
           target="_blank"
           rel="noopener noreferrer"
-          class="px-3 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-amber-950 text-xs font-bold transition flex items-center gap-1.5"
+          class="px-3 py-1.5 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white text-xs font-bold border border-white/30 transition flex items-center gap-1.5"
           title="เปิดรูปใน Google Drive"
         >
           <i class="fa-brands fa-google-drive text-xs"></i>
@@ -839,7 +877,7 @@
         <button
           type="button"
           onclick="closeLightbox()"
-          class="w-9 h-9 rounded-full bg-white/10 hover:bg-red-600 text-white flex items-center justify-center transition cursor-pointer"
+          class="w-9 h-9 rounded-full bg-rose-500/80 hover:bg-rose-500 text-white flex items-center justify-center transition cursor-pointer"
           title="ปิดหน้าต่างรูปภาพ (ESC)"
         >
           <i class="fa-solid fa-xmark text-lg"></i>
@@ -854,7 +892,7 @@
         type="button"
         id="btnPrevPhoto"
         onclick="navigatePhoto(-1); event.stopPropagation();"
-        class="absolute left-2 sm:left-4 z-20 w-11 h-11 rounded-full bg-black/60 hover:bg-amber-500 hover:text-amber-950 text-white border border-white/20 flex items-center justify-center transition shadow-lg cursor-pointer active:scale-95"
+        class="absolute left-2 sm:left-4 z-20 w-11 h-11 rounded-full bg-white/15 hover:bg-rose-400 text-white border-2 border-white/30 flex items-center justify-center transition shadow-lg cursor-pointer active:scale-95"
         title="ภาพก่อนหน้า (ลูกศรซ้าย)"
       >
         <i class="fa-solid fa-chevron-left text-lg"></i>
@@ -866,7 +904,7 @@
           id="lbImage"
           src=""
           alt="Expanded Photo"
-          class="max-w-full max-h-[75vh] object-contain rounded-xl shadow-2xl border border-white/10 select-none"
+          class="max-w-full max-h-[75vh] object-contain rounded-3xl shadow-2xl border-4 border-white/95 select-none"
         />
       </div>
 
@@ -875,7 +913,7 @@
         type="button"
         id="btnNextPhoto"
         onclick="navigatePhoto(1); event.stopPropagation();"
-        class="absolute right-2 sm:right-4 z-20 w-11 h-11 rounded-full bg-black/60 hover:bg-amber-500 hover:text-amber-950 text-white border border-white/20 flex items-center justify-center transition shadow-lg cursor-pointer active:scale-95"
+        class="absolute right-2 sm:right-4 z-20 w-11 h-11 rounded-full bg-white/15 hover:bg-rose-400 text-white border-2 border-white/30 flex items-center justify-center transition shadow-lg cursor-pointer active:scale-95"
         title="ภาพถัดไป (ลูกศรขวา)"
       >
         <i class="fa-solid fa-chevron-right text-lg"></i>
@@ -883,12 +921,12 @@
     </div>
 
     <!-- Lightbox Footer Meta & Zoom Controls -->
-    <div class="px-4 py-2.5 bg-black/70 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs text-gray-300">
+    <div class="px-4 py-2.5 bg-[#241528]/80 border-t border-rose-200/20 flex flex-wrap items-center justify-between gap-3 text-xs text-rose-100">
       <div class="flex items-center gap-3">
-        <span id="lbDate" class="text-amber-200">
-          <i class="fa-regular fa-calendar-check mr-1 text-amber-400"></i>-
+        <span id="lbDate" class="text-rose-200">
+          <i class="fa-regular fa-calendar-check mr-1 text-rose-300"></i>-
         </span>
-        <span id="lbFileSize" class="text-gray-400 border-l border-white/20 pl-3">
+        <span id="lbFileSize" class="text-rose-200/80 border-l border-white/20 pl-3">
           -
         </span>
       </div>
@@ -898,16 +936,16 @@
         <button
           type="button"
           onclick="zoomPhoto(-0.25)"
-          class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-gray-200 transition"
+          class="px-2.5 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white transition cursor-pointer"
           title="ซูมออก (-)"
         >
           <i class="fa-solid fa-magnifying-glass-minus"></i>
         </button>
-        <span id="lbZoomText" class="text-amber-300 font-semibold text-[11px] min-w-[45px] text-center">100%</span>
+        <span id="lbZoomText" class="text-rose-200 font-bold text-[11px] min-w-[45px] text-center">100%</span>
         <button
           type="button"
           onclick="zoomPhoto(0.25)"
-          class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-gray-200 transition"
+          class="px-2.5 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white transition cursor-pointer"
           title="ซูมเข้า (+)"
         >
           <i class="fa-solid fa-magnifying-glass-plus"></i>
@@ -915,7 +953,7 @@
         <button
           type="button"
           onclick="resetZoom()"
-          class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-gray-200 transition text-[11px]"
+          class="px-3 py-1 rounded-full bg-white/15 hover:bg-white/25 text-white transition text-[11px] cursor-pointer"
           title="รีเซ็ตขนาดภาพ"
         >
           รีเซ็ต
@@ -924,23 +962,23 @@
     </div>
   </div>
 
-  <!-- Footer -->
-  <footer class="relative z-10 w-full mt-12 py-6 px-4 bg-black/50 border-t border-white/10 text-center text-xs text-gray-400 space-y-2">
-    <div class="flex flex-wrap items-center justify-center gap-4 text-gray-300 font-medium">
+  <!-- Footer (Cute Cozy Christmas) -->
+  <footer class="relative z-10 w-full mt-12 py-6 px-4 bg-white/85 backdrop-blur-md border-t-2 border-rose-200/80 text-center text-xs text-slate-600 space-y-2 shadow-inner">
+    <div class="flex flex-wrap items-center justify-center gap-4 text-rose-700 font-bold">
       <a
         href="https://drive.google.com/drive/folders/1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L?usp=sharing"
         target="_blank"
         rel="noopener noreferrer"
-        class="hover:text-amber-300 transition flex items-center gap-1.5"
+        class="px-4 py-1.5 rounded-full bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 transition flex items-center gap-1.5 shadow-2xs"
       >
-        <i class="fa-brands fa-google-drive text-emerald-400"></i>
+        <i class="fa-brands fa-google-drive text-emerald-500"></i>
         <span>โฟลเดอร์ Google Drive</span>
       </a>
     </div>
-    <p class="text-[11px] text-gray-400 flex items-center justify-center gap-1.5 pt-1">
-      <i class="fa-regular fa-snowflake text-red-400"></i>
+    <p class="text-[11px] text-rose-600/90 font-semibold flex items-center justify-center gap-1.5 pt-1">
+      <span>🎄</span>
       <span>CM Frozenfood Christmas & New Year Celebration 2026</span>
-      <i class="fa-regular fa-snowflake text-emerald-400"></i>
+      <span>⛄</span>
     </p>
   </footer>
 
@@ -1025,13 +1063,13 @@
       }
     }
 
-    // แสดง Skeleton Placeholder ขณะกำลังโหลดรูป
+    // แสดง Skeleton Placeholder ขณะกำลังโหลดรูป (Cute Pastel Card)
     function renderSkeletons(count = 8) {
       const grid = document.getElementById('galleryGrid');
       grid.innerHTML = '';
       for (let i = 0; i < count; i++) {
         const card = document.createElement('div');
-        card.className = 'aspect-square rounded-2xl bg-white/5 border border-white/10 overflow-hidden relative shimmer-placeholder';
+        card.className = 'aspect-square rounded-3xl bg-white/85 border-2 border-rose-200/80 overflow-hidden relative shimmer-placeholder shadow-sm';
         grid.appendChild(card);
       }
     }
@@ -1167,28 +1205,32 @@
 
       if (!autoRefreshEnabled) {
         if (ssText) ssText.innerText = 'ปิดซิงค์อัตโนมัติ';
-        if (ssBadge) ssBadge.className = 'hidden sm:inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-900/80 text-gray-400 border border-white/15';
+        if (ssBadge) ssBadge.className = 'hidden sm:inline-flex items-center gap-1 text-[10px] font-medium px-2.5 py-0.5 rounded-full bg-white/10 text-rose-200/75 border border-white/20';
         if (galleryText) galleryText.innerText = 'ปิดซิงค์อัตโนมัติ';
-        if (galleryDot) galleryDot.className = 'w-1.5 h-1.5 rounded-full bg-gray-500';
-        if (galleryPill) galleryPill.className = 'inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full bg-gray-900/80 text-gray-400 border border-white/15';
+        if (galleryDot) galleryDot.className = 'w-2 h-2 rounded-full bg-slate-400';
+        if (galleryPill) galleryPill.className = 'inline-flex items-center gap-1.5 text-[10px] font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-300';
         return;
       }
 
       if (state === 'checking') {
         if (ssText) ssText.innerText = label || 'กำลังเช็คภาพใหม่...';
-        if (ssBadge) ssBadge.className = 'hidden sm:inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-amber-950/90 text-amber-300 border border-amber-400/40';
+        if (ssBadge) ssBadge.className = 'hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-400/25 text-amber-200 border border-amber-300/50';
         if (galleryText) galleryText.innerText = 'กำลังซิงค์...';
+        if (galleryDot) galleryDot.className = 'w-2 h-2 rounded-full bg-amber-500 animate-ping';
+        if (galleryPill) galleryPill.className = 'inline-flex items-center gap-1.5 text-[10px] font-bold px-3 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-300';
       } else if (state === 'found') {
         if (ssText) ssText.innerText = label || 'พบภาพใหม่!';
-        if (ssBadge) ssBadge.className = 'hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500 text-amber-950 border border-amber-200 shadow';
+        if (ssBadge) ssBadge.className = 'hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white border border-white/60 shadow';
         if (galleryText) galleryText.innerText = label || 'อัปเดตภาพใหม่แล้ว!';
+        if (galleryDot) galleryDot.className = 'w-2 h-2 rounded-full bg-rose-500 animate-bounce';
+        if (galleryPill) galleryPill.className = 'inline-flex items-center gap-1.5 text-[10px] font-bold px-3 py-1 rounded-full bg-rose-100 text-rose-700 border border-rose-300';
       } else {
         const sec = Math.round(autoRefreshIntervalMs / 1000);
         if (ssText) ssText.innerText = `ซิงค์ทุก ${sec}s`;
-        if (ssBadge) ssBadge.className = 'hidden sm:inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-400/30';
+        if (ssBadge) ssBadge.className = 'hidden sm:inline-flex items-center gap-1 text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-200 border border-emerald-400/40';
         if (galleryText) galleryText.innerText = 'ซิงค์อัตโนมัติ';
-        if (galleryDot) galleryDot.className = 'w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse';
-        if (galleryPill) galleryPill.className = 'inline-flex items-center gap-1.5 text-[10px] font-semibold px-2.5 py-1 rounded-full bg-emerald-950/80 text-emerald-300 border border-emerald-400/30';
+        if (galleryDot) galleryDot.className = 'w-2 h-2 rounded-full bg-emerald-500 animate-pulse';
+        if (galleryPill) galleryPill.className = 'inline-flex items-center gap-1.5 text-[10px] font-bold px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-300';
       }
     }
 
@@ -1485,55 +1527,57 @@
 
       filteredImages.forEach((img, index) => {
         const card = document.createElement('div');
-        card.className = 'gallery-img-card group relative aspect-square rounded-2xl overflow-hidden bg-black/40 border border-amber-500/20 shadow-lg cursor-pointer';
+        card.className = 'gallery-img-card group relative aspect-square rounded-3xl overflow-hidden bg-white p-1.5 border-2 border-rose-200/90 shadow-md cursor-pointer';
         card.onclick = () => openLightbox(index);
 
         const formattedSize = formatFileSize(img.size);
 
         card.innerHTML = `
-          <!-- รูปภาพหลักแสดงผลผ่าน URL Google lh5 -->
-          <img
-            src="${img.url}"
-            alt="${escapeHtml(img.name)}"
-            loading="lazy"
-            class="w-full h-full object-cover transition duration-500 group-hover:scale-105"
-            onerror="handleImgError(this, '${img.fallbackUrl}', '${img.driveThumbnailUrl}')"
-          />
+          <div class="relative w-full h-full rounded-2xl overflow-hidden bg-rose-50">
+            <!-- รูปภาพหลักแสดงผลผ่าน URL Google lh5 -->
+            <img
+              src="${img.url}"
+              alt="${escapeHtml(img.name)}"
+              loading="lazy"
+              class="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+              onerror="handleImgError(this, '${img.fallbackUrl}', '${img.driveThumbnailUrl}')"
+            />
 
-          <!-- Gradient Overlay ตอน Hover -->
-          <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-3 pointer-events-none">
-            <!-- Top Tag: Event Badge & Zoom Icon -->
-            <div class="flex items-center justify-between">
-              <span class="text-[10px] px-2 py-0.5 rounded-md bg-amber-500/90 text-amber-950 font-bold shadow-sm flex items-center gap-1">
-                <i class="fa-solid fa-gift text-[9px]"></i>
-                <span>CM Party</span>
-              </span>
-              <span class="w-7 h-7 rounded-full bg-white/20 backdrop-blur-sm text-white flex items-center justify-center text-xs">
-                <i class="fa-solid fa-magnifying-glass-plus"></i>
-              </span>
-            </div>
+            <!-- Gradient Overlay ตอน Hover -->
+            <div class="absolute inset-0 bg-gradient-to-t from-rose-950/85 via-rose-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-3 pointer-events-none">
+              <!-- Top Tag: Event Badge & Zoom Icon -->
+              <div class="flex items-center justify-between">
+                <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-bold border border-white/80 shadow-sm flex items-center gap-1">
+                  <span>🎄</span>
+                  <span>CM Party</span>
+                </span>
+                <span class="w-7 h-7 rounded-full bg-white/85 backdrop-blur-sm text-rose-600 flex items-center justify-center text-xs shadow-xs">
+                  <i class="fa-solid fa-magnifying-glass-plus"></i>
+                </span>
+              </div>
 
-            <!-- Bottom Metadata & Actions -->
-            <div class="space-y-1">
-              <p class="text-xs font-semibold text-white truncate drop-shadow">
-                ${escapeHtml(img.name)}
-              </p>
-              <div class="flex items-center justify-between text-[11px] text-gray-300">
-                <span class="truncate">${img.date || '-'}</span>
-                <span class="text-amber-300 font-medium">${formattedSize}</span>
+              <!-- Bottom Metadata & Actions -->
+              <div class="space-y-1">
+                <p class="text-xs font-semibold text-white truncate drop-shadow">
+                  ${escapeHtml(img.name)}
+                </p>
+                <div class="flex items-center justify-between text-[11px] text-rose-100">
+                  <span class="truncate">${img.date || '-'}</span>
+                  <span class="text-amber-200 font-bold">${formattedSize}</span>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Quick Copy Link Button (มุมขวาบน) -->
-          <button
-            type="button"
-            onclick="copySpecificPhotoLink('${img.url}'); event.stopPropagation();"
-            class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 w-8 h-8 rounded-full bg-black/70 hover:bg-amber-500 hover:text-amber-950 text-white border border-white/20 flex items-center justify-center text-xs transition duration-200 z-10"
-            title="คัดลอกลิงก์รูปภาพ"
-          >
-            <i class="fa-regular fa-copy"></i>
-          </button>
+            <!-- Quick Copy Link Button (มุมขวาบน) -->
+            <button
+              type="button"
+              onclick="copySpecificPhotoLink('${img.url}'); event.stopPropagation();"
+              class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 hover:bg-rose-500 hover:text-white text-rose-600 border border-rose-200 shadow-md flex items-center justify-center text-xs transition duration-200 z-10 cursor-pointer"
+              title="คัดลอกลิงก์รูปภาพ"
+            >
+              <i class="fa-regular fa-copy"></i>
+            </button>
+          </div>
         `;
 
         grid.appendChild(card);
@@ -1636,7 +1680,7 @@
       document.getElementById('ssPhotoDate').innerText = photo.date ? `ถ่าย/อัปโหลดเมื่อ: ${photo.date}` : '';
 
       // จัดการ Animation ลูกเล่นเปลี่ยนภาพ
-      mainImg.className = 'max-w-full max-h-[78vh] object-contain rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.85)] border-2 border-amber-400/40 select-none';
+      mainImg.className = 'max-w-full max-h-[78vh] object-contain rounded-3xl shadow-[0_24px_60px_rgba(0,0,0,0.75)] border-4 border-white/95 select-none';
 
       if (slideshowEffect === 'kenburns') {
         kenBurnsToggle = kenBurnsToggle === 1 ? 2 : 1;
@@ -1776,10 +1820,11 @@
       slideshowSpeedMs = ms;
       document.querySelectorAll('.ss-speed-btn').forEach(btn => {
         const speed = parseInt(btn.dataset.speed, 10);
+        const responsiveCls = speed === 12000 ? ' hidden sm:inline-block' : '';
         if (speed === ms) {
-          btn.className = 'ss-speed-btn px-2 py-0.5 rounded-md bg-amber-500 text-amber-950 font-bold';
+          btn.className = `ss-speed-btn px-2.5 py-0.5 rounded-full bg-rose-400 text-white font-bold shadow-xs cursor-pointer${responsiveCls}`;
         } else {
-          btn.className = 'ss-speed-btn px-2 py-0.5 rounded-md hover:bg-white/20 text-gray-300';
+          btn.className = `ss-speed-btn px-2.5 py-0.5 rounded-full hover:bg-white/20 text-rose-100 cursor-pointer${responsiveCls}`;
         }
       });
 
@@ -1805,9 +1850,9 @@
       isShuffle = !isShuffle;
       const btn = document.getElementById('ssShuffleBtn');
       if (isShuffle) {
-        btn.className = 'px-2.5 py-1 rounded-lg bg-amber-500 text-amber-950 font-bold text-xs transition flex items-center gap-1 shadow';
+        btn.className = 'px-3 py-1 rounded-full bg-rose-400 text-white font-bold text-xs transition flex items-center gap-1 shadow-xs border border-white/40 cursor-pointer';
       } else {
-        btn.className = 'px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-gray-300 text-xs transition flex items-center gap-1';
+        btn.className = 'px-3 py-1 rounded-full bg-white/15 hover:bg-white/25 text-rose-100 text-xs transition flex items-center gap-1 cursor-pointer';
       }
     }
 
@@ -2004,9 +2049,9 @@
         const btn = document.getElementById(`colBtn${c}`);
         if (!btn) return;
         if (c === cols) {
-          btn.className = 'px-2.5 py-1 rounded-lg bg-amber-500 text-amber-950 font-bold transition';
+          btn.className = 'px-2.5 py-1 rounded-xl bg-rose-500 text-white font-bold shadow-xs transition cursor-pointer';
         } else {
-          btn.className = 'px-2.5 py-1 rounded-lg hover:text-white transition';
+          btn.className = 'px-2.5 py-1 rounded-xl hover:bg-white/80 hover:text-rose-700 transition cursor-pointer';
         }
       });
     }

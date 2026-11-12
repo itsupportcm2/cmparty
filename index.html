@@ -60,65 +60,99 @@
       border: 2px solid rgba(250, 204, 21, 0.65);
     }
 
-    /* Luxury Christmas Countdown Styles */
-    @keyframes goldShimmer {
+    /* Cute Cozy Christmas Countdown Styles */
+    @keyframes candyShimmer {
       0% { background-position: 0% center; }
       100% { background-position: 200% center; }
     }
 
-    @keyframes pulseGlow {
+    @keyframes cuteBounceGlow {
       0%, 100% {
-        box-shadow: 0 0 20px rgba(250, 204, 21, 0.45), 0 0 40px rgba(220, 38, 38, 0.25);
-        transform: scale(1);
+        box-shadow: 0 8px 25px rgba(251, 113, 133, 0.32), 0 0 18px rgba(253, 224, 71, 0.45);
+        transform: translateY(0px) scale(1);
       }
       50% {
-        box-shadow: 0 0 30px rgba(250, 204, 21, 0.8), 0 0 55px rgba(16, 185, 129, 0.35);
-        transform: scale(1.02);
+        box-shadow: 0 12px 30px rgba(251, 113, 133, 0.48), 0 0 26px rgba(52, 211, 153, 0.45);
+        transform: translateY(-3px) scale(1.02);
       }
     }
 
-    @keyframes floatSlow {
-      0%, 100% { transform: translateY(0px); }
-      50% { transform: translateY(-4px); }
+    @keyframes cuteWiggle {
+      0%, 100% { transform: rotate(-5deg); }
+      50% { transform: rotate(5deg); }
     }
 
-    .luxury-christmas-card {
-      background: radial-gradient(circle at 50% 0%, rgba(185, 28, 28, 0.55) 0%, transparent 60%),
-                  linear-gradient(155deg, #2e0404 0%, #580808 35%, #0c311e 75%, #041a0f 100%);
-      border: 2px solid rgba(250, 204, 21, 0.85);
-      box-shadow: 0 20px 45px -10px rgba(0, 0, 0, 0.65),
-                  inset 0 0 32px rgba(250, 204, 21, 0.16);
+    @keyframes fairyTwinkle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.82); }
     }
 
-    .luxury-gold-text {
-      background: linear-gradient(90deg, #fef08a 0%, #f59e0b 25%, #fffbeb 50%, #d97706 75%, #fef08a 100%);
+    .cute-candy-border {
+      background: repeating-linear-gradient(
+        135deg,
+        #fb7185 0px,
+        #fb7185 12px,
+        #ffffff 12px,
+        #ffffff 24px,
+        #34d399 24px,
+        #34d399 36px,
+        #ffffff 36px,
+        #ffffff 48px
+      );
+    }
+
+    .cute-christmas-card {
+      background: radial-gradient(circle at top right, rgba(254, 205, 211, 0.55) 0%, transparent 45%),
+                  radial-gradient(circle at bottom left, rgba(167, 243, 208, 0.5) 0%, transparent 45%),
+                  linear-gradient(170deg, #fffdf9 0%, #fff1f2 52%, #ecfdf5 100%);
+      box-shadow: 0 16px 35px -8px rgba(190, 18, 60, 0.18),
+                  inset 0 0 24px rgba(255, 255, 255, 0.9);
+    }
+
+    .cute-title-gradient {
+      background: linear-gradient(90deg, #e11d48 0%, #f97316 35%, #10b981 70%, #e11d48 100%);
       background-size: 200% auto;
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
-      animation: goldShimmer 4s linear infinite;
+      animation: candyShimmer 5s linear infinite;
     }
 
-    .luxury-logo-frame {
-      background: linear-gradient(135deg, #fef08a 0%, #d97706 50%, #fde047 100%);
-      animation: pulseGlow 3.5s ease-in-out infinite;
+    .cute-logo-frame {
+      background: linear-gradient(135deg, #fecdd3 0%, #fde68a 50%, #a7f3d0 100%);
+      animation: cuteBounceGlow 3.2s ease-in-out infinite;
     }
 
-    .luxury-timer-box-red {
-      background: linear-gradient(180deg, rgba(153, 27, 27, 0.92) 0%, rgba(69, 10, 10, 0.96) 100%);
-      border: 1.5px solid rgba(250, 204, 21, 0.75);
-      box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    .cute-wiggle {
+      display: inline-block;
+      animation: cuteWiggle 2.4s ease-in-out infinite;
     }
 
-    .luxury-timer-box-green {
-      background: linear-gradient(180deg, rgba(6, 95, 70, 0.92) 0%, rgba(5, 46, 22, 0.96) 100%);
-      border: 1.5px solid rgba(250, 204, 21, 0.75);
-      box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.25);
+    .cute-fairy-dot {
+      animation: fairyTwinkle 1.8s ease-in-out infinite;
     }
 
-    .luxury-timer-box-gold {
-      background: linear-gradient(180deg, rgba(180, 83, 9, 0.92) 0%, rgba(120, 53, 15, 0.96) 50%, rgba(69, 10, 10, 0.98) 100%);
-      border: 1.5px solid rgba(254, 240, 138, 0.95);
-      box-shadow: 0 10px 25px -5px rgba(245, 158, 11, 0.35), inset 0 1px 2px rgba(255, 255, 255, 0.35);
+    .cute-timer-box-pink {
+      background: linear-gradient(180deg, #fb7185 0%, #e11d48 100%);
+      border: 2.5px solid #ffffff;
+      box-shadow: 0 8px 16px -4px rgba(225, 29, 72, 0.35);
+    }
+
+    .cute-timer-box-mint {
+      background: linear-gradient(180deg, #34d399 0%, #059669 100%);
+      border: 2.5px solid #ffffff;
+      box-shadow: 0 8px 16px -4px rgba(5, 150, 105, 0.35);
+    }
+
+    .cute-timer-box-berry {
+      background: linear-gradient(180deg, #f472b6 0%, #db2777 100%);
+      border: 2.5px solid #ffffff;
+      box-shadow: 0 8px 16px -4px rgba(219, 39, 119, 0.35);
+    }
+
+    .cute-timer-box-honey {
+      background: linear-gradient(180deg, #fbbf24 0%, #d97706 100%);
+      border: 2.5px solid #ffffff;
+      box-shadow: 0 8px 18px -4px rgba(217, 119, 6, 0.38);
     }
   </style>
 </head>
@@ -423,150 +457,154 @@
       </a>
     </div>
 
-    <!-- Christmas Countdown View (แสดงเมื่อยังไม่ถึงเวลาเปิดระบบลงทะเบียน - Luxury Christmas Theme) -->
-    <div id="countdownContainer" class="hidden p-5 sm:p-6 text-center space-y-5 relative overflow-hidden">
-      <!-- การ์ดหลัก Luxury Christmas Velvet & Gold -->
-      <div class="relative rounded-3xl luxury-christmas-card p-6 sm:p-7 text-white overflow-hidden">
-        <!-- กรอบเส้นทองด้านใน (Inner Luxury Gold Filigree Frame) -->
-        <div class="absolute inset-2.5 rounded-2xl border border-yellow-400/30 pointer-events-none"></div>
+    <!-- Christmas Countdown View (แสดงเมื่อยังไม่ถึงเวลาเปิดระบบลงทะเบียน - Cute Cozy Christmas Theme) -->
+    <div id="countdownContainer" class="hidden p-4 sm:p-6 text-center space-y-4 relative overflow-hidden">
+      <!-- กรอบลาย Candy Cane สุดน่ารักรอบการ์ดหลัก -->
+      <div class="cute-candy-border p-1.5 rounded-[2rem] shadow-[0_16px_40px_-10px_rgba(244,63,94,0.28)]">
+        <!-- การ์ดหลัก Cute Snowy Pastel Christmas -->
+        <div class="relative rounded-[1.7rem] cute-christmas-card p-5 sm:p-6 text-slate-700 overflow-hidden">
+          <!-- กรอบเส้นปะสีชมพูพาสเทลด้านใน -->
+          <div class="absolute inset-2.5 rounded-[1.35rem] border-2 border-dashed border-rose-200/80 pointer-events-none"></div>
 
-        <!-- แสงออร่าและประกายไฟคริสต์มาส -->
-        <div class="absolute -top-12 left-1/2 -translate-x-1/2 w-56 h-32 bg-yellow-400/20 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-12 -right-10 w-40 h-40 bg-emerald-400/15 rounded-full blur-3xl pointer-events-none"></div>
-        <div class="absolute -bottom-12 -left-10 w-40 h-40 bg-red-500/20 rounded-full blur-3xl pointer-events-none"></div>
-
-        <!-- ประดับดาวและเกล็ดหิมะทองคำ -->
-        <div class="absolute top-4 left-5 text-yellow-300/80 text-xs animate-pulse"><i class="fa-solid fa-star"></i></div>
-        <div class="absolute top-8 left-10 text-yellow-200/50 text-[9px] animate-ping"><i class="fa-solid fa-sparkle"></i></div>
-        <div class="absolute top-5 right-5 text-yellow-300/80 text-xs animate-bounce"><i class="fa-solid fa-snowflake"></i></div>
-        <div class="absolute bottom-5 left-5 text-yellow-400/60 text-xs animate-pulse"><i class="fa-solid fa-holly-berry"></i></div>
-        <div class="absolute bottom-5 right-5 text-yellow-300/70 text-xs animate-pulse"><i class="fa-solid fa-star"></i></div>
-
-        <!-- ป้ายริบบิ้นด้านบน -->
-        <div class="relative inline-flex items-center gap-2 px-4 py-1 rounded-full bg-gradient-to-r from-yellow-500/20 via-amber-300/25 to-yellow-500/20 border border-yellow-300/60 text-yellow-200 text-[10px] font-bold tracking-[0.18em] uppercase mb-4 shadow-md backdrop-blur-md">
-          <i class="fa-solid fa-crown text-yellow-300 text-[10px]"></i>
-          <span>EXCLUSIVE CHRISTMAS PARTY</span>
-          <i class="fa-solid fa-sleigh text-yellow-300 text-[10px]"></i>
-        </div>
-
-        <!-- โลโก้งานเลี้ยง CM Party ในกรอบทองลักชูรี่ -->
-        <div class="relative flex justify-center my-2">
-          <!-- แสงรัศมีสีทองด้านหลังโลโก้ -->
-          <div class="absolute inset-0 m-auto w-28 h-28 rounded-full bg-gradient-to-tr from-yellow-400/35 via-amber-200/25 to-red-500/30 blur-xl pointer-events-none"></div>
-
-          <div class="relative luxury-logo-frame p-1.5 rounded-3xl shadow-2xl inline-flex items-center justify-center">
-            <div class="bg-white/95 p-2 rounded-2xl border border-yellow-500/40 shadow-inner">
-              <img
-                src="https://lh5.googleusercontent.com/d/1rzj7RdJ76nk5OccBPZ-kj-qxDp_Rg_Yk"
-                alt="CM Party Logo"
-                class="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-xl mx-auto"
-                referrerpolicy="no-referrer"
-                loading="eager"
-                onerror="this.outerHTML='<div class=\'w-24 h-24 flex flex-col items-center justify-center font-bold text-red-800 text-xs gap-1\'><i class=\'fa-solid fa-tree text-3xl text-emerald-700\'></i><span>CM PARTY</span></div>'"
-              />
-            </div>
-            <!-- เหรียญกระดิ่งคริสต์มาสสีทองมุมขวาบน -->
-            <span class="absolute -top-2.5 -right-2.5 w-8 h-8 rounded-full bg-gradient-to-br from-yellow-300 via-amber-500 to-yellow-700 p-0.5 shadow-lg flex items-center justify-center">
-              <span class="w-full h-full rounded-full bg-red-800 flex items-center justify-center text-yellow-300 text-xs">
-                <i class="fa-solid fa-bell"></i>
-              </span>
-            </span>
-            <!-- โบว์ของขวัญมุมซ้ายล่าง -->
-            <span class="absolute -bottom-2 -left-2 w-7 h-7 rounded-full bg-gradient-to-br from-yellow-300 via-amber-500 to-yellow-700 p-0.5 shadow-lg flex items-center justify-center">
-              <span class="w-full h-full rounded-full bg-emerald-900 flex items-center justify-center text-yellow-300 text-[11px]">
-                <i class="fa-solid fa-gift"></i>
-              </span>
-            </span>
+          <!-- สายไฟประดับด้านบนการ์ด (Fairy Lights) -->
+          <div class="flex items-center justify-center gap-3 mb-3 relative z-10" aria-hidden="true">
+            <span class="cute-fairy-dot w-2.5 h-2.5 rounded-full bg-rose-400 shadow-[0_0_8px_#fb7185] inline-block" style="animation-delay: 0s;"></span>
+            <span class="h-[2px] w-4 bg-rose-200 rounded-full"></span>
+            <span class="cute-fairy-dot w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399] inline-block" style="animation-delay: 0.3s;"></span>
+            <span class="h-[2px] w-4 bg-rose-200 rounded-full"></span>
+            <span class="cute-fairy-dot w-2.5 h-2.5 rounded-full bg-amber-400 shadow-[0_0_8px_#fbbf24] inline-block" style="animation-delay: 0.6s;"></span>
+            <span class="h-[2px] w-4 bg-rose-200 rounded-full"></span>
+            <span class="cute-fairy-dot w-2.5 h-2.5 rounded-full bg-sky-400 shadow-[0_0_8px_#38bdf8] inline-block" style="animation-delay: 0.9s;"></span>
+            <span class="h-[2px] w-4 bg-rose-200 rounded-full"></span>
+            <span class="cute-fairy-dot w-2.5 h-2.5 rounded-full bg-rose-400 shadow-[0_0_8px_#fb7185] inline-block" style="animation-delay: 1.2s;"></span>
           </div>
-        </div>
 
-        <!-- หัวข้อหรูหราพร้อมลูกเล่นสีทอง -->
-        <div class="mt-4 space-y-1">
-          <h3 class="text-xl sm:text-2xl font-extrabold luxury-gold-text tracking-wide drop-shadow">
-            เตรียมเปิดรับลงทะเบียนเร็วๆ นี้
-          </h3>
-          <p class="text-[11px] sm:text-xs text-amber-100/85 font-light tracking-wide">
-            นับถอยหลังสู่ค่ำคืนสุดพิเศษ CM Frozenfood Christmas Party
+          <!-- ของตกแต่งคริสต์มาสน่ารักมุมการ์ด -->
+          <div class="absolute top-4 left-4 text-lg cute-wiggle select-none pointer-events-none">🎄</div>
+          <div class="absolute top-4 right-4 text-lg cute-wiggle select-none pointer-events-none" style="animation-delay: 0.5s;">⛄</div>
+          <div class="absolute bottom-4 left-4 text-base opacity-85 select-none pointer-events-none">🍬</div>
+          <div class="absolute bottom-4 right-4 text-base opacity-85 select-none pointer-events-none">🎁</div>
+
+          <!-- ป้ายริบบิ้นด้านบน -->
+          <div class="relative z-10 inline-flex items-center gap-1.5 px-4 py-1.5 rounded-full bg-gradient-to-r from-rose-100 via-pink-50 to-emerald-100 border-2 border-rose-200 text-rose-700 text-[11px] font-bold tracking-wider shadow-sm mb-3">
+            <span>🎅🏻</span>
+            <span>CM PARTY CHRISTMAS COUNTDOWN</span>
+            <span>✨</span>
+          </div>
+
+          <!-- โลโก้งานเลี้ยง CM Party ในกรอบน่ารักสไตล์สโนว์โกลบ/สติ๊กเกอร์ -->
+          <div class="relative flex justify-center my-2 z-10">
+            <div class="absolute inset-0 m-auto w-28 h-28 rounded-full bg-gradient-to-tr from-rose-200/70 via-amber-100/70 to-emerald-200/70 blur-xl pointer-events-none"></div>
+
+            <div class="relative cute-logo-frame p-2 rounded-[1.75rem] shadow-lg inline-flex items-center justify-center bg-white">
+              <div class="bg-gradient-to-b from-rose-50/70 to-white p-2 rounded-2xl border-2 border-rose-100 shadow-inner">
+                <img
+                  src="https://lh5.googleusercontent.com/d/1rzj7RdJ76nk5OccBPZ-kj-qxDp_Rg_Yk"
+                  alt="CM Party Logo"
+                  class="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-xl mx-auto"
+                  referrerpolicy="no-referrer"
+                  loading="eager"
+                  onerror="this.outerHTML='<div class=\'w-24 h-24 flex flex-col items-center justify-center font-bold text-rose-600 text-xs gap-1\'><span class=\'text-3xl\'>🎄</span><span>CM PARTY</span></div>'"
+                />
+              </div>
+              <!-- หมวก/กระดิ่งคริสต์มาสน่ารักมุมขวาบน -->
+              <span class="cute-wiggle absolute -top-3 -right-3 w-9 h-9 rounded-full bg-gradient-to-br from-rose-400 to-red-500 border-2 border-white shadow-md flex items-center justify-center text-white text-sm">
+                🔔
+              </span>
+              <!-- กล่องของขวัญมุมซ้ายล่าง -->
+              <span class="absolute -bottom-2.5 -left-2.5 w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 border-2 border-white shadow-md flex items-center justify-center text-white text-sm">
+                🎁
+              </span>
+            </div>
+          </div>
+
+          <!-- หัวข้อคริสต์มาสน่ารักสดใส -->
+          <div class="relative z-10 mt-3 space-y-1">
+            <h3 class="text-xl sm:text-2xl font-extrabold cute-title-gradient tracking-tight">
+              เตรียมตัวให้พร้อม! เร็วๆ นี้ 🎄
+            </h3>
+            <p class="text-xs sm:text-sm text-rose-700/85 font-medium">
+              นับถอยหลังสู่ปาร์ตี้แสนอบอุ่น CM Frozenfood Christmas Party ✨
+            </p>
+          </div>
+
+          <!-- เส้นคั่นเกล็ดหิมะน่ารัก -->
+          <div class="relative z-10 flex items-center justify-center gap-2 my-3">
+            <span class="h-[2px] w-10 rounded-full bg-gradient-to-r from-transparent to-rose-300"></span>
+            <span class="text-xs">❄️</span>
+            <span class="text-xs">🎀</span>
+            <span class="text-xs">❄️</span>
+            <span class="h-[2px] w-10 rounded-full bg-gradient-to-l from-transparent to-emerald-300"></span>
+          </div>
+
+          <!-- กล่องตัวเลขนับถอยหลัง 4 ช่อง พาสเทลสดใส (วัน : ชั่วโมง : นาที : วินาที) -->
+          <div class="grid grid-cols-4 gap-2 sm:gap-2.5 my-3.5 relative z-10">
+            <!-- วัน (Days) -->
+            <div class="relative cute-timer-box-pink rounded-2xl py-3 px-1.5 flex flex-col items-center justify-center overflow-hidden">
+              <span class="text-[11px] mb-0.5 drop-shadow-xs">🎅🏻</span>
+              <span id="cdDays" class="text-2xl sm:text-3xl font-extrabold text-white tracking-wider font-mono drop-shadow-sm">00</span>
+              <span class="text-[11px] font-bold text-white/95 mt-0.5">วัน</span>
+              <span class="text-[8px] font-bold text-rose-100/90 tracking-widest uppercase">DAYS</span>
+            </div>
+
+            <!-- ชั่วโมง (Hours) -->
+            <div class="relative cute-timer-box-mint rounded-2xl py-3 px-1.5 flex flex-col items-center justify-center overflow-hidden">
+              <span class="text-[11px] mb-0.5 drop-shadow-xs">🎄</span>
+              <span id="cdHours" class="text-2xl sm:text-3xl font-extrabold text-white tracking-wider font-mono drop-shadow-sm">00</span>
+              <span class="text-[11px] font-bold text-white/95 mt-0.5">ชั่วโมง</span>
+              <span class="text-[8px] font-bold text-emerald-100/90 tracking-widest uppercase">HOURS</span>
+            </div>
+
+            <!-- นาที (Minutes) -->
+            <div class="relative cute-timer-box-berry rounded-2xl py-3 px-1.5 flex flex-col items-center justify-center overflow-hidden">
+              <span class="text-[11px] mb-0.5 drop-shadow-xs">⛄</span>
+              <span id="cdMinutes" class="text-2xl sm:text-3xl font-extrabold text-white tracking-wider font-mono drop-shadow-sm">00</span>
+              <span class="text-[11px] font-bold text-white/95 mt-0.5">นาที</span>
+              <span class="text-[8px] font-bold text-pink-100/90 tracking-widest uppercase">MINS</span>
+            </div>
+
+            <!-- วินาที (Seconds) -->
+            <div class="relative cute-timer-box-honey rounded-2xl py-3 px-1.5 flex flex-col items-center justify-center overflow-hidden">
+              <span class="text-[11px] mb-0.5 drop-shadow-xs">✨</span>
+              <span id="cdSeconds" class="text-2xl sm:text-3xl font-extrabold text-white tracking-wider font-mono drop-shadow-sm animate-pulse">00</span>
+              <span class="text-[11px] font-bold text-white/95 mt-0.5">วินาที</span>
+              <span class="text-[8px] font-bold text-amber-100/95 tracking-widest uppercase">SECS</span>
+            </div>
+          </div>
+
+          <!-- กรอบแสดงกำหนดการเปิด-ปิดระบบ (Cozy Pastel Card) -->
+          <div class="relative z-10 bg-white/85 backdrop-blur-sm rounded-2xl p-3.5 border-2 border-dashed border-rose-200 text-left space-y-2 text-xs shadow-sm mt-3.5">
+            <div class="flex items-center gap-2">
+              <span class="w-7 h-7 rounded-full bg-emerald-100 border border-emerald-200 flex items-center justify-center text-emerald-600 shrink-0">
+                <i class="fa-solid fa-door-open text-xs"></i>
+              </span>
+              <span class="text-slate-600 font-semibold">เริ่มเปิดระบบ:</span>
+              <span id="countdownOpenTimeText" class="text-emerald-700 font-bold ml-auto text-right tracking-wide">-</span>
+            </div>
+            <div id="countdownCloseTimeRow" class="hidden flex items-center gap-2 pt-2 border-t border-rose-100">
+              <span class="w-7 h-7 rounded-full bg-rose-100 border border-rose-200 flex items-center justify-center text-rose-500 shrink-0">
+                <i class="fa-solid fa-hourglass-end text-xs"></i>
+              </span>
+              <span class="text-slate-600 font-semibold">ปิดรับข้อมูล:</span>
+              <span id="countdownCloseTimeText" class="text-rose-600 font-bold ml-auto text-right tracking-wide">-</span>
+            </div>
+          </div>
+
+          <p class="relative z-10 text-xs text-rose-600/90 mt-3.5 flex items-center justify-center gap-1.5 font-semibold">
+            <span class="animate-bounce">🎁</span>
+            <span>ระบบจะพาเข้าหน้าลงทะเบียนอัตโนมัติเมื่อถึงเวลาค่ะ</span>
+            <span class="animate-bounce" style="animation-delay: 0.2s;">✨</span>
           </p>
         </div>
-
-        <!-- เส้นคั่นลวดลายทอง -->
-        <div class="flex items-center justify-center gap-2.5 my-3.5 opacity-85">
-          <span class="h-[1px] w-12 bg-gradient-to-r from-transparent to-yellow-400"></span>
-          <i class="fa-solid fa-snowflake text-yellow-300 text-[10px]"></i>
-          <span class="text-yellow-300 text-xs">✦</span>
-          <i class="fa-solid fa-tree text-emerald-400 text-xs"></i>
-          <span class="text-yellow-300 text-xs">✦</span>
-          <i class="fa-solid fa-snowflake text-yellow-300 text-[10px]"></i>
-          <span class="h-[1px] w-12 bg-gradient-to-l from-transparent to-yellow-400"></span>
-        </div>
-
-        <!-- กล่องตัวเลขนับถอยหลัง 4 ช่อง ลักชูรี่ (วัน : ชั่วโมง : นาที : วินาที) -->
-        <div class="grid grid-cols-4 gap-2 sm:gap-2.5 my-4 relative z-10">
-          <!-- วัน (Days) -->
-          <div class="relative luxury-timer-box-red rounded-2xl py-3 px-1.5 flex flex-col items-center justify-center overflow-hidden">
-            <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-yellow-600 via-yellow-200 to-yellow-600"></div>
-            <span id="cdDays" class="text-2xl sm:text-3xl font-extrabold text-white tracking-wider font-mono drop-shadow-md">00</span>
-            <span class="text-[10px] font-bold text-yellow-300 tracking-wider uppercase mt-1">วัน</span>
-            <span class="text-[8px] text-amber-200/60 tracking-widest uppercase">DAYS</span>
-          </div>
-
-          <!-- ชั่วโมง (Hours) -->
-          <div class="relative luxury-timer-box-green rounded-2xl py-3 px-1.5 flex flex-col items-center justify-center overflow-hidden">
-            <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-yellow-600 via-yellow-200 to-yellow-600"></div>
-            <span id="cdHours" class="text-2xl sm:text-3xl font-extrabold text-white tracking-wider font-mono drop-shadow-md">00</span>
-            <span class="text-[10px] font-bold text-yellow-300 tracking-wider uppercase mt-1">ชั่วโมง</span>
-            <span class="text-[8px] text-emerald-200/60 tracking-widest uppercase">HOURS</span>
-          </div>
-
-          <!-- นาที (Minutes) -->
-          <div class="relative luxury-timer-box-red rounded-2xl py-3 px-1.5 flex flex-col items-center justify-center overflow-hidden">
-            <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-yellow-600 via-yellow-200 to-yellow-600"></div>
-            <span id="cdMinutes" class="text-2xl sm:text-3xl font-extrabold text-white tracking-wider font-mono drop-shadow-md">00</span>
-            <span class="text-[10px] font-bold text-yellow-300 tracking-wider uppercase mt-1">นาที</span>
-            <span class="text-[8px] text-amber-200/60 tracking-widest uppercase">MINS</span>
-          </div>
-
-          <!-- วินาที (Seconds) -->
-          <div class="relative luxury-timer-box-gold rounded-2xl py-3 px-1.5 flex flex-col items-center justify-center overflow-hidden">
-            <div class="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-yellow-300 via-white to-yellow-300"></div>
-            <span id="cdSeconds" class="text-2xl sm:text-3xl font-extrabold text-yellow-200 tracking-wider font-mono drop-shadow-md animate-pulse">00</span>
-            <span class="text-[10px] font-bold text-white tracking-wider uppercase mt-1">วินาที</span>
-            <span class="text-[8px] text-yellow-200/80 tracking-widest uppercase">SECS</span>
-          </div>
-        </div>
-
-        <!-- กรอบแสดงกำหนดการเปิด-ปิดระบบ (Luxury Gold Plaque) -->
-        <div class="relative z-10 bg-black/40 backdrop-blur-md rounded-2xl p-3.5 border border-yellow-400/45 text-left space-y-2 text-xs shadow-inner mt-4">
-          <div class="flex items-center gap-2">
-            <span class="w-6 h-6 rounded-full bg-emerald-500/20 border border-emerald-400/50 flex items-center justify-center text-emerald-300 shrink-0">
-              <i class="fa-solid fa-door-open text-[11px]"></i>
-            </span>
-            <span class="text-amber-100/90 font-medium">เริ่มเปิดระบบ:</span>
-            <span id="countdownOpenTimeText" class="text-yellow-300 font-bold ml-auto text-right tracking-wide">-</span>
-          </div>
-          <div id="countdownCloseTimeRow" class="hidden flex items-center gap-2 pt-2 border-t border-yellow-400/20">
-            <span class="w-6 h-6 rounded-full bg-rose-500/20 border border-rose-400/50 flex items-center justify-center text-rose-300 shrink-0">
-              <i class="fa-solid fa-hourglass-end text-[11px]"></i>
-            </span>
-            <span class="text-amber-100/90 font-medium">ปิดรับข้อมูล:</span>
-            <span id="countdownCloseTimeText" class="text-rose-200 font-bold ml-auto text-right tracking-wide">-</span>
-          </div>
-        </div>
-
-        <p class="relative z-10 text-[11px] text-yellow-200/90 mt-4 flex items-center justify-center gap-1.5 font-medium">
-          <i class="fa-solid fa-wand-magic-sparkles text-yellow-300 animate-pulse"></i>
-          <span>ระบบจะเข้าสู่หน้าลงทะเบียนอัตโนมัติทันทีเมื่อถึงเวลา</span>
-        </p>
       </div>
 
-      <!-- ปุ่มปิดหน้าต่างดีไซน์หรูหรา (ไม่มีปุ่มรีเฟรชตามที่ต้องการ) -->
+      <!-- ปุ่มปิดหน้าต่างน่ารัก (ยังคงไม่มีปุ่มรีเฟรชตามที่ต้องการ) -->
       <button
         type="button"
         onclick="closeLiffWindow()"
-        class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-red-800 via-red-700 to-red-900 hover:from-red-900 hover:to-red-950 text-amber-100 font-bold text-sm border border-yellow-400/60 shadow-lg hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+        class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-rose-500 via-red-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold text-sm border-2 border-white/80 shadow-lg shadow-rose-500/25 hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
       >
-        <i class="fa-solid fa-circle-xmark text-yellow-300"></i>
+        <i class="fa-solid fa-circle-xmark text-rose-100"></i>
         <span>ปิดหน้าต่าง (Close Window)</span>
       </button>
     </div>
