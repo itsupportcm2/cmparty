@@ -619,62 +619,73 @@ function pushRegistrationFlexMessage(uid, info) {
           {
             type: 'box',
             layout: 'vertical',
-            backgroundColor: '#2A080D99',
             paddingAll: '16px',
             spacing: 'md',
+            background: {
+              type: 'linearGradient',
+              angle: '180deg',
+              startColor: '#14030700',
+              centerColor: '#14030788',
+              endColor: '#140307E6',
+              centerPosition: '36%'
+            },
             contents: [
               {
                 type: 'box',
-                layout: 'vertical',
-                paddingBottom: '4px',
+                layout: 'horizontal',
+                alignItems: 'center',
                 contents: [
                   {
                     type: 'box',
-                    layout: 'horizontal',
-                    alignItems: 'center',
+                    layout: 'vertical',
+                    backgroundColor: '#FBBF24',
+                    cornerRadius: '20px',
+                    paddingStart: '10px',
+                    paddingEnd: '10px',
+                    paddingTop: '4px',
+                    paddingBottom: '4px',
+                    flex: 0,
                     contents: [
                       {
-                        type: 'box',
-                        layout: 'vertical',
-                        backgroundColor: '#FBBF24',
-                        cornerRadius: '20px',
-                        paddingStart: '10px',
-                        paddingEnd: '10px',
-                        paddingTop: '4px',
-                        paddingBottom: '4px',
-                        flex: 0,
-                        contents: [
-                          {
-                            type: 'text',
-                            text: 'VIP PASS',
-                            color: '#78350F',
-                            size: 'xxs',
-                            weight: 'bold'
-                          }
-                        ]
-                      },
-                      {
                         type: 'text',
-                        text: 'CHRISTMAS & NEW YEAR',
-                        color: '#FDE68A',
+                        text: 'VIP PASS',
+                        color: '#78350F',
                         size: 'xxs',
-                        weight: 'bold',
-                        align: 'end'
+                        weight: 'bold'
                       }
                     ]
                   },
                   {
                     type: 'text',
+                    text: 'CHRISTMAS & NEW YEAR',
+                    color: '#FDE68A',
+                    size: 'xxs',
+                    weight: 'bold',
+                    align: 'end'
+                  }
+                ]
+              },
+              {
+                type: 'box',
+                layout: 'vertical',
+                height: '88px',
+                contents: []
+              },
+              {
+                type: 'box',
+                layout: 'vertical',
+                contents: [
+                  {
+                    type: 'text',
                     text: 'CM PARTY TICKET',
                     color: '#FFFFFF',
                     size: 'xl',
-                    weight: 'bold',
-                    margin: 'md'
+                    weight: 'bold'
                   },
                   {
                     type: 'text',
                     text: 'บัตรยืนยันการลงทะเบียนเข้างานเลี้ยงสำเร็จแล้ว',
-                    color: '#FECACA',
+                    color: '#FDE68A',
                     size: 'xs',
                     margin: 'xs'
                   }
@@ -683,10 +694,12 @@ function pushRegistrationFlexMessage(uid, info) {
               {
                 type: 'box',
                 layout: 'vertical',
-                backgroundColor: '#FFFFFFEB',
+                backgroundColor: '#1204077A',
+                borderColor: '#FDE68A55',
+                borderWidth: '1px',
                 cornerRadius: '16px',
-                paddingAll: '16px',
-                spacing: 'lg',
+                paddingAll: '14px',
+                spacing: 'md',
                 contents: [
                   {
                     type: 'box',
@@ -697,11 +710,11 @@ function pushRegistrationFlexMessage(uid, info) {
                       {
                         type: 'box',
                         layout: 'vertical',
-                        width: '68px',
-                        height: '68px',
-                        cornerRadius: '34px',
-                        borderWidth: '3px',
-                        borderColor: '#15803D',
+                        width: '60px',
+                        height: '60px',
+                        cornerRadius: '30px',
+                        borderWidth: '2px',
+                        borderColor: '#86EFAC',
                         flex: 0,
                         contents: [
                           {
@@ -725,7 +738,7 @@ function pushRegistrationFlexMessage(uid, info) {
                               {
                                 type: 'box',
                                 layout: 'vertical',
-                                backgroundColor: '#DCFCE7',
+                                backgroundColor: '#15803DCC',
                                 cornerRadius: '6px',
                                 paddingStart: '8px',
                                 paddingEnd: '8px',
@@ -736,7 +749,7 @@ function pushRegistrationFlexMessage(uid, info) {
                                   {
                                     type: 'text',
                                     text: 'ลงทะเบียนสำเร็จ',
-                                    color: '#15803D',
+                                    color: '#DCFCE7',
                                     size: 'xxs',
                                     weight: 'bold'
                                   }
@@ -748,15 +761,15 @@ function pushRegistrationFlexMessage(uid, info) {
                             type: 'text',
                             text: empName,
                             weight: 'bold',
-                            size: 'lg',
-                            color: '#111827',
+                            size: 'md',
+                            color: '#FFFFFF',
                             wrap: true
                           },
                           {
                             type: 'text',
                             text: 'LINE: ' + lineName,
                             size: 'xs',
-                            color: '#6B7280',
+                            color: '#FECACA',
                             wrap: true
                           }
                         ]
@@ -765,17 +778,17 @@ function pushRegistrationFlexMessage(uid, info) {
                   },
                   {
                     type: 'separator',
-                    color: '#E5E7EB'
+                    color: '#FFFFFF33'
                   },
                   {
                     type: 'box',
                     layout: 'vertical',
-                    backgroundColor: '#FEFCE8',
+                    backgroundColor: '#00000040',
                     cornerRadius: '12px',
-                    paddingAll: '14px',
+                    paddingAll: '12px',
                     spacing: 'sm',
                     borderWidth: '1px',
-                    borderColor: '#FDE68A',
+                    borderColor: '#FDE68A44',
                     contents: [
                       {
                         type: 'box',
@@ -785,14 +798,14 @@ function pushRegistrationFlexMessage(uid, info) {
                           {
                             type: 'text',
                             text: 'รหัสพนักงาน',
-                            color: '#92400E',
+                            color: '#FDE68A',
                             size: 'xs',
                             flex: 4
                           },
                           {
                             type: 'text',
                             text: empId,
-                            color: '#B91C1C',
+                            color: '#FFFFFF',
                             size: 'sm',
                             weight: 'bold',
                             flex: 6,
@@ -808,14 +821,14 @@ function pushRegistrationFlexMessage(uid, info) {
                           {
                             type: 'text',
                             text: 'แผนก',
-                            color: '#92400E',
+                            color: '#FDE68A',
                             size: 'xs',
                             flex: 4
                           },
                           {
                             type: 'text',
                             text: department,
-                            color: '#1F2937',
+                            color: '#F3F4F6',
                             size: 'xs',
                             weight: 'bold',
                             flex: 6,
@@ -831,14 +844,14 @@ function pushRegistrationFlexMessage(uid, info) {
                           {
                             type: 'text',
                             text: 'สาขา',
-                            color: '#92400E',
+                            color: '#FDE68A',
                             size: 'xs',
                             flex: 4
                           },
                           {
                             type: 'text',
                             text: branch,
-                            color: '#15803D',
+                            color: '#86EFAC',
                             size: 'xs',
                             weight: 'bold',
                             flex: 6,
@@ -849,48 +862,51 @@ function pushRegistrationFlexMessage(uid, info) {
                     ]
                   }
                 ]
-              }
-            ]
-          }
-        ]
-      },
-      footer: {
-        type: 'box',
-        layout: 'vertical',
-        backgroundColor: '#14532D',
-        paddingAll: '14px',
-        spacing: 'xs',
-        contents: [
-          {
-            type: 'box',
-            layout: 'horizontal',
-            alignItems: 'center',
-            contents: [
-              {
-                type: 'text',
-                text: 'STATUS: REGISTERED',
-                color: '#86EFAC',
-                size: 'xxs',
-                weight: 'bold',
-                flex: 1
               },
               {
-                type: 'text',
-                text: timestamp,
-                color: '#DCFCE7',
-                size: 'xxs',
-                align: 'end',
-                flex: 1
+                type: 'box',
+                layout: 'vertical',
+                backgroundColor: '#14532DB8',
+                borderColor: '#86EFAC44',
+                borderWidth: '1px',
+                cornerRadius: '14px',
+                paddingAll: '12px',
+                spacing: 'xs',
+                contents: [
+                  {
+                    type: 'box',
+                    layout: 'horizontal',
+                    alignItems: 'center',
+                    contents: [
+                      {
+                        type: 'text',
+                        text: 'STATUS: REGISTERED',
+                        color: '#86EFAC',
+                        size: 'xxs',
+                        weight: 'bold',
+                        flex: 1
+                      },
+                      {
+                        type: 'text',
+                        text: timestamp,
+                        color: '#DCFCE7',
+                        size: 'xxs',
+                        align: 'end',
+                        flex: 1
+                      }
+                    ]
+                  },
+                  {
+                    type: 'text',
+                    text: 'กรุณาแสดงบัตรนี้ที่จุดลงทะเบียนหน้างาน',
+                    color: '#FEF08A',
+                    size: 'xxs',
+                    align: 'center',
+                    margin: 'xs'
+                  }
+                ]
               }
             ]
-          },
-          {
-            type: 'text',
-            text: 'กรุณาแสดงบัตรนี้ที่จุดลงทะเบียนหน้างาน',
-            color: '#FEF08A',
-            size: 'xxs',
-            align: 'center',
-            margin: 'xs'
           }
         ]
       }
@@ -1983,62 +1999,73 @@ function pushRewardFlexMessage(uid, info) {
           {
             type: 'box',
             layout: 'vertical',
-            backgroundColor: '#2A080D99',
             paddingAll: '16px',
             spacing: 'md',
+            background: {
+              type: 'linearGradient',
+              angle: '180deg',
+              startColor: '#14030700',
+              centerColor: '#14030788',
+              endColor: '#140307E6',
+              centerPosition: '36%'
+            },
             contents: [
               {
                 type: 'box',
-                layout: 'vertical',
-                paddingBottom: '4px',
+                layout: 'horizontal',
+                alignItems: 'center',
                 contents: [
                   {
                     type: 'box',
-                    layout: 'horizontal',
-                    alignItems: 'center',
+                    layout: 'vertical',
+                    backgroundColor: '#FBBF24',
+                    cornerRadius: '20px',
+                    paddingStart: '10px',
+                    paddingEnd: '10px',
+                    paddingTop: '4px',
+                    paddingBottom: '4px',
+                    flex: 0,
                     contents: [
                       {
-                        type: 'box',
-                        layout: 'vertical',
-                        backgroundColor: '#FBBF24',
-                        cornerRadius: '20px',
-                        paddingStart: '10px',
-                        paddingEnd: '10px',
-                        paddingTop: '4px',
-                        paddingBottom: '4px',
-                        flex: 0,
-                        contents: [
-                          {
-                            type: 'text',
-                            text: 'LUCKY DRAW WINNER',
-                            color: '#78350F',
-                            size: 'xxs',
-                            weight: 'bold'
-                          }
-                        ]
-                      },
-                      {
                         type: 'text',
-                        text: 'CM PARTY',
-                        color: '#FDE68A',
-                        size: 'xs',
-                        weight: 'bold',
-                        align: 'end'
+                        text: 'LUCKY DRAW WINNER',
+                        color: '#78350F',
+                        size: 'xxs',
+                        weight: 'bold'
                       }
                     ]
                   },
                   {
                     type: 'text',
+                    text: 'CM PARTY',
+                    color: '#FDE68A',
+                    size: 'xs',
+                    weight: 'bold',
+                    align: 'end'
+                  }
+                ]
+              },
+              {
+                type: 'box',
+                layout: 'vertical',
+                height: '88px',
+                contents: []
+              },
+              {
+                type: 'box',
+                layout: 'vertical',
+                contents: [
+                  {
+                    type: 'text',
                     text: 'ขอแสดงความยินดีด้วยครับ!',
                     color: '#FFFFFF',
                     size: 'xl',
-                    weight: 'bold',
-                    margin: 'md'
+                    weight: 'bold'
                   },
                   {
                     type: 'text',
                     text: 'คุณคือผู้โชคดีได้รับรางวัลในงานเลี้ยง',
-                    color: '#FECACA',
+                    color: '#FDE68A',
                     size: 'xs',
                     margin: 'xs'
                   }
@@ -2047,33 +2074,35 @@ function pushRewardFlexMessage(uid, info) {
               {
                 type: 'box',
                 layout: 'vertical',
-                backgroundColor: '#FFFFFFEB',
+                backgroundColor: '#1204077A',
+                borderColor: '#FDE68A55',
+                borderWidth: '1px',
                 cornerRadius: '16px',
-                paddingAll: '16px',
+                paddingAll: '14px',
                 spacing: 'md',
                 contents: [
                   {
                     type: 'box',
                     layout: 'vertical',
-                    backgroundColor: '#FEFCE8',
-                    borderColor: '#F59E0B',
-                    borderWidth: '2px',
+                    backgroundColor: '#0000004D',
+                    borderColor: '#FBBF2499',
+                    borderWidth: '1.5px',
                     cornerRadius: '14px',
-                    paddingAll: '16px',
+                    paddingAll: '14px',
                     alignItems: 'center',
                     spacing: 'xs',
                     contents: [
                       {
                         type: 'text',
                         text: 'รางวัลที่ได้รับ',
-                        color: '#B45309',
+                        color: '#FDE68A',
                         size: 'xs',
                         weight: 'bold'
                       },
                       {
                         type: 'text',
                         text: info.rewardName || '-',
-                        color: '#991B1B',
+                        color: '#FFFFFF',
                         size: 'lg',
                         weight: 'bold',
                         align: 'center',
@@ -2083,14 +2112,12 @@ function pushRewardFlexMessage(uid, info) {
                   },
                   {
                     type: 'separator',
-                    margin: 'md',
-                    color: '#E5E7EB'
+                    color: '#FFFFFF33'
                   },
                   {
                     type: 'box',
                     layout: 'vertical',
                     spacing: 'sm',
-                    margin: 'md',
                     contents: [
                       {
                         type: 'box',
@@ -2099,14 +2126,14 @@ function pushRewardFlexMessage(uid, info) {
                           {
                             type: 'text',
                             text: 'รหัสพนักงาน',
-                            color: '#6B7280',
+                            color: '#FDE68A',
                             size: 'xs',
                             flex: 4
                           },
                           {
                             type: 'text',
                             text: String(info.empId || '-'),
-                            color: '#111827',
+                            color: '#FFFFFF',
                             size: 'sm',
                             weight: 'bold',
                             flex: 6,
@@ -2121,14 +2148,14 @@ function pushRewardFlexMessage(uid, info) {
                           {
                             type: 'text',
                             text: 'ชื่อ - สกุล',
-                            color: '#6B7280',
+                            color: '#FDE68A',
                             size: 'xs',
                             flex: 4
                           },
                           {
                             type: 'text',
                             text: info.empName || '-',
-                            color: '#111827',
+                            color: '#FFFFFF',
                             size: 'sm',
                             weight: 'bold',
                             flex: 6,
@@ -2143,14 +2170,14 @@ function pushRewardFlexMessage(uid, info) {
                           {
                             type: 'text',
                             text: 'แผนก',
-                            color: '#6B7280',
+                            color: '#FDE68A',
                             size: 'xs',
                             flex: 4
                           },
                           {
                             type: 'text',
                             text: info.department || '-',
-                            color: '#374151',
+                            color: '#F3F4F6',
                             size: 'xs',
                             flex: 6,
                             wrap: true
@@ -2164,14 +2191,14 @@ function pushRewardFlexMessage(uid, info) {
                           {
                             type: 'text',
                             text: 'สาขา',
-                            color: '#6B7280',
+                            color: '#FDE68A',
                             size: 'xs',
                             flex: 4
                           },
                           {
                             type: 'text',
                             text: info.branch || '-',
-                            color: '#15803D',
+                            color: '#86EFAC',
                             size: 'xs',
                             weight: 'bold',
                             flex: 6,
@@ -2182,33 +2209,36 @@ function pushRewardFlexMessage(uid, info) {
                     ]
                   }
                 ]
+              },
+              {
+                type: 'box',
+                layout: 'vertical',
+                backgroundColor: '#14532DB8',
+                borderColor: '#86EFAC44',
+                borderWidth: '1px',
+                cornerRadius: '14px',
+                paddingAll: '12px',
+                contents: [
+                  {
+                    type: 'text',
+                    text: 'กรุณาแสดงข้อความนี้เพื่อติดต่อรับรางวัลกับเจ้าหน้าที่',
+                    color: '#FEF08A',
+                    size: 'xs',
+                    weight: 'bold',
+                    align: 'center',
+                    wrap: true
+                  },
+                  {
+                    type: 'text',
+                    text: 'เวลาประกาศผล: ' + nowStr,
+                    color: '#86EFAC',
+                    size: 'xxs',
+                    align: 'center',
+                    margin: 'xs'
+                  }
+                ]
               }
             ]
-          }
-        ]
-      },
-      footer: {
-        type: 'box',
-        layout: 'vertical',
-        backgroundColor: '#14532D',
-        paddingAll: '14px',
-        contents: [
-          {
-            type: 'text',
-            text: 'กรุณาแสดงข้อความนี้เพื่อติดต่อรับรางวัลกับเจ้าหน้าที่',
-            color: '#FEF08A',
-            size: 'xs',
-            weight: 'bold',
-            align: 'center',
-            wrap: true
-          },
-          {
-            type: 'text',
-            text: 'เวลาประกาศผล: ' + nowStr,
-            color: '#86EFAC',
-            size: 'xxs',
-            align: 'center',
-            margin: 'xs'
           }
         ]
       }
