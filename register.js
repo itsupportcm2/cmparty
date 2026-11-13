@@ -2986,14 +2986,14 @@ function createNoRewardFlexMessage(empId, empInfo) {
         {
           type: 'text',
           text: 'รหัสพนักงาน',
-          color: '#6B7280',
+          color: '#FDE68A',
           size: 'xs',
           flex: 4
         },
         {
           type: 'text',
           text: String(empId || '-'),
-          color: '#111827',
+          color: '#FFFFFF',
           size: 'sm',
           weight: 'bold',
           flex: 6,
@@ -3011,14 +3011,14 @@ function createNoRewardFlexMessage(empId, empInfo) {
         {
           type: 'text',
           text: 'ชื่อ - สกุล',
-          color: '#6B7280',
+          color: '#FDE68A',
           size: 'xs',
           flex: 4
         },
         {
           type: 'text',
           text: empName,
-          color: '#111827',
+          color: '#FFFFFF',
           size: 'sm',
           weight: 'bold',
           flex: 6,
@@ -3036,14 +3036,14 @@ function createNoRewardFlexMessage(empId, empInfo) {
         {
           type: 'text',
           text: 'แผนก',
-          color: '#6B7280',
+          color: '#FDE68A',
           size: 'xs',
           flex: 4
         },
         {
           type: 'text',
           text: department,
-          color: '#374151',
+          color: '#F3F4F6',
           size: 'xs',
           flex: 6,
           wrap: true
@@ -3060,14 +3060,14 @@ function createNoRewardFlexMessage(empId, empInfo) {
         {
           type: 'text',
           text: 'สาขา',
-          color: '#6B7280',
+          color: '#FDE68A',
           size: 'xs',
           flex: 4
         },
         {
           type: 'text',
           text: branch,
-          color: '#15803D',
+          color: '#86EFAC',
           size: 'xs',
           weight: 'bold',
           flex: 6,
@@ -3083,155 +3083,196 @@ function createNoRewardFlexMessage(empId, empInfo) {
     contents: {
       type: 'bubble',
       size: 'mega',
-      header: {
+      body: {
         type: 'box',
         layout: 'vertical',
-        backgroundColor: '#991B1B',
-        paddingAll: '20px',
+        paddingAll: '0px',
         contents: [
           {
+            type: 'image',
+            url: 'https://cmparty.vercel.app/assets/flex-giftbox.jpg',
+            position: 'absolute',
+            offsetTop: '0px',
+            offsetBottom: '0px',
+            offsetStart: '0px',
+            offsetEnd: '0px',
+            size: 'full',
+            aspectMode: 'cover'
+          },
+          {
             type: 'box',
-            layout: 'horizontal',
-            alignItems: 'center',
+            layout: 'vertical',
+            paddingAll: '16px',
+            spacing: 'md',
+            background: {
+              type: 'linearGradient',
+              angle: '180deg',
+              startColor: '#14030700',
+              centerColor: '#14030788',
+              endColor: '#140307E6',
+              centerPosition: '36%'
+            },
             contents: [
               {
                 type: 'box',
-                layout: 'vertical',
-                backgroundColor: '#F3F4F6',
-                cornerRadius: '20px',
-                paddingStart: '10px',
-                paddingEnd: '10px',
-                paddingTop: '4px',
-                paddingBottom: '4px',
-                flex: 0,
+                layout: 'horizontal',
+                alignItems: 'center',
                 contents: [
                   {
+                    type: 'box',
+                    layout: 'vertical',
+                    backgroundColor: '#FDE68A',
+                    cornerRadius: '20px',
+                    paddingStart: '10px',
+                    paddingEnd: '10px',
+                    paddingTop: '4px',
+                    paddingBottom: '4px',
+                    flex: 0,
+                    contents: [
+                      {
+                        type: 'text',
+                        text: 'REWARD CHECK',
+                        color: '#78350F',
+                        size: 'xxs',
+                        weight: 'bold'
+                      }
+                    ]
+                  },
+                  {
                     type: 'text',
-                    text: 'REWARD CHECK',
-                    color: '#374151',
-                    size: 'xxs',
-                    weight: 'bold'
+                    text: 'CM PARTY',
+                    color: '#FDE68A',
+                    size: 'xs',
+                    weight: 'bold',
+                    align: 'end'
                   }
                 ]
               },
               {
-                type: 'text',
-                text: 'CM PARTY',
-                color: '#FDE68A',
-                size: 'xs',
-                weight: 'bold',
-                align: 'end'
-              }
-            ]
-          },
-          {
-            type: 'text',
-            text: 'ท่านไม่ได้รางวัลค่ะ',
-            color: '#FFFFFF',
-            size: 'xl',
-            weight: 'bold',
-            margin: 'md'
-          },
-          {
-            type: 'text',
-            text: 'ระบบตรวจสอบรางวัล CM Party',
-            color: '#FECACA',
-            size: 'xs',
-            margin: 'xs'
-          }
-        ]
-      },
-      body: {
-        type: 'box',
-        layout: 'vertical',
-        backgroundColor: '#FFFFFF',
-        paddingAll: '20px',
-        spacing: 'md',
-        contents: [
-          {
-            type: 'box',
-            layout: 'vertical',
-            backgroundColor: '#FEF2F2',
-            borderColor: '#FCA5A5',
-            borderWidth: '1.5px',
-            cornerRadius: '14px',
-            paddingAll: '16px',
-            alignItems: 'center',
-            spacing: 'xs',
-            contents: [
-              {
-                type: 'text',
-                text: '🎁 สถานะการรับรางวัล',
-                color: '#991B1B',
-                size: 'xs',
-                weight: 'bold'
+                type: 'box',
+                layout: 'vertical',
+                height: '88px',
+                contents: []
               },
               {
-                type: 'text',
-                text: 'ท่านไม่ได้รางวัลค่ะ',
-                color: '#DC2626',
-                size: 'lg',
-                weight: 'bold',
-                align: 'center',
-                margin: 'xs'
+                type: 'box',
+                layout: 'vertical',
+                contents: [
+                  {
+                    type: 'text',
+                    text: '🎄 ท่านไม่ได้รางวัลค่ะ',
+                    color: '#FFFFFF',
+                    size: 'xl',
+                    weight: 'bold'
+                  },
+                  {
+                    type: 'text',
+                    text: 'ระบบตรวจสอบรางวัล CM Party',
+                    color: '#FDE68A',
+                    size: 'xs',
+                    margin: 'xs'
+                  }
+                ]
               },
               {
-                type: 'text',
-                text: 'ขอขอบคุณที่ร่วมสนุกกับงานเลี้ยง CM Party ลุ้นใหม่ในรอบถัดไปนะคะ',
-                color: '#6B7280',
-                size: 'xs',
-                align: 'center',
-                wrap: true,
-                margin: 'sm'
+                type: 'box',
+                layout: 'vertical',
+                backgroundColor: '#1204077A',
+                borderColor: '#FDE68A55',
+                borderWidth: '1px',
+                cornerRadius: '16px',
+                paddingAll: '14px',
+                spacing: 'md',
+                contents: [
+                  {
+                    type: 'box',
+                    layout: 'vertical',
+                    backgroundColor: '#0000004D',
+                    borderColor: '#FCA5A588',
+                    borderWidth: '2px',
+                    cornerRadius: '14px',
+                    paddingAll: '14px',
+                    alignItems: 'center',
+                    spacing: 'xs',
+                    contents: [
+                      {
+                        type: 'text',
+                        text: '🎁 สถานะการรับรางวัล',
+                        color: '#FDE68A',
+                        size: 'xs',
+                        weight: 'bold'
+                      },
+                      {
+                        type: 'text',
+                        text: 'ท่านไม่ได้รางวัลค่ะ',
+                        color: '#FECACA',
+                        size: 'lg',
+                        weight: 'bold',
+                        align: 'center',
+                        margin: 'xs'
+                      },
+                      {
+                        type: 'text',
+                        text: 'ขอขอบคุณที่ร่วมสนุกกับงานเลี้ยง CM Party ลุ้นใหม่ในรอบถัดไปนะคะ',
+                        color: '#E5E7EB',
+                        size: 'xs',
+                        align: 'center',
+                        wrap: true,
+                        margin: 'sm'
+                      }
+                    ]
+                  },
+                  {
+                    type: 'separator',
+                    color: '#FFFFFF33'
+                  },
+                  {
+                    type: 'box',
+                    layout: 'vertical',
+                    spacing: 'sm',
+                    contents: employeeDetailRows
+                  }
+                ]
+              },
+              {
+                type: 'box',
+                layout: 'vertical',
+                backgroundColor: '#14532DB8',
+                borderColor: '#86EFAC44',
+                borderWidth: '1px',
+                cornerRadius: '14px',
+                paddingAll: '12px',
+                spacing: 'sm',
+                contents: [
+                  {
+                    type: 'button',
+                    style: 'primary',
+                    color: '#DC2626',
+                    height: 'sm',
+                    action: {
+                      type: 'message',
+                      label: 'ตรวจสอบรางวัล',
+                      text: 'ตรวจสอบรางวัล'
+                    }
+                  },
+                  {
+                    type: 'text',
+                    text: 'กดปุ่มด้านบนเพื่อตรวจสอบรางวัลอีกครั้ง',
+                    color: '#FEF08A',
+                    size: 'xxs',
+                    align: 'center',
+                    margin: 'xs'
+                  },
+                  {
+                    type: 'text',
+                    text: 'ข้อมูล ณ เวลา: ' + nowStr,
+                    color: '#86EFAC',
+                    size: 'xxs',
+                    align: 'center'
+                  }
+                ]
               }
             ]
-          },
-          {
-            type: 'separator',
-            margin: 'md',
-            color: '#E5E7EB'
-          },
-          {
-            type: 'box',
-            layout: 'vertical',
-            spacing: 'sm',
-            margin: 'md',
-            contents: employeeDetailRows
-          }
-        ]
-      },
-      footer: {
-        type: 'box',
-        layout: 'vertical',
-        backgroundColor: '#14532D',
-        paddingAll: '14px',
-        spacing: 'sm',
-        contents: [
-          {
-            type: 'button',
-            style: 'primary',
-            color: '#DC2626',
-            height: 'sm',
-            action: {
-              type: 'message',
-              label: 'ตรวจสอบรางวัล',
-              text: 'ตรวจสอบรางวัล'
-            }
-          },
-          {
-            type: 'text',
-            text: 'กดปุ่มด้านบนเพื่อตรวจสอบรางวัลอีกครั้ง',
-            color: '#FEF08A',
-            size: 'xxs',
-            align: 'center',
-            margin: 'xs'
-          },
-          {
-            type: 'text',
-            text: 'ข้อมูล ณ เวลา: ' + nowStr,
-            color: '#86EFAC',
-            size: 'xxs',
-            align: 'center'
           }
         ]
       }
