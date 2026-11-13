@@ -691,48 +691,31 @@
         <span>✨</span>
       </div>
 
-      <!-- Center Slide Image Display with Party Stage Frame -->
-      <div class="w-full h-full flex flex-col items-center justify-between gap-2 py-1">
-        <div class="flex-1 min-h-0 flex items-center justify-center w-full">
-          <div id="ssStageScreenFrame" class="ss-stage-screen-frame max-w-full max-h-full flex items-center justify-center">
-            <div id="ssImageContainer" class="relative max-w-full max-h-full flex items-center justify-center overflow-hidden rounded-2xl">
-              <img
-                id="ssMainImage"
-                src=""
-                alt="Slideshow"
-                class="max-w-full max-h-[54vh] sm:max-h-[58vh] object-contain rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.75)] border-4 border-white/95 select-none transition-all duration-700"
-              />
-            </div>
-          </div>
-        </div>
-
-        <!-- Party Stage Crowd (Registered Attendees as Cute Christmas Dolls) -->
-        <div id="ssStageCrowdSection" class="w-full max-w-6xl mx-auto rounded-2xl ss-stage-deck relative overflow-visible px-3 pt-4 pb-2 transition-all duration-500">
-          <!-- Twinkling stage rim lights -->
-          <div class="ss-stage-lights h-2.5 w-full absolute top-0 left-0 right-0 rounded-t-2xl pointer-events-none"></div>
-
-          <!-- Stage header pill -->
-          <div class="flex items-center justify-between gap-2 mb-1.5 px-1">
-            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/45 border border-amber-300/35 text-[10px] sm:text-[11px] text-amber-200 font-semibold shadow-sm">
-              <span>🎅</span>
-              <span id="ssCrowdCountText">กำลังโหลดรายชื่อผู้ร่วมงาน...</span>
-            </div>
-            <div id="ssCrowdWaveBadge" class="hidden inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 border border-white/20 text-[10px] text-rose-100 font-medium">
-              <i class="fa-solid fa-arrows-rotate text-[9px] text-emerald-300"></i>
-              <span id="ssCrowdWaveText">กลุ่ม 1/1</span>
-            </div>
-          </div>
-
-          <!-- Cute Dolls Row -->
-          <div id="ssStageCrowdRow" class="flex items-end justify-center gap-2 sm:gap-3.5 min-h-[82px] sm:min-h-[90px] pt-5 pb-0.5 px-1 overflow-visible">
-            <!-- Rendered dynamically by JS -->
+      <!-- Center Slide Image Display with Fixed Auto-Fit Party Stage Frame -->
+      <div class="w-full h-full flex items-center justify-center py-1">
+        <div id="ssStageScreenFrame" class="ss-stage-screen-frame w-[92vw] max-w-5xl h-[65vh] sm:h-[69vh] flex items-center justify-center transition-all duration-500">
+          <div id="ssImageContainer" class="relative w-full h-full flex items-center justify-center overflow-hidden rounded-2xl bg-black/60">
+            <!-- Blurred Pillar-Fill Background for Portrait/Landscape Auto-Fit -->
+            <img
+              id="ssStageFrameBlurBg"
+              src=""
+              alt=""
+              aria-hidden="true"
+              class="absolute inset-0 w-full h-full object-cover blur-2xl scale-110 opacity-55 brightness-75 pointer-events-none select-none transition-all duration-700"
+            />
+            <img
+              id="ssMainImage"
+              src=""
+              alt="Slideshow"
+              class="relative z-10 max-w-full max-h-full w-auto h-auto object-contain rounded-xl shadow-[0_18px_50px_rgba(0,0,0,0.65)] select-none transition-all duration-700"
+            />
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Bottom Floating Bar (Controls + Photo Caption) -->
-    <div id="ssBottomBar" class="relative z-20 flex flex-col items-center justify-center px-4 py-3 bg-gradient-to-t from-[#1c1020]/90 via-[#1c1020]/45 to-transparent transition-opacity duration-300 space-y-2">
+    <!-- Bottom Floating Bar (Auto-Hiding Controls + Photo Caption) -->
+    <div id="ssBottomBar" class="absolute bottom-[134px] sm:bottom-[144px] left-1/2 -translate-x-1/2 z-30 flex flex-col items-center justify-center px-4 py-2 rounded-3xl bg-[#1c1020]/75 backdrop-blur-md border border-white/15 shadow-2xl transition-opacity duration-300 space-y-1.5 max-w-[94vw]">
       <!-- Photo Caption (Name & Upload Date) -->
       <div id="ssCaptionBox" class="text-center max-w-xl truncate px-3">
         <p id="ssPhotoTitle" class="text-sm sm:text-base font-bold text-rose-100 truncate drop-shadow">
@@ -800,6 +783,29 @@
           <i class="fa-solid fa-shuffle text-xs"></i>
           <span class="hidden md:inline">สุ่มภาพ</span>
         </button>
+      </div>
+    </div>
+
+    <!-- Party Stage Crowd (Pinned at Very Bottom Edge of Slideshow) -->
+    <div id="ssStageCrowdSection" class="relative z-20 w-full max-w-6xl mx-auto rounded-t-2xl ss-stage-deck overflow-visible px-3 pt-3.5 pb-1.5 transition-all duration-500">
+      <!-- Twinkling stage rim lights -->
+      <div class="ss-stage-lights h-2.5 w-full absolute top-0 left-0 right-0 rounded-t-2xl pointer-events-none"></div>
+
+      <!-- Stage header pill -->
+      <div class="flex items-center justify-between gap-2 mb-1 px-1">
+        <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/45 border border-amber-300/35 text-[10px] sm:text-[11px] text-amber-200 font-semibold shadow-sm">
+          <span>🎅</span>
+          <span id="ssCrowdCountText">กำลังโหลดรายชื่อผู้ร่วมงาน...</span>
+        </div>
+        <div id="ssCrowdWaveBadge" class="hidden inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 border border-white/20 text-[10px] text-rose-100 font-medium">
+          <i class="fa-solid fa-arrows-rotate text-[9px] text-emerald-300"></i>
+          <span id="ssCrowdWaveText">กลุ่ม 1/1</span>
+        </div>
+      </div>
+
+      <!-- Cute Dolls Row -->
+      <div id="ssStageCrowdRow" class="flex items-end justify-center gap-2 sm:gap-3.5 min-h-[78px] sm:min-h-[84px] pt-4 pb-0.5 px-1 overflow-visible">
+        <!-- Rendered dynamically by JS -->
       </div>
     </div>
 
@@ -1825,11 +1831,8 @@
       document.getElementById('ssPhotoTitle').innerText = photo.name || '-';
       document.getElementById('ssPhotoDate').innerText = photo.date ? `ถ่าย/อัปโหลดเมื่อ: ${photo.date}` : '';
 
-      // จัดการ Animation ลูกเล่นเปลี่ยนภาพ (ปรับความสูงอัตโนมัติตามโหมดเวที)
-      const imgSizeCls = showStageCrowd
-        ? 'max-w-full max-h-[54vh] sm:max-h-[58vh] object-contain rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.75)] border-4 border-white/95 select-none'
-        : 'max-w-full max-h-[78vh] object-contain rounded-3xl shadow-[0_24px_60px_rgba(0,0,0,0.75)] border-4 border-white/95 select-none';
-      mainImg.className = imgSizeCls;
+      // จัดการ Animation ลูกเล่นเปลี่ยนภาพ (Auto-fit ทั้งแนวตั้งและแนวนอนพอดีกรอบเวที)
+      mainImg.className = 'relative z-10 max-w-full max-h-full w-auto h-auto object-contain rounded-xl shadow-[0_18px_50px_rgba(0,0,0,0.65)] select-none';
 
       if (slideshowEffect === 'kenburns') {
         kenBurnsToggle = kenBurnsToggle === 1 ? 2 : 1;
@@ -1849,6 +1852,14 @@
       delete mainImg.dataset.triedThumb;
       mainImg.onerror = () => handleImgError(mainImg, photo.fallbackUrl, photo.driveThumbnailUrl);
       mainImg.src = displayUrl;
+
+      const stageFrameBlurBg = document.getElementById('ssStageFrameBlurBg');
+      if (stageFrameBlurBg) {
+        delete stageFrameBlurBg.dataset.triedFallback;
+        delete stageFrameBlurBg.dataset.triedThumb;
+        stageFrameBlurBg.onerror = () => handleImgError(stageFrameBlurBg, photo.fallbackUrl, photo.driveThumbnailUrl);
+        stageFrameBlurBg.src = displayUrl;
+      }
 
       if (showAmbientGlow) {
         delete ambientBg.dataset.triedFallback;
@@ -2048,15 +2059,21 @@
     function applyStageCrowdLayout() {
       const crowdSection = document.getElementById('ssStageCrowdSection');
       const screenFrame = document.getElementById('ssStageScreenFrame');
+      const bottomBar = document.getElementById('ssBottomBar');
       if (crowdSection) {
         crowdSection.style.display = showStageCrowd ? 'block' : 'none';
       }
       if (screenFrame) {
         if (showStageCrowd) {
-          screenFrame.classList.add('ss-stage-screen-frame');
+          screenFrame.className = 'ss-stage-screen-frame w-[92vw] max-w-5xl h-[65vh] sm:h-[69vh] flex items-center justify-center transition-all duration-500';
         } else {
-          screenFrame.classList.remove('ss-stage-screen-frame');
+          screenFrame.className = 'w-[92vw] max-w-6xl h-[78vh] flex items-center justify-center transition-all duration-500';
         }
+      }
+      if (bottomBar) {
+        bottomBar.classList.toggle('bottom-[134px]', showStageCrowd);
+        bottomBar.classList.toggle('sm:bottom-[144px]', showStageCrowd);
+        bottomBar.classList.toggle('bottom-4', !showStageCrowd);
       }
     }
 
