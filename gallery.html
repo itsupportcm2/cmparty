@@ -178,6 +178,99 @@
     .ss-new-badge-pop {
       animation: ssNewBadgePop 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
     }
+
+    /* ==========================================
+       🎄 PARTY STAGE & CUTE CHRISTMAS CROWD
+       ========================================== */
+    .ss-stage-screen-frame {
+      position: relative;
+      padding: 8px;
+      border-radius: 1.75rem;
+      background: linear-gradient(135deg, rgba(251, 113, 133, 0.35), rgba(253, 224, 71, 0.25), rgba(52, 211, 153, 0.35));
+      box-shadow: 0 0 38px rgba(251, 191, 36, 0.18), 0 20px 50px rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+    }
+
+    .ss-stage-deck {
+      background: linear-gradient(180deg, rgba(136, 19, 55, 0.65) 0%, rgba(69, 10, 26, 0.88) 45%, rgba(28, 16, 32, 0.95) 100%);
+      border-top: 2px solid rgba(253, 224, 71, 0.55);
+      box-shadow: 0 -10px 30px rgba(251, 191, 36, 0.15), inset 0 6px 16px rgba(255, 255, 255, 0.12);
+    }
+
+    .ss-stage-lights {
+      background-image: radial-gradient(circle, rgba(253, 224, 71, 0.9) 2px, transparent 2.5px),
+                        radial-gradient(circle, rgba(251, 113, 133, 0.9) 2px, transparent 2.5px),
+                        radial-gradient(circle, rgba(52, 211, 153, 0.9) 2px, transparent 2.5px);
+      background-size: 48px 10px;
+      background-position: 0 2px, 16px 2px, 32px 2px;
+      background-repeat: repeat-x;
+      animation: ssStageLightsTwinkle 1.8s ease-in-out infinite alternate;
+    }
+
+    @keyframes ssStageLightsTwinkle {
+      0% { opacity: 0.6; filter: brightness(0.95); }
+      100% { opacity: 1; filter: brightness(1.3); }
+    }
+
+    .ss-avatar-doll {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+      transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.35s ease;
+      animation: ssDollBounce var(--doll-duration, 2.4s) ease-in-out var(--doll-delay, 0s) infinite;
+      will-change: transform;
+    }
+
+    .ss-avatar-doll:hover {
+      transform: translateY(-8px) scale(1.08);
+      z-index: 25;
+    }
+
+    @keyframes ssDollBounce {
+      0%, 100% { transform: translateY(0) rotate(-1.5deg); }
+      50% { transform: translateY(-6px) rotate(1.5deg); }
+    }
+
+    @keyframes ssDollWaveArm {
+      0%, 100% { transform: rotate(0deg); }
+      50% { transform: rotate(-18deg); }
+    }
+
+    .ss-doll-arm-wave {
+      transform-origin: 85% 40%;
+      animation: ssDollWaveArm 1.4s ease-in-out infinite;
+    }
+
+    @keyframes ssDollPopIn {
+      0% { opacity: 0; transform: translateY(18px) scale(0.6); }
+      65% { opacity: 1; transform: translateY(-6px) scale(1.08); }
+      100% { opacity: 1; transform: translateY(0) scale(1); }
+    }
+
+    .ss-doll-enter {
+      animation: ssDollPopIn 0.55s cubic-bezier(0.34, 1.56, 0.64, 1) forwards,
+                 ssDollBounce var(--doll-duration, 2.4s) ease-in-out 0.6s infinite;
+    }
+
+    .ss-doll-welcome-ring {
+      box-shadow: 0 0 0 3px #fde047, 0 0 18px rgba(253, 224, 71, 0.85);
+    }
+
+    @keyframes ssBubbleFloat {
+      0%, 100% { transform: translate(-50%, 0); }
+      50% { transform: translate(-50%, -4px); }
+    }
+
+    .ss-welcome-bubble {
+      position: absolute;
+      bottom: calc(100% + 4px);
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      animation: ssBubbleFloat 1.6s ease-in-out infinite;
+      z-index: 30;
+    }
   </style>
 </head>
 <body class="relative min-h-screen pb-16 flex flex-col justify-between selection:bg-rose-300 selection:text-rose-950">
@@ -598,14 +691,43 @@
         <span>✨</span>
       </div>
 
-      <!-- Center Slide Image Display with transition wrapper -->
-      <div id="ssImageContainer" class="relative max-w-full max-h-full flex items-center justify-center overflow-hidden rounded-3xl">
-        <img
-          id="ssMainImage"
-          src=""
-          alt="Slideshow"
-          class="max-w-full max-h-[78vh] object-contain rounded-3xl shadow-[0_24px_60px_rgba(0,0,0,0.75)] border-4 border-white/95 select-none transition-all duration-700"
-        />
+      <!-- Center Slide Image Display with Party Stage Frame -->
+      <div class="w-full h-full flex flex-col items-center justify-between gap-2 py-1">
+        <div class="flex-1 min-h-0 flex items-center justify-center w-full">
+          <div id="ssStageScreenFrame" class="ss-stage-screen-frame max-w-full max-h-full flex items-center justify-center">
+            <div id="ssImageContainer" class="relative max-w-full max-h-full flex items-center justify-center overflow-hidden rounded-2xl">
+              <img
+                id="ssMainImage"
+                src=""
+                alt="Slideshow"
+                class="max-w-full max-h-[54vh] sm:max-h-[58vh] object-contain rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.75)] border-4 border-white/95 select-none transition-all duration-700"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- Party Stage Crowd (Registered Attendees as Cute Christmas Dolls) -->
+        <div id="ssStageCrowdSection" class="w-full max-w-6xl mx-auto rounded-2xl ss-stage-deck relative overflow-visible px-3 pt-4 pb-2 transition-all duration-500">
+          <!-- Twinkling stage rim lights -->
+          <div class="ss-stage-lights h-2.5 w-full absolute top-0 left-0 right-0 rounded-t-2xl pointer-events-none"></div>
+
+          <!-- Stage header pill -->
+          <div class="flex items-center justify-between gap-2 mb-1.5 px-1">
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-black/45 border border-amber-300/35 text-[10px] sm:text-[11px] text-amber-200 font-semibold shadow-sm">
+              <span>🎅</span>
+              <span id="ssCrowdCountText">กำลังโหลดรายชื่อผู้ร่วมงาน...</span>
+            </div>
+            <div id="ssCrowdWaveBadge" class="hidden inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 border border-white/20 text-[10px] text-rose-100 font-medium">
+              <i class="fa-solid fa-arrows-rotate text-[9px] text-emerald-300"></i>
+              <span id="ssCrowdWaveText">กลุ่ม 1/1</span>
+            </div>
+          </div>
+
+          <!-- Cute Dolls Row -->
+          <div id="ssStageCrowdRow" class="flex items-end justify-center gap-2 sm:gap-3.5 min-h-[82px] sm:min-h-[90px] pt-5 pb-0.5 px-1 overflow-visible">
+            <!-- Rendered dynamically by JS -->
+          </div>
+        </div>
       </div>
     </div>
 
@@ -762,6 +884,15 @@
             <span>แสดงชื่อไฟล์และวันที่</span>
           </span>
           <input type="checkbox" id="ssToggleCaption" checked onchange="toggleCaption(this.checked)" class="accent-rose-400 cursor-pointer w-4 h-4" />
+        </label>
+
+        <!-- Stage Crowd Toggle -->
+        <label class="flex items-center justify-between cursor-pointer">
+          <span class="flex items-center gap-1.5 text-amber-200 font-semibold">
+            <span>🎅</span>
+            <span>เวที &amp; ตุ๊กตาผู้ร่วมงาน (Stage Crowd)</span>
+          </span>
+          <input type="checkbox" id="ssToggleStageCrowd" checked onchange="toggleStageCrowd(this.checked)" class="accent-amber-400 cursor-pointer w-4 h-4" />
         </label>
       </div>
 
@@ -988,6 +1119,7 @@
     // ==========================================
     const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx6yDgQvf3RvCVu8nHRN3yQM6IM5Be2JZpESNT6nJ3XddDsOlrMj_S7nIPCRUqmZBjFYw/exec';
     const BACKUP_GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzXGB3ckVANtHFesKySN341DrmH-FQHWbPg1zGcS9MBTpYWVWtHe7SDlu7cvoXauNld2A/exec';
+    const SPREADSHEET_ID = '1j2wb2cBiPK2IDfpNKJZBSUu3MDVwSEogAkRENvU-GJw';
     const DRIVE_FOLDER_ID = '1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L';
     const DRIVE_FOLDER_URL = `https://drive.google.com/drive/folders/${DRIVE_FOLDER_ID}?usp=sharing`;
 
@@ -1007,6 +1139,17 @@
     let showAmbientGlow = true;
     let showSlideshowSnow = true;
     let showCaptionText = true;
+    let showStageCrowd = true;
+
+    // สถานะระบบเวที & ตุ๊กตาผู้ร่วมงาน (Party Stage Crowd State)
+    let stageAttendees = [];
+    let knownAttendeeIds = new Set();
+    let hasInitializedAttendees = false;
+    let welcomeAttendeeExpiryMap = new Map();
+    let stageWaveIndex = 0;
+    let stageWaveTimer = null;
+    let stageAttendeeSyncTimer = null;
+    let isAttendeeSyncing = false;
 
     let slideshowTimer = null;
     let progressTimer = null;
@@ -1635,9 +1778,11 @@
       modal.focus();
 
       createSlideshowSnowflakes();
+      applyStageCrowdLayout();
       updateSlideshowDisplay(false);
       startSlideshowAutoTimer();
       startAutoSyncTimer();
+      startStageCrowdSystem();
 
       // Setup Mouse Activity Tracker for Auto-hiding Controls
       document.addEventListener('mousemove', resetSlideshowControlsActivity);
@@ -1652,6 +1797,7 @@
     function closeSlideshowModal() {
       isSlideshowActive = false;
       stopSlideshowAutoTimer();
+      stopStageCrowdSystem();
       hideNewPhotoSpotlight();
       priorityNewPhotoIds = [];
 
@@ -1679,8 +1825,11 @@
       document.getElementById('ssPhotoTitle').innerText = photo.name || '-';
       document.getElementById('ssPhotoDate').innerText = photo.date ? `ถ่าย/อัปโหลดเมื่อ: ${photo.date}` : '';
 
-      // จัดการ Animation ลูกเล่นเปลี่ยนภาพ
-      mainImg.className = 'max-w-full max-h-[78vh] object-contain rounded-3xl shadow-[0_24px_60px_rgba(0,0,0,0.75)] border-4 border-white/95 select-none';
+      // จัดการ Animation ลูกเล่นเปลี่ยนภาพ (ปรับความสูงอัตโนมัติตามโหมดเวที)
+      const imgSizeCls = showStageCrowd
+        ? 'max-w-full max-h-[54vh] sm:max-h-[58vh] object-contain rounded-2xl shadow-[0_24px_60px_rgba(0,0,0,0.75)] border-4 border-white/95 select-none'
+        : 'max-w-full max-h-[78vh] object-contain rounded-3xl shadow-[0_24px_60px_rgba(0,0,0,0.75)] border-4 border-white/95 select-none';
+      mainImg.className = imgSizeCls;
 
       if (slideshowEffect === 'kenburns') {
         kenBurnsToggle = kenBurnsToggle === 1 ? 2 : 1;
@@ -1879,6 +2028,382 @@
       if (box) {
         box.style.display = enabled ? 'block' : 'none';
       }
+    }
+
+    // ==========================================
+    // 🎅 PARTY STAGE & CUTE CHRISTMAS CROWD
+    // ==========================================
+
+    function toggleStageCrowd(enabled) {
+      showStageCrowd = enabled;
+      applyStageCrowdLayout();
+      updateSlideshowDisplay(false);
+      if (enabled && isSlideshowActive) {
+        startStageCrowdSystem();
+      } else {
+        stopStageCrowdSystem();
+      }
+    }
+
+    function applyStageCrowdLayout() {
+      const crowdSection = document.getElementById('ssStageCrowdSection');
+      const screenFrame = document.getElementById('ssStageScreenFrame');
+      if (crowdSection) {
+        crowdSection.style.display = showStageCrowd ? 'block' : 'none';
+      }
+      if (screenFrame) {
+        if (showStageCrowd) {
+          screenFrame.classList.add('ss-stage-screen-frame');
+        } else {
+          screenFrame.classList.remove('ss-stage-screen-frame');
+        }
+      }
+    }
+
+    function startStageCrowdSystem() {
+      stopStageCrowdSystem();
+      if (!showStageCrowd || !isSlideshowActive) return;
+
+      syncStageAttendees();
+      // ซิงก์รายชื่อผู้ลงทะเบียนใหม่อัตโนมัติทุก 15 วินาที
+      stageAttendeeSyncTimer = setInterval(() => {
+        if (isSlideshowActive && showStageCrowd) {
+          syncStageAttendees();
+        }
+      }, 15000);
+
+      // หมุนเวียนกลุ่มตุ๊กตาหน้าเวทีทุก 16 วินาที
+      stageWaveTimer = setInterval(() => {
+        if (!isSlideshowActive || !showStageCrowd) return;
+        const waveSize = getStageWaveSize();
+        if (stageAttendees.length > waveSize) {
+          const totalWaves = Math.ceil(stageAttendees.length / waveSize);
+          stageWaveIndex = (stageWaveIndex + 1) % totalWaves;
+          renderStageCrowdWave(true);
+        }
+      }, 16000);
+    }
+
+    function stopStageCrowdSystem() {
+      if (stageAttendeeSyncTimer) {
+        clearInterval(stageAttendeeSyncTimer);
+        stageAttendeeSyncTimer = null;
+      }
+      if (stageWaveTimer) {
+        clearInterval(stageWaveTimer);
+        stageWaveTimer = null;
+      }
+    }
+
+    function getStageWaveSize() {
+      if (window.innerWidth < 640) return 6;
+      if (window.innerWidth < 1024) return 11;
+      return 16;
+    }
+
+    function cleanGvizCell(cell) {
+      if (!cell || cell.v === null || cell.v === undefined) return '';
+      return String(cell.v).trim();
+    }
+
+    function isValidRegisterGvizForStage(gvizObj) {
+      if (!gvizObj || !gvizObj.table) return false;
+      const cols = gvizObj.table.cols || [];
+      const rows = gvizObj.table.rows || [];
+      const colFLabel = (cols[5] && cols[5].label) ? String(cols[5].label).toUpperCase() : '';
+      if (colFLabel.indexOf('UID') !== -1 || colFLabel.indexOf('LINE') !== -1) return true;
+      if (rows.length > 0 && rows[0].c) {
+        const cellF = cleanGvizCell(rows[0].c[5]).toUpperCase();
+        if (cellF.indexOf('UID') !== -1 || cellF.indexOf('U') === 0) return true;
+      }
+      return false;
+    }
+
+    async function fetchRegisterGvizJson(queryParam) {
+      const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&${queryParam}&_t=${Date.now()}`;
+      const res = await fetch(url, { cache: 'no-store' });
+      const text = await res.text();
+      const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]+)\);?/);
+      if (!match || !match[1]) throw new Error('Invalid gviz response');
+      return JSON.parse(match[1]);
+    }
+
+    function parseRegisterGvizAttendees(gvizObj) {
+      const rows = (gvizObj.table && gvizObj.table.rows) || [];
+      const list = [];
+      const seen = new Set();
+
+      for (let i = 0; i < rows.length; i++) {
+        const c = rows[i].c || [];
+        const empId = cleanGvizCell(c[1]);
+        if (!empId || empId === 'รหัสพนักงาน' || seen.has(empId)) continue;
+        seen.add(empId);
+
+        const valC = cleanGvizCell(c[2]);
+        const valD = cleanGvizCell(c[3]);
+        const displayName = cleanGvizCell(c[6]) || valC || valD || empId;
+        const pictureUrl = cleanGvizCell(c[7]);
+
+        list.push({
+          empId,
+          displayName,
+          pictureUrl
+        });
+      }
+      return list;
+    }
+
+    async function syncStageAttendees() {
+      if (isAttendeeSyncing) return;
+      isAttendeeSyncing = true;
+
+      try {
+        let fetchedList = null;
+
+        // 1. อ่านตรงจาก Google Sheets Gviz (เร็ว ~0.2s)
+        const [resSpace, resNoSpace] = await Promise.allSettled([
+          fetchRegisterGvizJson(`sheet=${encodeURIComponent('Register ')}&headers=1`),
+          fetchRegisterGvizJson(`sheet=${encodeURIComponent('Register')}&headers=1`)
+        ]);
+
+        if (resSpace.status === 'fulfilled' && isValidRegisterGvizForStage(resSpace.value)) {
+          fetchedList = parseRegisterGvizAttendees(resSpace.value);
+        } else if (resNoSpace.status === 'fulfilled' && isValidRegisterGvizForStage(resNoSpace.value)) {
+          fetchedList = parseRegisterGvizAttendees(resNoSpace.value);
+        }
+
+        // 2. Fallback ผ่าน GAS Web App หาก Gviz อ่านไม่สำเร็จ
+        if (!fetchedList) {
+          const gasRes = await fetch(`${BACKUP_GAS_WEB_APP_URL}?action=getRewardInitData&_t=${Date.now()}`, { cache: 'no-store' });
+          const gasJson = await gasRes.json();
+          if (gasJson && gasJson.status === 'success' && gasJson.employees) {
+            fetchedList = Object.values(gasJson.employees).map(emp => ({
+              empId: String(emp.empId || '').trim(),
+              displayName: String(emp.displayName || emp.empName || emp.empId || '').trim(),
+              pictureUrl: String(emp.pictureUrl || '').trim()
+            })).filter(item => item.empId);
+          }
+        }
+
+        if (!fetchedList) return;
+
+        const newlyArrivedIds = [];
+        if (!hasInitializedAttendees) {
+          fetchedList.forEach(item => knownAttendeeIds.add(item.empId));
+          hasInitializedAttendees = true;
+        } else {
+          const now = Date.now();
+          fetchedList.forEach(item => {
+            if (!knownAttendeeIds.has(item.empId)) {
+              knownAttendeeIds.add(item.empId);
+              newlyArrivedIds.push(item.empId);
+              welcomeAttendeeExpiryMap.set(item.empId, now + 10000);
+            }
+          });
+        }
+
+        stageAttendees = fetchedList;
+
+        if (newlyArrivedIds.length > 0) {
+          // พาคนลงทะเบียนใหม่มาโชว์หน้าเวทีทันที
+          stageWaveIndex = 0;
+          renderStageCrowdWave(true);
+          setTimeout(() => {
+            if (isSlideshowActive && showStageCrowd) renderStageCrowdWave(false);
+          }, 10500);
+        } else {
+          renderStageCrowdWave(false);
+        }
+      } catch (err) {
+        console.warn('Stage attendee sync warning:', err);
+        const countEl = document.getElementById('ssCrowdCountText');
+        if (countEl && stageAttendees.length === 0) {
+          countEl.innerText = 'กำลังรอข้อมูลผู้ลงทะเบียน...';
+        }
+      } finally {
+        isAttendeeSyncing = false;
+      }
+    }
+
+    function getAttendeeThemeIndex(empId) {
+      let hash = 0;
+      for (let i = 0; i < empId.length; i++) {
+        hash = ((hash << 5) - hash) + empId.charCodeAt(i);
+        hash |= 0;
+      }
+      return Math.abs(hash) % 4;
+    }
+
+    function createFallbackAvatarDataUri(themeIdx) {
+      const bgColors = ['#fecdd3', '#a7f3d0', '#fde68a', '#bae6fd'];
+      const bg = bgColors[themeIdx % bgColors.length];
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><rect width="64" height="64" fill="${bg}"/><circle cx="32" cy="34" r="18" fill="#fff7ed"/><circle cx="25" cy="32" r="2.6" fill="#334155"/><circle cx="39" cy="32" r="2.6" fill="#334155"/><circle cx="21" cy="36" r="3" fill="#fda4af" opacity="0.75"/><circle cx="43" cy="36" r="3" fill="#fda4af" opacity="0.75"/><path d="M26 39 Q32 45 38 39" fill="none" stroke="#334155" stroke-width="2.4" stroke-linecap="round"/></svg>`;
+      return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+    }
+
+    function createChristmasHatSvg(themeIdx) {
+      if (themeIdx === 0) {
+        // หมวกซานต้า
+        return `<svg viewBox="0 0 48 26" class="w-9 h-5 -mb-2.5 relative z-20 drop-shadow">
+          <path d="M8 22 C12 6, 26 2, 39 10 L35 22 Z" fill="#e11d48"/>
+          <circle cx="40" cy="11" r="4.2" fill="#ffffff"/>
+          <rect x="6" y="19" width="32" height="6" rx="3" fill="#ffffff"/>
+        </svg>`;
+      }
+      if (themeIdx === 1) {
+        // หมวกเอลฟ์สีเขียว
+        return `<svg viewBox="0 0 48 26" class="w-9 h-5 -mb-2.5 relative z-20 drop-shadow">
+          <path d="M9 22 L24 3 L39 22 Z" fill="#059669"/>
+          <circle cx="24" cy="4" r="3.5" fill="#fde047"/>
+          <rect x="7" y="19" width="34" height="5.5" rx="2.75" fill="#fbbf24"/>
+        </svg>`;
+      }
+      if (themeIdx === 2) {
+        // เขากวางเรนเดียร์
+        return `<svg viewBox="0 0 48 24" class="w-10 h-5 -mb-2 relative z-20 drop-shadow">
+          <path d="M14 22 L11 8 M11 14 L6 10 M12 11 L16 7" stroke="#92400e" stroke-width="3" stroke-linecap="round" fill="none"/>
+          <path d="M34 22 L37 8 M37 14 L42 10 M36 11 L32 7" stroke="#92400e" stroke-width="3" stroke-linecap="round" fill="none"/>
+          <circle cx="24" cy="18" r="3" fill="#ef4444"/>
+        </svg>`;
+      }
+      // หมวกไหมพรมสโนว์แมน
+      return `<svg viewBox="0 0 48 26" class="w-9 h-5 -mb-2.5 relative z-20 drop-shadow">
+        <path d="M11 21 C12 9, 36 9, 37 21 Z" fill="#0284c7"/>
+        <circle cx="24" cy="7" r="4" fill="#ffffff"/>
+        <rect x="8" y="19" width="32" height="5.5" rx="2.75" fill="#bae6fd"/>
+      </svg>`;
+    }
+
+    function createChristmasBodySvg(themeIdx) {
+      const outfits = [
+        { suit: '#e11d48', trim: '#ffffff', accent: '#fde047' }, // Santa
+        { suit: '#059669', trim: '#fde047', accent: '#f43f5e' }, // Elf
+        { suit: '#92400e', trim: '#fb7185', accent: '#fde68a' }, // Reindeer
+        { suit: '#0284c7', trim: '#f8fafc', accent: '#fb7185' }  // Snowman
+      ];
+      const o = outfits[themeIdx % outfits.length];
+      return `<svg viewBox="0 0 56 36" class="w-11 h-7 -mt-1.5 relative z-10 drop-shadow-md overflow-visible">
+        <!-- Waving Left Arm -->
+        <g class="ss-doll-arm-wave">
+          <path d="M13 10 C5 8, 3 2, 7 1 C10 0, 13 6, 15 9" fill="${o.suit}" stroke="${o.trim}" stroke-width="1.5" stroke-linecap="round"/>
+        </g>
+        <!-- Right Arm -->
+        <path d="M41 10 C47 12, 49 18, 45 20 C42 21, 39 16, 39 12" fill="${o.suit}" stroke="${o.trim}" stroke-width="1.5" stroke-linecap="round"/>
+        <!-- Body -->
+        <path d="M15 8 C15 4, 41 4, 41 8 L43 26 C43 29, 13 29, 13 26 Z" fill="${o.suit}"/>
+        <!-- Scarf / Collar -->
+        <rect x="16" y="6" width="24" height="4.5" rx="2.2" fill="${o.trim}"/>
+        <!-- Belt / Button -->
+        <rect x="14" y="18" width="28" height="3.5" fill="${o.accent}" opacity="0.9"/>
+        <circle cx="28" cy="14" r="1.8" fill="${o.trim}"/>
+        <!-- Cute Shoes -->
+        <ellipse cx="21" cy="30" rx="5.5" ry="3.2" fill="#1e293b"/>
+        <ellipse cx="35" cy="30" rx="5.5" ry="3.2" fill="#1e293b"/>
+      </svg>`;
+    }
+
+    function buildCuteChristmasDoll(attendee, index, isWelcome, animatePop) {
+      const themeIdx = getAttendeeThemeIndex(attendee.empId);
+      const doll = document.createElement('div');
+      doll.className = `ss-avatar-doll shrink-0 ${animatePop ? 'ss-doll-enter' : ''}`;
+      doll.style.setProperty('--doll-duration', `${(2.1 + (index % 5) * 0.25).toFixed(2)}s`);
+      doll.style.setProperty('--doll-delay', `${((index % 6) * 0.18).toFixed(2)}s`);
+
+      if (isWelcome) {
+        const bubble = document.createElement('div');
+        bubble.className = 'ss-welcome-bubble px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 text-rose-950 text-[9px] font-extrabold shadow-md border border-white';
+        bubble.textContent = '🎉 เพิ่งลงทะเบียน!';
+        doll.appendChild(bubble);
+      }
+
+      // ป้ายชื่อ LINE บนหัวตัวละคร
+      const nameTag = document.createElement('div');
+      nameTag.className = 'mb-1 max-w-[78px] sm:max-w-[92px] truncate px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-xs border border-rose-200/45 text-[10px] font-semibold text-white shadow-sm text-center';
+      nameTag.title = attendee.displayName;
+      nameTag.textContent = attendee.displayName;
+      doll.appendChild(nameTag);
+
+      // หมวกคริสต์มาสเหนือหัว
+      const hatWrap = document.createElement('div');
+      hatWrap.innerHTML = createChristmasHatSvg(themeIdx);
+      doll.appendChild(hatWrap.firstElementChild);
+
+      // หัวตัวละคร (รูปโปรไฟล์ LINE)
+      const headWrap = document.createElement('div');
+      headWrap.className = `w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden border-2 border-white bg-rose-100 shadow-md relative z-10 ${isWelcome ? 'ss-doll-welcome-ring' : ''}`;
+
+      const avatarImg = document.createElement('img');
+      avatarImg.alt = attendee.displayName;
+      avatarImg.className = 'w-full h-full object-cover';
+      avatarImg.referrerPolicy = 'no-referrer';
+      const fallbackUri = createFallbackAvatarDataUri(themeIdx);
+      avatarImg.onerror = () => {
+        if (avatarImg.src !== fallbackUri) avatarImg.src = fallbackUri;
+      };
+      avatarImg.src = (attendee.pictureUrl && /^https?:\/\//i.test(attendee.pictureUrl))
+        ? attendee.pictureUrl
+        : fallbackUri;
+
+      headWrap.appendChild(avatarImg);
+      doll.appendChild(headWrap);
+
+      // ตัวตุ๊กตาคริสต์มาส
+      const bodyWrap = document.createElement('div');
+      bodyWrap.innerHTML = createChristmasBodySvg(themeIdx);
+      doll.appendChild(bodyWrap.firstElementChild);
+
+      return doll;
+    }
+
+    function renderStageCrowdWave(animatePop = false) {
+      const rowEl = document.getElementById('ssStageCrowdRow');
+      const countTextEl = document.getElementById('ssCrowdCountText');
+      const waveBadgeEl = document.getElementById('ssCrowdWaveBadge');
+      const waveTextEl = document.getElementById('ssCrowdWaveText');
+      if (!rowEl || !countTextEl) return;
+
+      const total = stageAttendees.length;
+      if (total === 0) {
+        countTextEl.innerText = 'ลงทะเบียนแล้ว 0 คน';
+        if (waveBadgeEl) waveBadgeEl.classList.add('hidden');
+        rowEl.innerHTML = '<div class="text-xs text-rose-200/80 py-4">🎄 รอผู้ร่วมงานสแกนลงทะเบียนเข้างาน...</div>';
+        return;
+      }
+
+      countTextEl.innerText = `ลงทะเบียนร่วมงานแล้ว ${total} คน`;
+
+      const now = Date.now();
+      for (const [id, exp] of welcomeAttendeeExpiryMap.entries()) {
+        if (exp <= now) welcomeAttendeeExpiryMap.delete(id);
+      }
+
+      // จัดลำดับให้คนที่เพิ่งลงทะเบียนใหม่ขึ้นมาอยู่หน้าเวทีก่อน
+      const prioritized = [
+        ...stageAttendees.filter(a => welcomeAttendeeExpiryMap.has(a.empId)),
+        ...stageAttendees.filter(a => !welcomeAttendeeExpiryMap.has(a.empId))
+      ];
+
+      const waveSize = getStageWaveSize();
+      const totalWaves = Math.max(1, Math.ceil(prioritized.length / waveSize));
+      if (stageWaveIndex >= totalWaves) stageWaveIndex = 0;
+
+      const start = stageWaveIndex * waveSize;
+      const slice = prioritized.slice(start, start + waveSize);
+
+      if (waveBadgeEl && waveTextEl) {
+        if (totalWaves > 1) {
+          waveBadgeEl.classList.remove('hidden');
+          waveTextEl.innerText = `หมุนเวียนกลุ่ม ${stageWaveIndex + 1}/${totalWaves}`;
+        } else {
+          waveBadgeEl.classList.add('hidden');
+        }
+      }
+
+      rowEl.innerHTML = '';
+      slice.forEach((attendee, idx) => {
+        const isWelcome = welcomeAttendeeExpiryMap.has(attendee.empId);
+        rowEl.appendChild(buildCuteChristmasDoll(attendee, idx, isWelcome, animatePop || isWelcome));
+      });
     }
 
     function toggleSlideshowSettings() {
