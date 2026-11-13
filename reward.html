@@ -19,6 +19,9 @@
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+  <!-- LINE LIFF SDK -->
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
   <style>
     body {
       font-family: 'Prompt', sans-serif;
@@ -497,6 +500,32 @@
 
   </div>
 
+  <!-- Admin Authentication Gate Overlay (เฉพาะ Admin UID เท่านั้น) -->
+  <div id="adminAuthOverlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gradient-to-br from-[#fff1f2] via-[#fffdf9] to-[#ecfdf5] backdrop-blur-md">
+    <div class="w-full max-w-md rounded-3xl bg-white/95 border-2 border-rose-200 shadow-2xl p-6 sm:p-8 text-center space-y-4">
+      <div id="adminAuthIcon" class="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-rose-500 to-amber-400 text-white flex items-center justify-center shadow-lg text-2xl">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <div class="space-y-1.5">
+        <span class="inline-block px-3 py-0.5 rounded-full bg-rose-100 text-rose-700 text-[11px] font-bold border border-rose-200">
+          ADMIN ONLY
+        </span>
+        <h2 id="adminAuthTitle" class="text-xl font-bold text-rose-900">
+          กำลังตรวจสอบสิทธิ์แอดมิน...
+        </h2>
+        <p id="adminAuthDesc" class="text-xs sm:text-sm text-slate-600 leading-relaxed">
+          ระบบสุ่มและจัดการรางวัลสงวนสิทธิ์เฉพาะผู้ดูแลระบบ (Admin) เท่านั้น กรุณายืนยันตัวตนผ่าน LINE
+        </p>
+      </div>
+      <div id="adminAuthActions" class="pt-2 space-y-2">
+        <div class="flex items-center justify-center gap-2 text-rose-500 text-sm font-semibold py-2">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          <span>กำลังเชื่อมต่อ LINE LIFF...</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ==========================================
     // ตั้งค่าการเชื่อมต่อ Google Apps Script (exec เดียวกันกับ register.js)
@@ -505,6 +534,9 @@
     const SPREADSHEET_ID = '1j2wb2cBiPK2IDfpNKJZBSUu3MDVwSEogAkRENvU-GJw';
     const REGISTER_SHEET_NAME = 'Register';
     const REWARD_SHEET_GID = '195154721';
+    const LIFF_ID = '2012486224-eFJTgFwr';
+    const ADMIN_UID = 'U1dcbd47c6981745c2f41c5691cde7ff3';
+    let currentAdminUid = '';
 
     let rewardsList = [];
     let employeesMap = {}; // { empId: { empId, empName, department, branch, uid, pictureUrl } }
@@ -692,14 +724,19 @@
 
     // เรียกใช้งาน GAS API (รองรับทั้ง google.script.run, POST และ GET fallback)
     async function callGasApi(payload) {
+      const securedPayload = {
+        ...payload,
+        adminUid: currentAdminUid
+      };
+
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         return await new Promise((resolve, reject) => {
           const runner = google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
-          if (payload.action === 'getRewardInitData') runner.getRewardInitData();
-          else if (payload.action === 'saveReward') runner.saveRewardRecord(payload);
-          else if (payload.action === 'saveBatchRewards') runner.saveBatchRewards(payload);
-          else if (payload.action === 'deleteReward') runner.deleteRewardRecord(payload);
-          else runner.checkRegisteredEmployeeById(payload.empId);
+          if (securedPayload.action === 'getRewardInitData') runner.getRewardInitData();
+          else if (securedPayload.action === 'saveReward') runner.saveRewardRecord(securedPayload);
+          else if (securedPayload.action === 'saveBatchRewards') runner.saveBatchRewards(securedPayload);
+          else if (securedPayload.action === 'deleteReward') runner.deleteRewardRecord(securedPayload);
+          else runner.checkRegisteredEmployeeById(securedPayload.empId);
         });
       }
 
@@ -708,15 +745,15 @@
           method: 'POST',
           redirect: 'follow',
           headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(securedPayload)
         });
         const text = await res.text();
         return JSON.parse(text);
       } catch (postErr) {
         const params = new URLSearchParams();
-        Object.keys(payload).forEach(k => {
-          if (payload[k] !== undefined && payload[k] !== null) {
-            const val = typeof payload[k] === 'object' ? JSON.stringify(payload[k]) : String(payload[k]);
+        Object.keys(securedPayload).forEach(k => {
+          if (securedPayload[k] !== undefined && securedPayload[k] !== null) {
+            const val = typeof securedPayload[k] === 'object' ? JSON.stringify(securedPayload[k]) : String(securedPayload[k]);
             params.append(k, val);
           }
         });
@@ -1778,9 +1815,98 @@
       }
     }
 
+    function adminLiffLogin() {
+      if (typeof liff !== 'undefined') {
+        liff.login({ redirectUri: window.location.href });
+      }
+    }
+
+    function adminLiffSwitchAccount() {
+      if (typeof liff !== 'undefined' && liff.isLoggedIn()) {
+        liff.logout();
+      }
+      window.location.reload();
+    }
+
+    async function initAdminAuthGate() {
+      const overlay = document.getElementById('adminAuthOverlay');
+      const iconEl = document.getElementById('adminAuthIcon');
+      const titleEl = document.getElementById('adminAuthTitle');
+      const descEl = document.getElementById('adminAuthDesc');
+      const actionsEl = document.getElementById('adminAuthActions');
+
+      try {
+        if (typeof liff === 'undefined') {
+          throw new Error('ไม่พบ LINE LIFF SDK');
+        }
+
+        await liff.init({ liffId: LIFF_ID });
+
+        if (!liff.isLoggedIn()) {
+          if (iconEl) iconEl.className = 'w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-emerald-500 to-teal-400 text-white flex items-center justify-center shadow-lg text-2xl';
+          if (titleEl) titleEl.innerText = 'ยืนยันตัวตนแอดมินด้วย LINE';
+          if (descEl) descEl.innerText = 'กรุณาเข้าสู่ระบบด้วยบัญชี LINE ของแอดมิน เพื่อเปิดใช้งานหน้าสุ่มและจัดการรางวัล';
+          if (actionsEl) {
+            actionsEl.innerHTML = `
+              <button type="button" onclick="adminLiffLogin()" class="w-full py-3 px-4 rounded-2xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-sm shadow-lg transition flex items-center justify-center gap-2 cursor-pointer">
+                <i class="fa-brands fa-line text-lg"></i>
+                <span>เข้าสู่ระบบด้วย LINE (แอดมิน)</span>
+              </button>
+              <a href="index.html" class="block w-full py-2.5 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition">
+                กลับหน้าหลัก
+              </a>
+            `;
+          }
+          return;
+        }
+
+        const profile = await liff.getProfile();
+        const uid = String((profile && profile.userId) || '').trim();
+
+        if (uid === ADMIN_UID) {
+          currentAdminUid = uid;
+          if (overlay) overlay.classList.add('hidden');
+          loadAllData();
+          return;
+        }
+
+        // ไม่ใช่แอดมิน -> บล็อกการเข้าถึง
+        if (iconEl) {
+          iconEl.className = 'w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-red-500 to-rose-600 text-white flex items-center justify-center shadow-lg text-2xl';
+          iconEl.innerHTML = '<i class="fa-solid fa-ban"></i>';
+        }
+        if (titleEl) titleEl.innerText = 'ไม่มีสิทธิ์เข้าถึงหน้านี้';
+        if (descEl) {
+          const nameText = profile && profile.displayName ? profile.displayName : 'ผู้ใช้งานทั่วไป';
+          descEl.innerHTML = `บัญชี <b>${nameText}</b> ไม่ใช่บัญชีแอดมินที่ได้รับอนุญาต<br/><span class="text-[11px] text-rose-500">ระบบสุ่มและจัดการรางวัลอนุญาตเฉพาะ Admin UID เท่านั้น</span>`;
+        }
+        if (actionsEl) {
+          actionsEl.innerHTML = `
+            <button type="button" onclick="adminLiffSwitchAccount()" class="w-full py-2.5 px-4 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow transition cursor-pointer">
+              สลับบัญชี LINE (สำหรับแอดมิน)
+            </button>
+            <a href="index.html" class="block w-full py-2.5 px-4 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition">
+              กลับหน้าหลัก
+            </a>
+          `;
+        }
+      } catch (err) {
+        console.error('Admin LIFF Auth Error:', err);
+        if (titleEl) titleEl.innerText = 'ไม่สามารถยืนยันตัวตนได้';
+        if (descEl) descEl.innerText = 'กรุณารีเฟรชหน้าจอหรือเข้าสู่ระบบผ่าน LINE อีกครั้ง';
+        if (actionsEl) {
+          actionsEl.innerHTML = `
+            <button type="button" onclick="window.location.reload()" class="w-full py-2.5 px-4 rounded-2xl bg-rose-500 hover:bg-rose-600 text-white font-bold text-xs shadow transition cursor-pointer">
+              ลองใหม่อีกครั้ง
+            </button>
+          `;
+        }
+      }
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       createRewardSnowflakes();
-      loadAllData();
+      initAdminAuthGate();
 
       const empInput = document.getElementById('empIdInput');
       empInput.addEventListener('input', () => {

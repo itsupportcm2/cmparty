@@ -4,7 +4,19 @@
 // - ระบบลงทะเบียนเข้างานเลี้ยง (index.html -> Sheet "Register")
 // - ระบบบันทึกและจัดการรางวัล (reward.html -> Sheet "gift" + LINE Push Flex Message)
 // ==========================================
-const LINE_BOT_ACCESS_TOKEN = 'ZUF3tyAspwl3dVgo+5YSqfJZpu1fA438z3vIyHmga+Jre+ZuWrg30Xj1qV4ews6AG+RLY/FiaC+L6lkk6HoEHsed4ZYB7NMMS6n+rWxcpulnh3V7SAohcUx1+84NR8niEI41u5zLf3hlRm5jvKkWIAdB04t89/1O/w1cDnyilFU=';
+// อ่าน LINE_BOT_ACCESS_TOKEN จาก Script Properties (เพื่อไม่ให้เก็บ Token จริงไว้ในโค้ด/GitHub)
+function getLineBotAccessToken() {
+  const token = String(PropertiesService.getScriptProperties().getProperty('LINE_BOT_ACCESS_TOKEN') || '').trim();
+  if (!token) {
+    console.error('Missing Script Property: LINE_BOT_ACCESS_TOKEN');
+  }
+  return token;
+}
+
+function isAdminAuthorized(payload) {
+  const uid = String((payload && (payload.adminUid || payload.uid)) || '').trim();
+  return uid === ADMIN_UID;
+}
 const LINE_DRIVE_FOLDER_ID = '1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L';
 const LINE_DEFAULT_FOLDER_NAME = 'LINE_Bot_Uploads';
 
@@ -217,7 +229,7 @@ function setupAndAuthorize() {
   const response = UrlFetchApp.fetch('https://api.line.me/v2/bot/info', {
     method: 'get',
     headers: {
-      'Authorization': 'Bearer ' + LINE_BOT_ACCESS_TOKEN
+      'Authorization': 'Bearer ' + getLineBotAccessToken()
     },
     muteHttpExceptions: true
   });
@@ -579,9 +591,7 @@ function saveRegistrationData(payload) {
  * ส่ง LINE Push Message (Flex Message บัตรเข้างาน VIP Pass) แจ้งยืนยันการลงทะเบียนสำเร็จเข้าแชทของผู้ลงทะเบียนโดยตรง
  */
 function pushRegistrationFlexMessage(uid, info) {
-  const token = (typeof LINE_BOT_ACCESS_TOKEN !== 'undefined' && LINE_BOT_ACCESS_TOKEN)
-    ? LINE_BOT_ACCESS_TOKEN
-    : 'ZUF3tyAspwl3dVgo+5YSqfJZpu1fA438z3vIyHmga+Jre+ZuWrg30Xj1qV4ews6AG+RLY/FiaC+L6lkk6HoEHsed4ZYB7NMMS6n+rWxcpulnh3V7SAohcUx1+84NR8niEI41u5zLf3hlRm5jvKkWIAdB04t89/1O/w1cDnyilFU=';
+  const token = getLineBotAccessToken();
 
   const profilePic = (info.pictureUrl && String(info.pictureUrl).indexOf('https://') === 0)
     ? String(info.pictureUrl)
@@ -1386,9 +1396,7 @@ function initRegisterSheetHeaders() {
   Logger.log('✅ อนุมัติสิทธิ์สร้างไฟล์ Google Drive (createFile) สำเร็จ! โฟลเดอร์: ' + driveFolder.getName() + ' (ID: ' + driveFolder.getId() + ')');
 
   // เรียก UrlFetchApp.fetch เพื่อให้ Google Apps Script ขอสิทธิ์ https://www.googleapis.com/auth/script.external_request ทันทีที่กด Run
-  const token = (typeof LINE_BOT_ACCESS_TOKEN !== 'undefined' && LINE_BOT_ACCESS_TOKEN)
-    ? LINE_BOT_ACCESS_TOKEN
-    : 'ZUF3tyAspwl3dVgo+5YSqfJZpu1fA438z3vIyHmga+Jre+ZuWrg30Xj1qV4ews6AG+RLY/FiaC+L6lkk6HoEHsed4ZYB7NMMS6n+rWxcpulnh3V7SAohcUx1+84NR8niEI41u5zLf3hlRm5jvKkWIAdB04t89/1O/w1cDnyilFU=';
+  const token = getLineBotAccessToken();
   const lineRes = UrlFetchApp.fetch('https://api.line.me/v2/bot/info', {
     method: 'get',
     headers: { 'Authorization': 'Bearer ' + token },
@@ -1579,6 +1587,9 @@ function getRewardsListInternal(ss, uidMap) {
  * - ส่ง LINE Flex Message แจ้งเตือน
  */
 function saveRewardRecord(payload) {
+  if (!isAdminAuthorized(payload)) {
+    return { status: 'error', message: 'ไม่มีสิทธิ์ดำเนินการ (อนุญาตเฉพาะแอดมินเท่านั้น)' };
+  }
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
@@ -1731,6 +1742,9 @@ function saveRewardRecord(payload) {
  * - ส่ง LINE Flex Message แจ้งเตือนผู้ได้รับรางวัลทุกคนที่มี LINE UID เหมือนบันทึกทีละรายการ
  */
 function saveBatchRewards(payload) {
+  if (!isAdminAuthorized(payload)) {
+    return { status: 'error', message: 'ไม่มีสิทธิ์ดำเนินการ (อนุญาตเฉพาะแอดมินเท่านั้น)' };
+  }
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(15000);
@@ -1922,6 +1936,9 @@ function saveBatchRewards(payload) {
  * ลบข้อมูลผู้รับรางวัล (ล้างค่าผู้รับรางวัลในคอลัมน์ B:F หรือลบทั้งแถว)
  */
 function deleteRewardRecord(payload) {
+  if (!isAdminAuthorized(payload)) {
+    return { status: 'error', message: 'ไม่มีสิทธิ์ดำเนินการ (อนุญาตเฉพาะแอดมินเท่านั้น)' };
+  }
   const lock = LockService.getScriptLock();
   try {
     lock.waitLock(10000);
@@ -1969,9 +1986,7 @@ function deleteRewardRecord(payload) {
  * ส่ง LINE Push Message (Flex Message) แจ้งเตือนผู้โชคดีที่ได้รับรางวัล
  */
 function pushRewardFlexMessage(uid, info) {
-  const token = (typeof CHANNEL_ACCESS_TOKEN !== 'undefined' && CHANNEL_ACCESS_TOKEN)
-    ? CHANNEL_ACCESS_TOKEN
-    : 'ZUF3tyAspwl3dVgo+5YSqfJZpu1fA438z3vIyHmga+Jre+ZuWrg30Xj1qV4ews6AG+RLY/FiaC+L6lkk6HoEHsed4ZYB7NMMS6n+rWxcpulnh3V7SAohcUx1+84NR8niEI41u5zLf3hlRm5jvKkWIAdB04t89/1O/w1cDnyilFU=';
+  const token = getLineBotAccessToken();
 
   const nowStr = Utilities.formatDate(new Date(), 'Asia/Bangkok', 'dd/MM/yyyy HH:mm:ss');
   const flexMsg = {
@@ -3354,7 +3369,7 @@ function startLoadingAnimation(chatId, loadingSeconds = 20) {
     method: 'post',
     contentType: 'application/json',
     headers: {
-      'Authorization': 'Bearer ' + LINE_BOT_ACCESS_TOKEN
+      'Authorization': 'Bearer ' + getLineBotAccessToken()
     },
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
@@ -3372,7 +3387,7 @@ function getUserProfile(userId) {
   const options = {
     method: 'get',
     headers: {
-      'Authorization': 'Bearer ' + LINE_BOT_ACCESS_TOKEN
+      'Authorization': 'Bearer ' + getLineBotAccessToken()
     },
     muteHttpExceptions: true
   };
@@ -3413,7 +3428,7 @@ function isUserFriendWithBot(userId, bypassCache) {
   const options = {
     method: 'get',
     headers: {
-      'Authorization': 'Bearer ' + LINE_BOT_ACCESS_TOKEN
+      'Authorization': 'Bearer ' + getLineBotAccessToken()
     },
     muteHttpExceptions: true
   };
@@ -3509,7 +3524,7 @@ function getLineMessageContent(messageId) {
   const options = {
     method: 'get',
     headers: {
-      'Authorization': 'Bearer ' + LINE_BOT_ACCESS_TOKEN
+      'Authorization': 'Bearer ' + getLineBotAccessToken()
     },
     muteHttpExceptions: true
   };
@@ -3532,7 +3547,7 @@ function replyLineMessage(replyToken, messages) {
     method: 'post',
     contentType: 'application/json',
     headers: {
-      'Authorization': 'Bearer ' + LINE_BOT_ACCESS_TOKEN
+      'Authorization': 'Bearer ' + getLineBotAccessToken()
     },
     payload: JSON.stringify(payload),
     muteHttpExceptions: true
