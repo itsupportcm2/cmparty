@@ -600,6 +600,13 @@ function pushRegistrationFlexMessage(uid, info) {
     contents: {
       type: 'bubble',
       size: 'mega',
+      hero: {
+        type: 'image',
+        url: 'https://cmparty.vercel.app/assets/flex-envelope.jpg',
+        size: 'full',
+        aspectRatio: '16:9',
+        aspectMode: 'cover'
+      },
       header: {
         type: 'box',
         layout: 'vertical',
@@ -1937,6 +1944,13 @@ function pushRewardFlexMessage(uid, info) {
     contents: {
       type: 'bubble',
       size: 'mega',
+      hero: {
+        type: 'image',
+        url: 'https://cmparty.vercel.app/assets/flex-giftbox.jpg',
+        size: 'full',
+        aspectRatio: '16:9',
+        aspectMode: 'cover'
+      },
       header: {
         type: 'box',
         layout: 'vertical',
