@@ -600,233 +600,253 @@ function pushRegistrationFlexMessage(uid, info) {
     contents: {
       type: 'bubble',
       size: 'mega',
-      hero: {
-        type: 'image',
-        url: 'https://cmparty.vercel.app/assets/flex-envelope.jpg',
-        size: 'full',
-        aspectRatio: '16:9',
-        aspectMode: 'cover'
-      },
-      header: {
-        type: 'box',
-        layout: 'vertical',
-        backgroundColor: '#991B1B',
-        paddingAll: '20px',
-        contents: [
-          {
-            type: 'box',
-            layout: 'horizontal',
-            alignItems: 'center',
-            contents: [
-              {
-                type: 'box',
-                layout: 'vertical',
-                backgroundColor: '#FBBF24',
-                cornerRadius: '20px',
-                paddingStart: '10px',
-                paddingEnd: '10px',
-                paddingTop: '4px',
-                paddingBottom: '4px',
-                flex: 0,
-                contents: [
-                  {
-                    type: 'text',
-                    text: 'VIP PASS',
-                    color: '#78350F',
-                    size: 'xxs',
-                    weight: 'bold'
-                  }
-                ]
-              },
-              {
-                type: 'text',
-                text: 'CHRISTMAS & NEW YEAR',
-                color: '#FDE68A',
-                size: 'xxs',
-                weight: 'bold',
-                align: 'end'
-              }
-            ]
-          },
-          {
-            type: 'text',
-            text: 'CM PARTY TICKET',
-            color: '#FFFFFF',
-            size: 'xl',
-            weight: 'bold',
-            margin: 'md'
-          },
-          {
-            type: 'text',
-            text: 'บัตรยืนยันการลงทะเบียนเข้างานเลี้ยงสำเร็จแล้ว',
-            color: '#FECACA',
-            size: 'xs',
-            margin: 'xs'
-          }
-        ]
-      },
       body: {
         type: 'box',
         layout: 'vertical',
-        backgroundColor: '#FFFFFF',
-        paddingAll: '20px',
-        spacing: 'lg',
+        paddingAll: '0px',
         contents: [
           {
+            type: 'image',
+            url: 'https://cmparty.vercel.app/assets/flex-envelope.jpg',
+            position: 'absolute',
+            offsetTop: '0px',
+            offsetBottom: '0px',
+            offsetStart: '0px',
+            offsetEnd: '0px',
+            size: 'full',
+            aspectMode: 'cover'
+          },
+          {
             type: 'box',
-            layout: 'horizontal',
+            layout: 'vertical',
+            backgroundColor: '#2A080D99',
+            paddingAll: '16px',
             spacing: 'md',
-            alignItems: 'center',
             contents: [
               {
                 type: 'box',
                 layout: 'vertical',
-                width: '68px',
-                height: '68px',
-                cornerRadius: '34px',
-                borderWidth: '3px',
-                borderColor: '#15803D',
-                flex: 0,
-                contents: [
-                  {
-                    type: 'image',
-                    url: profilePic,
-                    size: 'full',
-                    aspectMode: 'cover',
-                    aspectRatio: '1:1'
-                  }
-                ]
-              },
-              {
-                type: 'box',
-                layout: 'vertical',
-                spacing: 'xs',
+                paddingBottom: '4px',
                 contents: [
                   {
                     type: 'box',
                     layout: 'horizontal',
+                    alignItems: 'center',
                     contents: [
                       {
                         type: 'box',
                         layout: 'vertical',
-                        backgroundColor: '#DCFCE7',
-                        cornerRadius: '6px',
-                        paddingStart: '8px',
-                        paddingEnd: '8px',
-                        paddingTop: '2px',
-                        paddingBottom: '2px',
+                        backgroundColor: '#FBBF24',
+                        cornerRadius: '20px',
+                        paddingStart: '10px',
+                        paddingEnd: '10px',
+                        paddingTop: '4px',
+                        paddingBottom: '4px',
                         flex: 0,
                         contents: [
                           {
                             type: 'text',
-                            text: 'ลงทะเบียนสำเร็จ',
-                            color: '#15803D',
+                            text: 'VIP PASS',
+                            color: '#78350F',
                             size: 'xxs',
                             weight: 'bold'
+                          }
+                        ]
+                      },
+                      {
+                        type: 'text',
+                        text: 'CHRISTMAS & NEW YEAR',
+                        color: '#FDE68A',
+                        size: 'xxs',
+                        weight: 'bold',
+                        align: 'end'
+                      }
+                    ]
+                  },
+                  {
+                    type: 'text',
+                    text: 'CM PARTY TICKET',
+                    color: '#FFFFFF',
+                    size: 'xl',
+                    weight: 'bold',
+                    margin: 'md'
+                  },
+                  {
+                    type: 'text',
+                    text: 'บัตรยืนยันการลงทะเบียนเข้างานเลี้ยงสำเร็จแล้ว',
+                    color: '#FECACA',
+                    size: 'xs',
+                    margin: 'xs'
+                  }
+                ]
+              },
+              {
+                type: 'box',
+                layout: 'vertical',
+                backgroundColor: '#FFFFFFEB',
+                cornerRadius: '16px',
+                paddingAll: '16px',
+                spacing: 'lg',
+                contents: [
+                  {
+                    type: 'box',
+                    layout: 'horizontal',
+                    spacing: 'md',
+                    alignItems: 'center',
+                    contents: [
+                      {
+                        type: 'box',
+                        layout: 'vertical',
+                        width: '68px',
+                        height: '68px',
+                        cornerRadius: '34px',
+                        borderWidth: '3px',
+                        borderColor: '#15803D',
+                        flex: 0,
+                        contents: [
+                          {
+                            type: 'image',
+                            url: profilePic,
+                            size: 'full',
+                            aspectMode: 'cover',
+                            aspectRatio: '1:1'
+                          }
+                        ]
+                      },
+                      {
+                        type: 'box',
+                        layout: 'vertical',
+                        spacing: 'xs',
+                        contents: [
+                          {
+                            type: 'box',
+                            layout: 'horizontal',
+                            contents: [
+                              {
+                                type: 'box',
+                                layout: 'vertical',
+                                backgroundColor: '#DCFCE7',
+                                cornerRadius: '6px',
+                                paddingStart: '8px',
+                                paddingEnd: '8px',
+                                paddingTop: '2px',
+                                paddingBottom: '2px',
+                                flex: 0,
+                                contents: [
+                                  {
+                                    type: 'text',
+                                    text: 'ลงทะเบียนสำเร็จ',
+                                    color: '#15803D',
+                                    size: 'xxs',
+                                    weight: 'bold'
+                                  }
+                                ]
+                              }
+                            ]
+                          },
+                          {
+                            type: 'text',
+                            text: empName,
+                            weight: 'bold',
+                            size: 'lg',
+                            color: '#111827',
+                            wrap: true
+                          },
+                          {
+                            type: 'text',
+                            text: 'LINE: ' + lineName,
+                            size: 'xs',
+                            color: '#6B7280',
+                            wrap: true
                           }
                         ]
                       }
                     ]
                   },
                   {
-                    type: 'text',
-                    text: empName,
-                    weight: 'bold',
-                    size: 'lg',
-                    color: '#111827',
-                    wrap: true
+                    type: 'separator',
+                    color: '#E5E7EB'
                   },
                   {
-                    type: 'text',
-                    text: 'LINE: ' + lineName,
-                    size: 'xs',
-                    color: '#6B7280',
-                    wrap: true
-                  }
-                ]
-              }
-            ]
-          },
-          {
-            type: 'separator',
-            color: '#E5E7EB'
-          },
-          {
-            type: 'box',
-            layout: 'vertical',
-            backgroundColor: '#FEFCE8',
-            cornerRadius: '12px',
-            paddingAll: '14px',
-            spacing: 'sm',
-            borderWidth: '1px',
-            borderColor: '#FDE68A',
-            contents: [
-              {
-                type: 'box',
-                layout: 'baseline',
-                spacing: 'sm',
-                contents: [
-                  {
-                    type: 'text',
-                    text: 'รหัสพนักงาน',
-                    color: '#92400E',
-                    size: 'xs',
-                    flex: 4
-                  },
-                  {
-                    type: 'text',
-                    text: empId,
-                    color: '#B91C1C',
-                    size: 'sm',
-                    weight: 'bold',
-                    flex: 6,
-                    wrap: true
-                  }
-                ]
-              },
-              {
-                type: 'box',
-                layout: 'baseline',
-                spacing: 'sm',
-                contents: [
-                  {
-                    type: 'text',
-                    text: 'แผนก',
-                    color: '#92400E',
-                    size: 'xs',
-                    flex: 4
-                  },
-                  {
-                    type: 'text',
-                    text: department,
-                    color: '#1F2937',
-                    size: 'xs',
-                    weight: 'bold',
-                    flex: 6,
-                    wrap: true
-                  }
-                ]
-              },
-              {
-                type: 'box',
-                layout: 'baseline',
-                spacing: 'sm',
-                contents: [
-                  {
-                    type: 'text',
-                    text: 'สาขา',
-                    color: '#92400E',
-                    size: 'xs',
-                    flex: 4
-                  },
-                  {
-                    type: 'text',
-                    text: branch,
-                    color: '#15803D',
-                    size: 'xs',
-                    weight: 'bold',
-                    flex: 6,
-                    wrap: true
+                    type: 'box',
+                    layout: 'vertical',
+                    backgroundColor: '#FEFCE8',
+                    cornerRadius: '12px',
+                    paddingAll: '14px',
+                    spacing: 'sm',
+                    borderWidth: '1px',
+                    borderColor: '#FDE68A',
+                    contents: [
+                      {
+                        type: 'box',
+                        layout: 'baseline',
+                        spacing: 'sm',
+                        contents: [
+                          {
+                            type: 'text',
+                            text: 'รหัสพนักงาน',
+                            color: '#92400E',
+                            size: 'xs',
+                            flex: 4
+                          },
+                          {
+                            type: 'text',
+                            text: empId,
+                            color: '#B91C1C',
+                            size: 'sm',
+                            weight: 'bold',
+                            flex: 6,
+                            wrap: true
+                          }
+                        ]
+                      },
+                      {
+                        type: 'box',
+                        layout: 'baseline',
+                        spacing: 'sm',
+                        contents: [
+                          {
+                            type: 'text',
+                            text: 'แผนก',
+                            color: '#92400E',
+                            size: 'xs',
+                            flex: 4
+                          },
+                          {
+                            type: 'text',
+                            text: department,
+                            color: '#1F2937',
+                            size: 'xs',
+                            weight: 'bold',
+                            flex: 6,
+                            wrap: true
+                          }
+                        ]
+                      },
+                      {
+                        type: 'box',
+                        layout: 'baseline',
+                        spacing: 'sm',
+                        contents: [
+                          {
+                            type: 'text',
+                            text: 'สาขา',
+                            color: '#92400E',
+                            size: 'xs',
+                            flex: 4
+                          },
+                          {
+                            type: 'text',
+                            text: branch,
+                            color: '#15803D',
+                            size: 'xs',
+                            weight: 'bold',
+                            flex: 6,
+                            wrap: true
+                          }
+                        ]
+                      }
+                    ]
                   }
                 ]
               }
@@ -1944,202 +1964,222 @@ function pushRewardFlexMessage(uid, info) {
     contents: {
       type: 'bubble',
       size: 'mega',
-      hero: {
-        type: 'image',
-        url: 'https://cmparty.vercel.app/assets/flex-giftbox.jpg',
-        size: 'full',
-        aspectRatio: '16:9',
-        aspectMode: 'cover'
-      },
-      header: {
+      body: {
         type: 'box',
         layout: 'vertical',
-        backgroundColor: '#991B1B',
-        paddingAll: '20px',
+        paddingAll: '0px',
         contents: [
           {
+            type: 'image',
+            url: 'https://cmparty.vercel.app/assets/flex-giftbox.jpg',
+            position: 'absolute',
+            offsetTop: '0px',
+            offsetBottom: '0px',
+            offsetStart: '0px',
+            offsetEnd: '0px',
+            size: 'full',
+            aspectMode: 'cover'
+          },
+          {
             type: 'box',
-            layout: 'horizontal',
-            alignItems: 'center',
+            layout: 'vertical',
+            backgroundColor: '#2A080D99',
+            paddingAll: '16px',
+            spacing: 'md',
             contents: [
               {
                 type: 'box',
                 layout: 'vertical',
-                backgroundColor: '#FBBF24',
-                cornerRadius: '20px',
-                paddingStart: '10px',
-                paddingEnd: '10px',
-                paddingTop: '4px',
                 paddingBottom: '4px',
-                flex: 0,
                 contents: [
                   {
-                    type: 'text',
-                    text: 'LUCKY DRAW WINNER',
-                    color: '#78350F',
-                    size: 'xxs',
-                    weight: 'bold'
-                  }
-                ]
-              },
-              {
-                type: 'text',
-                text: 'CM PARTY',
-                color: '#FDE68A',
-                size: 'xs',
-                weight: 'bold',
-                align: 'end'
-              }
-            ]
-          },
-          {
-            type: 'text',
-            text: 'ขอแสดงความยินดีด้วยครับ!',
-            color: '#FFFFFF',
-            size: 'xl',
-            weight: 'bold',
-            margin: 'md'
-          },
-          {
-            type: 'text',
-            text: 'คุณคือผู้โชคดีได้รับรางวัลในงานเลี้ยง',
-            color: '#FECACA',
-            size: 'xs',
-            margin: 'xs'
-          }
-        ]
-      },
-      body: {
-        type: 'box',
-        layout: 'vertical',
-        backgroundColor: '#FFFFFF',
-        paddingAll: '20px',
-        spacing: 'md',
-        contents: [
-          {
-            type: 'box',
-            layout: 'vertical',
-            backgroundColor: '#FEFCE8',
-            borderColor: '#F59E0B',
-            borderWidth: '2px',
-            cornerRadius: '14px',
-            paddingAll: '16px',
-            alignItems: 'center',
-            spacing: 'xs',
-            contents: [
-              {
-                type: 'text',
-                text: 'รางวัลที่ได้รับ',
-                color: '#B45309',
-                size: 'xs',
-                weight: 'bold'
-              },
-              {
-                type: 'text',
-                text: info.rewardName || '-',
-                color: '#991B1B',
-                size: 'lg',
-                weight: 'bold',
-                align: 'center',
-                wrap: true
-              }
-            ]
-          },
-          {
-            type: 'separator',
-            margin: 'md',
-            color: '#E5E7EB'
-          },
-          {
-            type: 'box',
-            layout: 'vertical',
-            spacing: 'sm',
-            margin: 'md',
-            contents: [
-              {
-                type: 'box',
-                layout: 'baseline',
-                contents: [
-                  {
-                    type: 'text',
-                    text: 'รหัสพนักงาน',
-                    color: '#6B7280',
-                    size: 'xs',
-                    flex: 4
+                    type: 'box',
+                    layout: 'horizontal',
+                    alignItems: 'center',
+                    contents: [
+                      {
+                        type: 'box',
+                        layout: 'vertical',
+                        backgroundColor: '#FBBF24',
+                        cornerRadius: '20px',
+                        paddingStart: '10px',
+                        paddingEnd: '10px',
+                        paddingTop: '4px',
+                        paddingBottom: '4px',
+                        flex: 0,
+                        contents: [
+                          {
+                            type: 'text',
+                            text: 'LUCKY DRAW WINNER',
+                            color: '#78350F',
+                            size: 'xxs',
+                            weight: 'bold'
+                          }
+                        ]
+                      },
+                      {
+                        type: 'text',
+                        text: 'CM PARTY',
+                        color: '#FDE68A',
+                        size: 'xs',
+                        weight: 'bold',
+                        align: 'end'
+                      }
+                    ]
                   },
                   {
                     type: 'text',
-                    text: String(info.empId || '-'),
-                    color: '#111827',
-                    size: 'sm',
+                    text: 'ขอแสดงความยินดีด้วยครับ!',
+                    color: '#FFFFFF',
+                    size: 'xl',
                     weight: 'bold',
-                    flex: 6,
-                    wrap: true
+                    margin: 'md'
+                  },
+                  {
+                    type: 'text',
+                    text: 'คุณคือผู้โชคดีได้รับรางวัลในงานเลี้ยง',
+                    color: '#FECACA',
+                    size: 'xs',
+                    margin: 'xs'
                   }
                 ]
               },
               {
                 type: 'box',
-                layout: 'baseline',
+                layout: 'vertical',
+                backgroundColor: '#FFFFFFEB',
+                cornerRadius: '16px',
+                paddingAll: '16px',
+                spacing: 'md',
                 contents: [
                   {
-                    type: 'text',
-                    text: 'ชื่อ - สกุล',
-                    color: '#6B7280',
-                    size: 'xs',
-                    flex: 4
+                    type: 'box',
+                    layout: 'vertical',
+                    backgroundColor: '#FEFCE8',
+                    borderColor: '#F59E0B',
+                    borderWidth: '2px',
+                    cornerRadius: '14px',
+                    paddingAll: '16px',
+                    alignItems: 'center',
+                    spacing: 'xs',
+                    contents: [
+                      {
+                        type: 'text',
+                        text: 'รางวัลที่ได้รับ',
+                        color: '#B45309',
+                        size: 'xs',
+                        weight: 'bold'
+                      },
+                      {
+                        type: 'text',
+                        text: info.rewardName || '-',
+                        color: '#991B1B',
+                        size: 'lg',
+                        weight: 'bold',
+                        align: 'center',
+                        wrap: true
+                      }
+                    ]
                   },
                   {
-                    type: 'text',
-                    text: info.empName || '-',
-                    color: '#111827',
-                    size: 'sm',
-                    weight: 'bold',
-                    flex: 6,
-                    wrap: true
-                  }
-                ]
-              },
-              {
-                type: 'box',
-                layout: 'baseline',
-                contents: [
-                  {
-                    type: 'text',
-                    text: 'แผนก',
-                    color: '#6B7280',
-                    size: 'xs',
-                    flex: 4
+                    type: 'separator',
+                    margin: 'md',
+                    color: '#E5E7EB'
                   },
                   {
-                    type: 'text',
-                    text: info.department || '-',
-                    color: '#374151',
-                    size: 'xs',
-                    flex: 6,
-                    wrap: true
-                  }
-                ]
-              },
-              {
-                type: 'box',
-                layout: 'baseline',
-                contents: [
-                  {
-                    type: 'text',
-                    text: 'สาขา',
-                    color: '#6B7280',
-                    size: 'xs',
-                    flex: 4
-                  },
-                  {
-                    type: 'text',
-                    text: info.branch || '-',
-                    color: '#15803D',
-                    size: 'xs',
-                    weight: 'bold',
-                    flex: 6,
-                    wrap: true
+                    type: 'box',
+                    layout: 'vertical',
+                    spacing: 'sm',
+                    margin: 'md',
+                    contents: [
+                      {
+                        type: 'box',
+                        layout: 'baseline',
+                        contents: [
+                          {
+                            type: 'text',
+                            text: 'รหัสพนักงาน',
+                            color: '#6B7280',
+                            size: 'xs',
+                            flex: 4
+                          },
+                          {
+                            type: 'text',
+                            text: String(info.empId || '-'),
+                            color: '#111827',
+                            size: 'sm',
+                            weight: 'bold',
+                            flex: 6,
+                            wrap: true
+                          }
+                        ]
+                      },
+                      {
+                        type: 'box',
+                        layout: 'baseline',
+                        contents: [
+                          {
+                            type: 'text',
+                            text: 'ชื่อ - สกุล',
+                            color: '#6B7280',
+                            size: 'xs',
+                            flex: 4
+                          },
+                          {
+                            type: 'text',
+                            text: info.empName || '-',
+                            color: '#111827',
+                            size: 'sm',
+                            weight: 'bold',
+                            flex: 6,
+                            wrap: true
+                          }
+                        ]
+                      },
+                      {
+                        type: 'box',
+                        layout: 'baseline',
+                        contents: [
+                          {
+                            type: 'text',
+                            text: 'แผนก',
+                            color: '#6B7280',
+                            size: 'xs',
+                            flex: 4
+                          },
+                          {
+                            type: 'text',
+                            text: info.department || '-',
+                            color: '#374151',
+                            size: 'xs',
+                            flex: 6,
+                            wrap: true
+                          }
+                        ]
+                      },
+                      {
+                        type: 'box',
+                        layout: 'baseline',
+                        contents: [
+                          {
+                            type: 'text',
+                            text: 'สาขา',
+                            color: '#6B7280',
+                            size: 'xs',
+                            flex: 4
+                          },
+                          {
+                            type: 'text',
+                            text: info.branch || '-',
+                            color: '#15803D',
+                            size: 'xs',
+                            weight: 'bold',
+                            flex: 6,
+                            wrap: true
+                          }
+                        ]
+                      }
+                    ]
                   }
                 ]
               }
