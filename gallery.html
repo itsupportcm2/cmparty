@@ -253,6 +253,19 @@
                  ssDollBounce var(--doll-duration, 2.4s) ease-in-out 0.6s infinite;
     }
 
+    @keyframes ssDollWalkIn {
+      0% { opacity: 0; transform: translateX(-70px) translateY(0) scale(0.85) rotate(-6deg); }
+      25% { opacity: 1; transform: translateX(-48px) translateY(-9px) scale(0.95) rotate(5deg); }
+      50% { opacity: 1; transform: translateX(-28px) translateY(0) scale(1) rotate(-5deg); }
+      75% { opacity: 1; transform: translateX(-10px) translateY(-8px) scale(1.04) rotate(4deg); }
+      100% { opacity: 1; transform: translateX(0) translateY(0) scale(1) rotate(0deg); }
+    }
+
+    .ss-doll-walk-in {
+      animation: ssDollWalkIn 0.95s cubic-bezier(0.22, 1, 0.36, 1) forwards,
+                 ssDollBounce var(--doll-duration, 2.4s) ease-in-out 1.0s infinite;
+    }
+
     .ss-doll-welcome-ring {
       box-shadow: 0 0 0 3px #fde047, 0 0 18px rgba(253, 224, 71, 0.85);
     }
@@ -575,6 +588,9 @@
 
     <!-- Snowflakes Layer inside Slideshow -->
     <div id="ssSnowflakes" class="absolute inset-0 pointer-events-none z-10 overflow-hidden" aria-hidden="true"></div>
+
+    <!-- Fireworks Celebration Canvas (when a new attendee registers) -->
+    <canvas id="ssFireworksCanvas" class="hidden absolute inset-0 w-full h-full pointer-events-none z-[25]" aria-hidden="true"></canvas>
 
     <!-- Top Floating Bar (Header) -->
     <div id="ssTopBar" class="relative z-20 flex items-center justify-between px-4 sm:px-6 py-3 bg-gradient-to-b from-[#1e1021]/90 via-[#1e1021]/45 to-transparent transition-opacity duration-300">
@@ -900,6 +916,25 @@
           </span>
           <input type="checkbox" id="ssToggleStageCrowd" checked onchange="toggleStageCrowd(this.checked)" class="accent-amber-400 cursor-pointer w-4 h-4" />
         </label>
+
+        <!-- Fireworks on New Registration Toggle -->
+        <div class="flex items-center justify-between gap-2">
+          <label class="flex items-center gap-1.5 text-rose-100 cursor-pointer flex-1">
+            <span>🎆</span>
+            <span>จุดพลุเมื่อมีคนลงทะเบียนใหม่</span>
+          </label>
+          <div class="flex items-center gap-2">
+            <button
+              type="button"
+              onclick="launchStageFireworks()"
+              class="px-2 py-0.5 rounded-full bg-amber-400/20 hover:bg-amber-400/35 border border-amber-300/45 text-[10px] text-amber-200 font-semibold cursor-pointer transition"
+              title="ทดสอบเอฟเฟกต์พลุ"
+            >
+              ทดสอบ
+            </button>
+            <input type="checkbox" id="ssToggleFireworks" checked onchange="toggleFireworksOnJoin(this.checked)" class="accent-amber-400 cursor-pointer w-4 h-4" />
+          </div>
+        </div>
       </div>
 
       <!-- 4. การอัปเดตรูปใหม่อัตโนมัติ (Live Auto-Refresh) -->
@@ -1146,6 +1181,13 @@
     let showSlideshowSnow = true;
     let showCaptionText = true;
     let showStageCrowd = true;
+    let showFireworksOnJoin = true;
+
+    // สถานะระบบพลุเฉลิมฉลอง (Fireworks State)
+    let fwAnimFrameId = null;
+    let fwRockets = [];
+    let fwParticles = [];
+    let fwStopTimeout = null;
 
     // สถานะระบบเวที & ตุ๊กตาผู้ร่วมงาน (Party Stage Crowd State)
     let stageAttendees = [];
@@ -2056,6 +2098,148 @@
       }
     }
 
+    function toggleFireworksOnJoin(enabled) {
+      showFireworksOnJoin = enabled;
+      if (!enabled) stopStageFireworks();
+    }
+
+    function launchStageFireworks() {
+      const canvas = document.getElementById('ssFireworksCanvas');
+      if (!canvas || !isSlideshowActive) return;
+
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      canvas.classList.remove('hidden');
+
+      const colors = ['#fde047', '#fb7185', '#34d399', '#38bdf8', '#f472b6', '#ffffff', '#fb923c'];
+      const burstCount = 6;
+
+      // ยิงพลุเป็นระลอกสวยๆ 6 ลูก
+      for (let i = 0; i < burstCount; i++) {
+        setTimeout(() => {
+          if (!isSlideshowActive) return;
+          const startX = canvas.width * (0.15 + Math.random() * 0.7);
+          const targetY = canvas.height * (0.12 + Math.random() * 0.28);
+          fwRockets.push({
+            x: startX,
+            y: canvas.height * 0.85,
+            vx: (Math.random() - 0.5) * 2.2,
+            vy: -((canvas.height * 0.85 - targetY) / 22),
+            targetY,
+            color: colors[Math.floor(Math.random() * colors.length)]
+          });
+        }, i * 260);
+      }
+
+      if (fwStopTimeout) clearTimeout(fwStopTimeout);
+      fwStopTimeout = setTimeout(() => {
+        if (fwRockets.length === 0 && fwParticles.length === 0) {
+          stopStageFireworks();
+        }
+      }, 4200);
+
+      if (fwAnimFrameId) return;
+
+      const tick = () => {
+        if (!isSlideshowActive) {
+          stopStageFireworks();
+          return;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // อัปเดตจรวดพลุที่พุ่งขึ้น
+        for (let i = fwRockets.length - 1; i >= 0; i--) {
+          const r = fwRockets[i];
+          r.x += r.vx;
+          r.y += r.vy;
+          r.vy += 0.12;
+
+          ctx.beginPath();
+          ctx.arc(r.x, r.y, 3.2, 0, Math.PI * 2);
+          ctx.fillStyle = r.color;
+          ctx.shadowBlur = 12;
+          ctx.shadowColor = r.color;
+          ctx.fill();
+
+          if (r.y <= r.targetY || r.vy >= 0) {
+            // แตกตัวเป็นประกายพลุ
+            const particleCount = 42;
+            for (let p = 0; p < particleCount; p++) {
+              const angle = (Math.PI * 2 * p) / particleCount + (Math.random() - 0.5) * 0.15;
+              const speed = 2.2 + Math.random() * 4.5;
+              fwParticles.push({
+                x: r.x,
+                y: r.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                alpha: 1,
+                decay: 0.014 + Math.random() * 0.014,
+                size: 2 + Math.random() * 2.2,
+                color: Math.random() > 0.25 ? r.color : colors[Math.floor(Math.random() * colors.length)]
+              });
+            }
+            fwRockets.splice(i, 1);
+          }
+        }
+
+        // อัปเดตประกายพลุที่กระจายออก
+        for (let i = fwParticles.length - 1; i >= 0; i--) {
+          const pt = fwParticles[i];
+          pt.x += pt.vx;
+          pt.y += pt.vy;
+          pt.vx *= 0.985;
+          pt.vy = pt.vy * 0.985 + 0.065;
+          pt.alpha -= pt.decay;
+
+          if (pt.alpha <= 0) {
+            fwParticles.splice(i, 1);
+            continue;
+          }
+
+          ctx.save();
+          ctx.globalAlpha = Math.max(0, pt.alpha);
+          ctx.beginPath();
+          ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+          ctx.fillStyle = pt.color;
+          ctx.shadowBlur = 10;
+          ctx.shadowColor = pt.color;
+          ctx.fill();
+          ctx.restore();
+        }
+
+        if (fwRockets.length > 0 || fwParticles.length > 0) {
+          fwAnimFrameId = requestAnimationFrame(tick);
+        } else {
+          stopStageFireworks();
+        }
+      };
+
+      fwAnimFrameId = requestAnimationFrame(tick);
+    }
+
+    function stopStageFireworks() {
+      if (fwAnimFrameId) {
+        cancelAnimationFrame(fwAnimFrameId);
+        fwAnimFrameId = null;
+      }
+      if (fwStopTimeout) {
+        clearTimeout(fwStopTimeout);
+        fwStopTimeout = null;
+      }
+      fwRockets = [];
+      fwParticles = [];
+      const canvas = document.getElementById('ssFireworksCanvas');
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) ctx.clearRect(0, 0, canvas.width, canvas.height);
+        canvas.classList.add('hidden');
+      }
+    }
+
     function applyStageCrowdLayout() {
       const crowdSection = document.getElementById('ssStageCrowdSection');
       const screenFrame = document.getElementById('ssStageScreenFrame');
@@ -2110,6 +2294,7 @@
         clearInterval(stageWaveTimer);
         stageWaveTimer = null;
       }
+      stopStageFireworks();
     }
 
     function getStageWaveSize() {
@@ -2222,12 +2407,19 @@
         stageAttendees = fetchedList;
 
         if (newlyArrivedIds.length > 0) {
-          // พาคนลงทะเบียนใหม่มาโชว์หน้าเวทีทันที
+          // จุดพลุเฉลิมฉลองก่อน แล้วให้ตัวตุ๊กตาเดินเข้ามาหน้าเวที
           stageWaveIndex = 0;
-          renderStageCrowdWave(true);
+          if (showFireworksOnJoin) {
+            launchStageFireworks();
+          }
+          const enterDelay = showFireworksOnJoin ? 750 : 0;
           setTimeout(() => {
-            if (isSlideshowActive && showStageCrowd) renderStageCrowdWave(false);
-          }, 10500);
+            if (!isSlideshowActive || !showStageCrowd) return;
+            renderStageCrowdWave(true);
+            setTimeout(() => {
+              if (isSlideshowActive && showStageCrowd) renderStageCrowdWave(false);
+            }, 10500);
+          }, enterDelay);
         } else {
           renderStageCrowdWave(false);
         }
@@ -2322,7 +2514,8 @@
     function buildCuteChristmasDoll(attendee, index, isWelcome, animatePop) {
       const themeIdx = getAttendeeThemeIndex(attendee.empId);
       const doll = document.createElement('div');
-      doll.className = `ss-avatar-doll shrink-0 ${animatePop ? 'ss-doll-enter' : ''}`;
+      const enterAnimCls = isWelcome ? 'ss-doll-walk-in' : (animatePop ? 'ss-doll-enter' : '');
+      doll.className = `ss-avatar-doll shrink-0 ${enterAnimCls}`;
       doll.style.setProperty('--doll-duration', `${(2.1 + (index % 5) * 0.25).toFixed(2)}s`);
       doll.style.setProperty('--doll-delay', `${((index % 6) * 0.18).toFixed(2)}s`);
 
