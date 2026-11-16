@@ -19,6 +19,9 @@
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+  <!-- Shared CM Party Configuration -->
+  <script src="config.js"></script>
+
   <style>
     body {
       font-family: 'Prompt', sans-serif;
@@ -707,6 +710,22 @@
         <span>✨</span>
       </div>
 
+      <!-- Corner QR Code Card (สแกนลงทะเบียนเข้างาน & ขึ้นจอสไลด์โชว์) -->
+      <div
+        id="ssQrBadgeCard"
+        class="hidden md:flex flex-col items-center gap-1 p-2 rounded-2xl bg-white/90 backdrop-blur-md border-2 border-amber-300 shadow-2xl absolute bottom-3 left-3 z-20 transition-all duration-300"
+        title="สแกน QR Code เพื่อลงทะเบียนเข้างาน CM Party 2026"
+      >
+        <img
+          id="ssQrBadgeImg"
+          src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=4&data=https%3A%2F%2Fliff.line.me%2F2012486224-eFJTgFwr"
+          alt="QR Code ลงทะเบียนเข้างาน"
+          class="w-20 h-20 rounded-xl border border-rose-200 bg-white"
+        />
+        <span class="text-[10px] font-extrabold text-rose-700 leading-tight text-center">สแกนลงทะเบียน</span>
+        <span class="text-[9px] font-semibold text-emerald-700 leading-tight text-center">ขึ้นจอ + ลุ้นรางวัล 🎁</span>
+      </div>
+
       <!-- Center Slide Image Display with Fixed Auto-Fit Party Stage Frame -->
       <div class="w-full h-full flex items-center justify-center py-1">
         <div id="ssStageScreenFrame" class="ss-stage-screen-frame w-[92vw] max-w-5xl h-[65vh] sm:h-[69vh] flex items-center justify-center transition-all duration-500">
@@ -935,6 +954,15 @@
             <input type="checkbox" id="ssToggleFireworks" checked onchange="toggleFireworksOnJoin(this.checked)" class="accent-amber-400 cursor-pointer w-4 h-4" />
           </div>
         </div>
+
+        <!-- QR Code Corner Overlay Toggle -->
+        <label class="flex items-center justify-between cursor-pointer">
+          <span class="flex items-center gap-1.5 text-rose-100">
+            <i class="fa-solid fa-qrcode text-emerald-300 text-xs"></i>
+            <span>แสดง QR สแกนลงทะเบียนมุมจอ</span>
+          </span>
+          <input type="checkbox" id="ssToggleQrOverlay" checked onchange="toggleSlideshowQr(this.checked)" class="accent-emerald-400 cursor-pointer w-4 h-4" />
+        </label>
       </div>
 
       <!-- 4. การอัปเดตรูปใหม่อัตโนมัติ (Live Auto-Refresh) -->
@@ -1158,9 +1186,10 @@
     // ==========================================
     // การตั้งค่า API และโฟลเดอร์ Google Drive
     // ==========================================
-    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx6yDgQvf3RvCVu8nHRN3yQM6IM5Be2JZpESNT6nJ3XddDsOlrMj_S7nIPCRUqmZBjFYw/exec';
-    const BACKUP_GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzXGB3ckVANtHFesKySN341DrmH-FQHWbPg1zGcS9MBTpYWVWtHe7SDlu7cvoXauNld2A/exec';
-    const SPREADSHEET_ID = '1j2wb2cBiPK2IDfpNKJZBSUu3MDVwSEogAkRENvU-GJw';
+    const CM_CFG = window.CM_PARTY_CONFIG || {};
+    const GAS_WEB_APP_URL = CM_CFG.GAS_WEB_APP_URL || 'https://script.google.com/macros/s/AKfycbx6yDgQvf3RvCVu8nHRN3yQM6IM5Be2JZpESNT6nJ3XddDsOlrMj_S7nIPCRUqmZBjFYw/exec';
+    const BACKUP_GAS_WEB_APP_URL = CM_CFG.BACKUP_GAS_WEB_APP_URL || 'https://script.google.com/macros/s/AKfycbzXGB3ckVANtHFesKySN341DrmH-FQHWbPg1zGcS9MBTpYWVWtHe7SDlu7cvoXauNld2A/exec';
+    const SPREADSHEET_ID = CM_CFG.SPREADSHEET_ID || '1j2wb2cBiPK2IDfpNKJZBSUu3MDVwSEogAkRENvU-GJw';
     const DRIVE_FOLDER_ID = '1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L';
     const DRIVE_FOLDER_URL = `https://drive.google.com/drive/folders/${DRIVE_FOLDER_ID}?usp=sharing`;
 
@@ -2103,6 +2132,18 @@
       if (!enabled) stopStageFireworks();
     }
 
+    function toggleSlideshowQr(enabled) {
+      const qrCard = document.getElementById('ssQrBadgeCard');
+      if (!qrCard) return;
+      if (enabled) {
+        qrCard.classList.remove('hidden');
+        qrCard.classList.add('md:flex');
+      } else {
+        qrCard.classList.add('hidden');
+        qrCard.classList.remove('md:flex');
+      }
+    }
+
     function launchStageFireworks() {
       const canvas = document.getElementById('ssFireworksCanvas');
       if (!canvas || !isSlideshowActive) return;
@@ -2313,10 +2354,12 @@
       const cols = gvizObj.table.cols || [];
       const rows = gvizObj.table.rows || [];
       const colFLabel = (cols[5] && cols[5].label) ? String(cols[5].label).toUpperCase() : '';
-      if (colFLabel.indexOf('UID') !== -1 || colFLabel.indexOf('LINE') !== -1) return true;
+      const colILabel = (cols[8] && cols[8].label) ? String(cols[8].label) : '';
+      if (colFLabel.indexOf('UID') !== -1 || colFLabel.indexOf('LINE') !== -1 || colILabel.indexOf('สถานะ') !== -1) return true;
       if (rows.length > 0 && rows[0].c) {
         const cellF = cleanGvizCell(rows[0].c[5]).toUpperCase();
-        if (cellF.indexOf('UID') !== -1 || cellF.indexOf('U') === 0) return true;
+        const cellI = cleanGvizCell(rows[0].c[8]);
+        if (cellF.indexOf('UID') !== -1 || cellF.indexOf('U') === 0 || cellI.indexOf('ลงทะเบียน') !== -1 || cellI === 'สถานะ') return true;
       }
       return false;
     }

@@ -22,6 +22,9 @@
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
+  <!-- Shared CM Party Configuration -->
+  <script src="config.js"></script>
+
   <style>
     body {
       font-family: 'Prompt', sans-serif;
@@ -697,14 +700,15 @@
     // ตั้งค่า LIFF ID และ URL ของ Google Apps Script Web App
     // ==========================================
     // สามารถใส่ LIFF ID ตรงนี้ หรือส่งมาทาง URL parameter ?liffId=xxxx ก็ได้
-    const DEFAULT_LIFF_ID = '2012486224-eFJTgFwr';
-    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx6yDgQvf3RvCVu8nHRN3yQM6IM5Be2JZpESNT6nJ3XddDsOlrMj_S7nIPCRUqmZBjFYw/exec';
-    const BACKUP_GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzXGB3ckVANtHFesKySN341DrmH-FQHWbPg1zGcS9MBTpYWVWtHe7SDlu7cvoXauNld2A/exec';
-    const SPREADSHEET_ID = '1j2wb2cBiPK2IDfpNKJZBSUu3MDVwSEogAkRENvU-GJw';
+    const CM_CFG = window.CM_PARTY_CONFIG || {};
+    const DEFAULT_LIFF_ID = CM_CFG.LIFF_ID || '2012486224-eFJTgFwr';
+    const GAS_WEB_APP_URL = CM_CFG.GAS_WEB_APP_URL || 'https://script.google.com/macros/s/AKfycbx6yDgQvf3RvCVu8nHRN3yQM6IM5Be2JZpESNT6nJ3XddDsOlrMj_S7nIPCRUqmZBjFYw/exec';
+    const BACKUP_GAS_WEB_APP_URL = CM_CFG.BACKUP_GAS_WEB_APP_URL || 'https://script.google.com/macros/s/AKfycbzXGB3ckVANtHFesKySN341DrmH-FQHWbPg1zGcS9MBTpYWVWtHe7SDlu7cvoXauNld2A/exec';
+    const SPREADSHEET_ID = CM_CFG.SPREADSHEET_ID || '1j2wb2cBiPK2IDfpNKJZBSUu3MDVwSEogAkRENvU-GJw';
     const SOURCE_SHEET_NAME = 'การตอบแบบฟอร์ม 1';
 
     // บัญชีแอดมินสำหรับเปิด-ปิดระบบลงทะเบียน
-    const ADMIN_UID = 'U1dcbd47c6981745c2f41c5691cde7ff3';
+    const ADMIN_UID = CM_CFG.ADMIN_UID || 'U1dcbd47c6981745c2f41c5691cde7ff3';
 
     let cachedEmployees = null;
 
@@ -1640,9 +1644,9 @@
             </div>
           </div>
 
-          <!-- ทางลัดสำหรับแอดมิน (ไปหน้าจับรางวัล) -->
-          <div class="bg-gradient-to-r from-rose-50 via-amber-50 to-rose-50 p-3 rounded-2xl border border-amber-200/80 mb-3">
-            <p class="text-[10px] text-rose-900 font-semibold mb-1.5 flex items-center gap-1">
+          <!-- ทางลัดสำหรับแอดมิน (ไปหน้าจับรางวัล & แกลเลอรีสไลด์โชว์) -->
+          <div class="bg-gradient-to-r from-rose-50 via-amber-50 to-rose-50 p-3 rounded-2xl border border-amber-200/80 mb-3 space-y-2">
+            <p class="text-[10px] text-rose-900 font-semibold flex items-center gap-1">
               <i class="fa-solid fa-gift text-rose-600"></i>
               <span>ทางลัดจัดการงานเลี้ยง (เฉพาะแอดมิน):</span>
             </p>
@@ -1652,6 +1656,14 @@
             >
               <i class="fa-solid fa-trophy"></i>
               <span>เปิดหน้าสุ่ม &amp; จัดการรางวัล (Lucky Draw)</span>
+              <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
+            </a>
+            <a
+              href="gallery.html"
+              class="w-full py-2 px-4 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white font-bold text-xs shadow hover:shadow-md active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <i class="fa-solid fa-images"></i>
+              <span>เปิดแกลเลอรี &amp; เวทีสไลด์โชว์ (Gallery)</span>
               <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i>
             </a>
           </div>
@@ -2181,11 +2193,22 @@
         });
       }
 
-      // 2. ส่งข้อมูลผ่าน Web App URL (POST) พร้อมระบบสำรองผ่าน GET parameter
-      const urlsToTry = [GAS_WEB_APP_URL, BACKUP_GAS_WEB_APP_URL].filter(Boolean);
+      // 2. ส่งข้อมูลผ่าน Web App URL พร้อม Auto-Retry (หน่วงเวลาสุ่มป้องกันคิวชนกันช่วงคนสแกนพร้อมกัน)
+      const isTransientBackendMsg = (msg) => {
+        const s = String(msg || '').toLowerCase();
+        return s.indexOf('lock') !== -1 || s.indexOf('timeout') !== -1 || s.indexOf('too many') !== -1 || s.indexOf('ล็อก') !== -1 || s.indexOf('busy') !== -1;
+      };
+      const waitJitter = (minMs = 700, maxMs = 1400) =>
+        new Promise(r => setTimeout(r, minMs + Math.floor(Math.random() * (maxMs - minMs))));
+
+      const attemptEndpoints = [GAS_WEB_APP_URL, GAS_WEB_APP_URL, BACKUP_GAS_WEB_APP_URL].filter(Boolean);
       let lastError = null;
 
-      for (const apiUrl of urlsToTry) {
+      for (let attemptIdx = 0; attemptIdx < attemptEndpoints.length; attemptIdx++) {
+        const apiUrl = attemptEndpoints[attemptIdx];
+        if (attemptIdx > 0) {
+          await waitJitter(700, 1450);
+        }
         try {
           const res = await fetch(apiUrl, {
             method: 'POST',
@@ -2196,6 +2219,10 @@
           const text = await res.text();
           const json = JSON.parse(text);
           if (json && json.status) {
+            if (json.status === 'error' && isTransientBackendMsg(json.message) && attemptIdx < attemptEndpoints.length - 1) {
+              lastError = new Error(json.message);
+              continue;
+            }
             return json;
           }
         } catch (postErr) {
@@ -2218,6 +2245,10 @@
             const getText = await getRes.text();
             const getJson = JSON.parse(getText);
             if (getJson && getJson.status) {
+              if (getJson.status === 'error' && isTransientBackendMsg(getJson.message) && attemptIdx < attemptEndpoints.length - 1) {
+                lastError = new Error(getJson.message);
+                continue;
+              }
               return getJson;
             }
           } catch (getErr) {

@@ -22,6 +22,9 @@
   <!-- LINE LIFF SDK -->
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 
+  <!-- Shared CM Party Configuration -->
+  <script src="config.js"></script>
+
   <style>
     body {
       font-family: 'Prompt', sans-serif;
@@ -562,12 +565,13 @@
     // ==========================================
     // ตั้งค่าการเชื่อมต่อ Google Apps Script (exec เดียวกันกับ register.js)
     // ==========================================
-    const GAS_WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbx6yDgQvf3RvCVu8nHRN3yQM6IM5Be2JZpESNT6nJ3XddDsOlrMj_S7nIPCRUqmZBjFYw/exec';
-    const SPREADSHEET_ID = '1j2wb2cBiPK2IDfpNKJZBSUu3MDVwSEogAkRENvU-GJw';
+    const CM_CFG = window.CM_PARTY_CONFIG || {};
+    const GAS_WEB_APP_URL = CM_CFG.GAS_WEB_APP_URL || 'https://script.google.com/macros/s/AKfycbx6yDgQvf3RvCVu8nHRN3yQM6IM5Be2JZpESNT6nJ3XddDsOlrMj_S7nIPCRUqmZBjFYw/exec';
+    const SPREADSHEET_ID = CM_CFG.SPREADSHEET_ID || '1j2wb2cBiPK2IDfpNKJZBSUu3MDVwSEogAkRENvU-GJw';
     const REGISTER_SHEET_NAME = 'Register';
-    const REWARD_SHEET_GID = '195154721';
-    const LIFF_ID = '2012486224-eFJTgFwr';
-    const ADMIN_UID = 'U1dcbd47c6981745c2f41c5691cde7ff3';
+    const REWARD_SHEET_GID = CM_CFG.REWARD_SHEET_GID || '195154721';
+    const LIFF_ID = CM_CFG.LIFF_ID || '2012486224-eFJTgFwr';
+    const ADMIN_UID = CM_CFG.ADMIN_UID || 'U1dcbd47c6981745c2f41c5691cde7ff3';
     const EXCLUDED_REWARD_DEPARTMENTS = ['1.บริหาร'];
     let currentAdminUid = '';
 
@@ -589,16 +593,18 @@
     let pendingDrawList = [];
     const roundSkippedEmpIds = new Set();
 
-    // ตรวจสอบว่าข้อมูล Gviz ที่ได้มาจาก Sheet "Register" จริงหรือไม่ (คอลัมน์ F ต้องเป็น LINE UID ไม่ใช่แผ่นงานแบบฟอร์มแรก)
+    // ตรวจสอบว่าข้อมูล Gviz ที่ได้มาจาก Sheet "Register" จริงหรือไม่ (รองรับทั้งมี LINE UID และแถวลงทะเบียนออโต้อยู่กะที่ UID ว่าง)
     function isValidRegisterGvizTable(gvizObj) {
       if (!gvizObj || !gvizObj.table) return false;
       const cols = gvizObj.table.cols || [];
       const rows = gvizObj.table.rows || [];
       const colFLabel = (cols[5] && cols[5].label) ? String(cols[5].label).toUpperCase() : '';
-      if (colFLabel.indexOf('UID') !== -1 || colFLabel.indexOf('LINE') !== -1) return true;
+      const colILabel = (cols[8] && cols[8].label) ? String(cols[8].label) : '';
+      if (colFLabel.indexOf('UID') !== -1 || colFLabel.indexOf('LINE') !== -1 || colILabel.indexOf('สถานะ') !== -1) return true;
       if (rows.length > 0 && rows[0].c) {
         const cellF = cleanCell(rows[0].c[5]).toUpperCase();
-        if (cellF.indexOf('UID') !== -1 || cellF.indexOf('U') === 0) return true;
+        const cellI = cleanCell(rows[0].c[8]);
+        if (cellF.indexOf('UID') !== -1 || cellF.indexOf('U') === 0 || cellI.indexOf('ลงทะเบียน') !== -1 || cellI === 'สถานะ') return true;
       }
       return false;
     }
@@ -780,6 +786,7 @@
           else if (securedPayload.action === 'saveReward') runner.saveRewardRecord(securedPayload);
           else if (securedPayload.action === 'saveBatchRewards') runner.saveBatchRewards(securedPayload);
           else if (securedPayload.action === 'deleteReward') runner.deleteRewardRecord(securedPayload);
+          else if (securedPayload.action === 'syncShiftWorkers') runner.handleSyncShiftWorkersAction(securedPayload);
           else runner.checkRegisteredEmployeeById(securedPayload.empId);
         });
       }
