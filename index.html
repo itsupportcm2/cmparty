@@ -710,6 +710,19 @@
     // บัญชีแอดมินสำหรับเปิด-ปิดระบบลงทะเบียน
     const ADMIN_UID = CM_CFG.ADMIN_UID || 'U1dcbd47c6981745c2f41c5691cde7ff3';
 
+    function isCurrentUserAdmin() {
+      const uid = String((userProfile && userProfile.userId) || '').trim();
+      if (!uid) return false;
+      if (uid === ADMIN_UID) return true;
+      return Boolean(window.currentSysConfig && window.currentSysConfig.isAdmin === true);
+    }
+
+    function escapeAdminHtml(str) {
+      return String(str || '').replace(/[&<>"']/g, s => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+      }[s]));
+    }
+
     let cachedEmployees = null;
 
     let userProfile = {
@@ -806,16 +819,16 @@
           document.getElementById('lineUid').value = userProfile.userId;
 
           // 1. ตรวจสอบสถานะแอดมิน และดึงสถานะการเปิด/ปิดระบบลงทะเบียน
-          const isAdmin = userProfile.userId === ADMIN_UID;
-          let sysConfig = { systemStatus: 'OPEN', isOpen: true, openingDateTime: '', isBeforeOpeningTime: false, closingDateTime: '' };
+          let sysConfig = { systemStatus: 'OPEN', isOpen: true, openingDateTime: '', isBeforeOpeningTime: false, closingDateTime: '', isAdmin: (userProfile.userId === ADMIN_UID) };
           try {
             sysConfig = await fetchSystemStatus(userProfile.userId);
           } catch (sysErr) {
             console.warn('Error fetching system status:', sysErr);
           }
           window.currentSysConfig = sysConfig;
+          const isAdmin = isCurrentUserAdmin();
 
-          // แสดงปุ่มแผงควบคุมระบบ (เฉพาะ Admin UID = U1dcbd47c6981745c2f41c5691cde7ff3 เท่านั้น)
+          // แสดงปุ่มแผงควบคุมระบบ (เฉพาะ Admin UID เท่านั้น)
           if (isAdmin) {
             renderAdminControlPanel(sysConfig);
           } else {
@@ -864,7 +877,7 @@
       if (loadingEl) loadingEl.classList.add('hidden');
       document.getElementById('mustAddFriendContainer').classList.add('hidden');
 
-      const isAdmin = userProfile && userProfile.userId === ADMIN_UID;
+      const isAdmin = isCurrentUserAdmin();
       const sysConfig = window.currentSysConfig || { systemStatus: 'OPEN', isOpen: true, openingDateTime: '', isBeforeOpeningTime: false, closingDateTime: '' };
       const isWaitingOpen = Boolean(sysConfig.isBeforeOpeningTime && sysConfig.manualStatus !== 'CLOSED');
 
@@ -1092,7 +1105,7 @@
       }
 
       // หากไม่ใช่แอดมิน ให้ Pop-up แจ้งว่า "ท่านได้ลงทะเบียนแล้ว" ค้างไว้ 3 วินาที แล้วปิดหน้าต่างอัตโนมัติ
-      const isAdmin = userProfile && userProfile.userId === ADMIN_UID;
+      const isAdmin = isCurrentUserAdmin();
       if (!isAdmin) {
         setTimeout(() => {
           closeLiffWindow();
@@ -1238,7 +1251,7 @@
 
     // สำหรับแอดมินสลับดูหน้าตัวอย่าง (Countdown / ฟอร์มลงทะเบียน / ปิดระบบ)
     function adminSwitchPreview(mode) {
-      if (!userProfile || userProfile.userId !== ADMIN_UID) return;
+      if (!isCurrentUserAdmin()) return;
       closeAdminModal();
       const cfg = window.currentSysConfig || {};
       if (mode === 'countdown') {
@@ -1265,9 +1278,10 @@
 
     // เปิด/ปิด Pop-up ตั้งค่าระบบของแอดมิน
     function openAdminModal() {
-      if (!userProfile || userProfile.userId !== ADMIN_UID) return;
+      if (!isCurrentUserAdmin()) return;
       const modal = document.getElementById('adminSettingsModal');
       if (modal) modal.classList.remove('hidden');
+      loadAdminMembersList();
     }
 
     function closeAdminModal() {
@@ -1449,7 +1463,7 @@
       const modalContent = document.getElementById('adminModalContent');
       if (!panel) return;
 
-      const isAdmin = userProfile && userProfile.userId === ADMIN_UID;
+      const isAdmin = isCurrentUserAdmin();
       if (!isAdmin) {
         panel.classList.add('hidden');
         return;
@@ -1691,13 +1705,201 @@
               </button>
             `}
           </div>
+
+          <!-- จัดการรายชื่อแอดมิน (เพิ่ม / ลด แอดมิน) -->
+          <div class="bg-slate-50/90 p-3 rounded-2xl border border-slate-200 mt-3 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <p class="text-[11px] text-slate-800 font-bold flex items-center gap-1.5">
+                <i class="fa-solid fa-user-shield text-indigo-600"></i>
+                <span>จัดการสิทธิ์แอดมิน (เพิ่ม / ลบ):</span>
+              </p>
+              <button
+                type="button"
+                onclick="loadAdminMembersList()"
+                class="text-[10px] text-indigo-600 hover:text-indigo-800 font-semibold cursor-pointer flex items-center gap-1"
+                title="รีเฟรชรายชื่อแอดมิน"
+              >
+                <i class="fa-solid fa-rotate"></i>
+                <span>รีเฟรช</span>
+              </button>
+            </div>
+            <div class="flex gap-1.5">
+              <input
+                type="text"
+                id="newAdminInput"
+                placeholder="รหัสพนักงาน หรือ LINE UID (U...)"
+                class="flex-1 min-w-0 px-2.5 py-2 rounded-xl border border-slate-300 bg-white text-[11px] focus:outline-none focus:ring-2 focus:ring-indigo-400"
+              />
+              <button
+                type="button"
+                onclick="addAdminMember()"
+                class="px-3 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-[11px] shadow-xs transition cursor-pointer shrink-0 flex items-center gap-1"
+              >
+                <i class="fa-solid fa-plus"></i>
+                <span>เพิ่ม</span>
+              </button>
+            </div>
+            <p class="text-[10px] text-slate-500">
+              * ใช้รหัสพนักงานที่ลงทะเบียนในงานแล้ว หรือวาง LINE UID ของผู้ที่จะให้เป็นแอดมิน
+            </p>
+            <div id="adminMembersList" class="space-y-1.5 max-h-40 overflow-y-auto pt-1">
+              <div class="text-[11px] text-slate-400 text-center py-2">กำลังโหลดรายชื่อแอดมิน...</div>
+            </div>
+          </div>
         `;
+        loadAdminMembersList();
+      }
+    }
+
+    async function loadAdminMembersList() {
+      const listEl = document.getElementById('adminMembersList');
+      if (!listEl || !isCurrentUserAdmin()) return;
+
+      try {
+        const data = await sendAdminAction({
+          action: 'getAdmins',
+          adminUid: userProfile.userId
+        });
+        if (data && data.status === 'success') {
+          renderAdminMembersList(data.superAdminUid || ADMIN_UID, data.admins || []);
+        } else {
+          listEl.innerHTML = `<div class="text-[11px] text-rose-600 text-center py-1">${escapeAdminHtml((data && data.message) || 'โหลดรายชื่อแอดมินไม่สำเร็จ')}</div>`;
+        }
+      } catch (err) {
+        listEl.innerHTML = `<div class="text-[11px] text-rose-600 text-center py-1">เชื่อมต่อไม่สำเร็จ: ${escapeAdminHtml(err.message)}</div>`;
+      }
+    }
+
+    function renderAdminMembersList(superUid, extraAdmins) {
+      const listEl = document.getElementById('adminMembersList');
+      if (!listEl) return;
+
+      const shortUid = (u) => {
+        const s = String(u || '');
+        return s.length > 14 ? `${s.slice(0, 8)}...${s.slice(-4)}` : s;
+      };
+
+      const rows = [
+        `<div class="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-amber-50 border border-amber-200 text-[11px]">
+          <div class="min-w-0">
+            <div class="font-bold text-amber-900 flex items-center gap-1">
+              <span>👑</span>
+              <span>แอดมินหลัก (Super Admin)</span>
+            </div>
+            <div class="text-[10px] text-amber-700 font-mono truncate">${escapeAdminHtml(shortUid(superUid))}</div>
+          </div>
+          <span class="px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-900 text-[9px] font-bold shrink-0">ถาวร</span>
+        </div>`
+      ];
+
+      (extraAdmins || []).forEach(adm => {
+        const displayLabel = adm.empId ? `${adm.label} (${adm.empId})` : adm.label;
+        rows.push(`
+          <div class="flex items-center justify-between gap-2 px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 text-[11px]">
+            <div class="min-w-0">
+              <div class="font-bold text-slate-800 truncate">${escapeAdminHtml(displayLabel)}</div>
+              <div class="text-[10px] text-slate-400 font-mono truncate">${escapeAdminHtml(shortUid(adm.uid))}${adm.addedAt ? ' • ' + escapeAdminHtml(adm.addedAt) : ''}</div>
+            </div>
+            <button
+              type="button"
+              data-admin-uid="${escapeAdminHtml(adm.uid)}"
+              data-admin-label="${escapeAdminHtml(displayLabel)}"
+              onclick="removeAdminMember(this.getAttribute('data-admin-uid'), this.getAttribute('data-admin-label'))"
+              class="px-2 py-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 border border-rose-200 text-[10px] font-bold cursor-pointer shrink-0 transition"
+              title="ลบสิทธิ์แอดมิน"
+            >
+              <i class="fa-solid fa-trash-can mr-0.5"></i>ลบ
+            </button>
+          </div>
+        `);
+      });
+
+      listEl.innerHTML = rows.join('');
+    }
+
+    async function addAdminMember() {
+      if (!isCurrentUserAdmin()) return;
+      const inputEl = document.getElementById('newAdminInput');
+      const val = inputEl ? inputEl.value.trim() : '';
+      if (!val) {
+        Swal.fire({ icon: 'warning', title: 'กรุณากรอกข้อมูล', text: 'กรุณากรอกรหัสพนักงาน หรือ LINE UID ที่ต้องการเพิ่มเป็นแอดมิน', confirmButtonColor: '#4f46e5' });
+        return;
+      }
+
+      Swal.fire({ title: 'กำลังเพิ่มสิทธิ์แอดมิน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      try {
+        const data = await sendAdminAction({
+          action: 'addAdmin',
+          adminUid: userProfile.userId,
+          targetInput: val
+        });
+        Swal.close();
+
+        if (data && data.status === 'success') {
+          if (inputEl) inputEl.value = '';
+          renderAdminMembersList(data.superAdminUid || ADMIN_UID, data.admins || []);
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: data.message || 'เพิ่มแอดมินสำเร็จ!',
+            showConfirmButton: false,
+            timer: 2400
+          });
+        } else {
+          Swal.fire({ icon: 'error', title: 'เพิ่มแอดมินไม่สำเร็จ', text: (data && data.message) || 'เกิดข้อผิดพลาด', confirmButtonColor: '#f43f5e' });
+        }
+      } catch (err) {
+        Swal.close();
+        Swal.fire({ icon: 'error', title: 'ข้อผิดพลาดเครือข่าย', text: err.message, confirmButtonColor: '#f43f5e' });
+      }
+    }
+
+    async function removeAdminMember(targetUid, displayLabel) {
+      if (!isCurrentUserAdmin() || !targetUid) return;
+      const confirmRes = await Swal.fire({
+        icon: 'warning',
+        title: 'ลบสิทธิ์แอดมิน?',
+        html: `ต้องการถอดสิทธิ์แอดมินของ <b>${escapeAdminHtml(displayLabel || targetUid)}</b> ใช่หรือไม่?`,
+        showCancelButton: true,
+        confirmButtonColor: '#DC2626',
+        cancelButtonColor: '#9CA3AF',
+        confirmButtonText: 'ใช่, ลบสิทธิ์',
+        cancelButtonText: 'ยกเลิก'
+      });
+      if (!confirmRes.isConfirmed) return;
+
+      Swal.fire({ title: 'กำลังลบสิทธิ์แอดมิน...', allowOutsideClick: false, didOpen: () => Swal.showLoading() });
+      try {
+        const data = await sendAdminAction({
+          action: 'removeAdmin',
+          adminUid: userProfile.userId,
+          targetUid: targetUid
+        });
+        Swal.close();
+
+        if (data && data.status === 'success') {
+          renderAdminMembersList(data.superAdminUid || ADMIN_UID, data.admins || []);
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: 'ลบสิทธิ์แอดมินเรียบร้อยแล้ว',
+            showConfirmButton: false,
+            timer: 2000
+          });
+        } else {
+          Swal.fire({ icon: 'error', title: 'ลบไม่สำเร็จ', text: (data && data.message) || 'เกิดข้อผิดพลาด', confirmButtonColor: '#f43f5e' });
+        }
+      } catch (err) {
+        Swal.close();
+        Swal.fire({ icon: 'error', title: 'ข้อผิดพลาดเครือข่าย', text: err.message, confirmButtonColor: '#f43f5e' });
       }
     }
 
     // แอดมินบันทึกวันเวลา เปิด และ ปิด ระบบ
     async function saveScheduleSettings() {
-      if (!userProfile || userProfile.userId !== ADMIN_UID) {
+      if (!isCurrentUserAdmin()) {
         Swal.fire({ icon: 'error', title: 'ไม่มีสิทธิ์', text: 'ฟังก์ชันนี้อนุญาตเฉพาะแอดมินเท่านั้น', confirmButtonColor: '#f43f5e' });
         return;
       }
@@ -1797,7 +1999,7 @@
 
     // ล้างค่าเวลาเฉพาะช่อง (เปิด หรือ ปิด)
     async function clearSingleSchedule(type) {
-      if (!userProfile || userProfile.userId !== ADMIN_UID) return;
+      if (!isCurrentUserAdmin()) return;
       const isClearingOpen = type === 'open';
 
       const confirmRes = await Swal.fire({
@@ -1864,7 +2066,7 @@
 
     // แอดมินยกเลิกการกำหนดเวลาทั้งเปิดและปิดระบบ (เปิดตลอด)
     async function clearClosingDateTimeSetting() {
-      if (!userProfile || userProfile.userId !== ADMIN_UID) return;
+      if (!isCurrentUserAdmin()) return;
 
       const confirmRes = await Swal.fire({
         title: 'ล้างกำหนดเวลาทั้งหมด?',
@@ -1925,7 +2127,7 @@
 
     // แอดมินกดเปิด/ปิดระบบลงทะเบียน (Manual Toggle)
     async function toggleRegistrationSystem(targetStatus) {
-      if (!userProfile || userProfile.userId !== ADMIN_UID) {
+      if (!isCurrentUserAdmin()) {
         Swal.fire({
           icon: 'error',
           title: 'ไม่มีสิทธิ์',
@@ -2406,7 +2608,7 @@
       // ตรวจสอบสถานะการเปิด-ปิดระบบลงทะเบียนอีกครั้งก่อนกดยืนยัน
       try {
         const checkSys = await fetchSystemStatus(userProfile.userId);
-        if (checkSys && !checkSys.isOpen && userProfile.userId !== ADMIN_UID) {
+        if (checkSys && !checkSys.isOpen && !checkSys.isAdmin && !isCurrentUserAdmin()) {
           if (checkSys.isBeforeOpeningTime && checkSys.manualStatus !== 'CLOSED') {
             Swal.fire({
               icon: 'info',

@@ -13,9 +13,153 @@ function getLineBotAccessToken() {
   return token;
 }
 
+const EXTRA_ADMIN_UIDS_PROP_KEY = 'EXTRA_ADMIN_UIDS';
+
+function getExtraAdminsList() {
+  try {
+    const raw = PropertiesService.getScriptProperties().getProperty(EXTRA_ADMIN_UIDS_PROP_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .map(item => {
+        if (typeof item === 'string') {
+          return { uid: item.trim(), label: item.trim(), empId: '', addedAt: '' };
+        }
+        return {
+          uid: String((item && item.uid) || '').trim(),
+          label: String((item && item.label) || (item && item.uid) || '').trim(),
+          empId: String((item && item.empId) || '').trim(),
+          addedAt: String((item && item.addedAt) || '').trim()
+        };
+      })
+      .filter(a => a.uid && a.uid !== ADMIN_UID);
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveExtraAdminsList(list) {
+  PropertiesService.getScriptProperties().setProperty(EXTRA_ADMIN_UIDS_PROP_KEY, JSON.stringify(list || []));
+}
+
+function isAdminUid(uid) {
+  const cleanUid = String(uid || '').trim();
+  if (!cleanUid) return false;
+  if (cleanUid === ADMIN_UID) return true;
+  return getExtraAdminsList().some(a => a.uid === cleanUid);
+}
+
 function isAdminAuthorized(payload) {
   const uid = String((payload && (payload.adminUid || payload.uid)) || '').trim();
-  return uid === ADMIN_UID;
+  return isAdminUid(uid);
+}
+
+function getAdminManagementList(payload) {
+  if (!isAdminAuthorized(payload)) {
+    return { status: 'forbidden', message: 'ไม่มีสิทธิ์เข้าถึงรายชื่อแอดมิน (เฉพาะแอดมินเท่านั้น)' };
+  }
+  return {
+    status: 'success',
+    superAdminUid: ADMIN_UID,
+    admins: getExtraAdminsList()
+  };
+}
+
+function addExtraAdmin(payload) {
+  if (!isAdminAuthorized(payload)) {
+    return { status: 'forbidden', message: 'ไม่มีสิทธิ์เพิ่มแอดมิน (เฉพาะแอดมินเท่านั้น)' };
+  }
+  const inputVal = String((payload && (payload.targetInput || payload.targetUid || payload.empId)) || '').trim();
+  if (!inputVal) {
+    return { status: 'error', message: 'กรุณาระบุรหัสพนักงาน หรือ LINE UID' };
+  }
+
+  let targetUid = '';
+  let label = '';
+  let empId = '';
+
+  const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+  const { employeesMap } = getRegisteredEmployeesFromRegisterSheet(ss);
+
+  if (/^U[a-zA-Z0-9]{15,}$/.test(inputVal)) {
+    targetUid = inputVal;
+    const allEmps = Object.keys(employeesMap).map(k => employeesMap[k]);
+    const matchedByUid = allEmps.find(e => e && e.uid === targetUid);
+    if (matchedByUid) {
+      empId = matchedByUid.empId || '';
+      label = matchedByUid.empName || matchedByUid.displayName || targetUid;
+    } else {
+      label = String(payload.label || targetUid).trim();
+    }
+  } else {
+    const cleanId = inputVal.replace(/\.0$/, '');
+    const matchedEmp = employeesMap[cleanId];
+    if (!matchedEmp) {
+      return {
+        status: 'error',
+        message: `ไม่พบรหัสพนักงาน "${cleanId}" ใน Sheet Register (พนักงานต้องสแกนลงทะเบียนเข้างานก่อน หรือกรอก LINE UID โดยตรง)`
+      };
+    }
+    if (!matchedEmp.uid || matchedEmp.uid === 'TEST_USER') {
+      return {
+        status: 'error',
+        message: `พนักงาน "${matchedEmp.empName}" (${cleanId}) ยังไม่มี LINE UID ในระบบ (ไม่สามารถใช้สิทธิ์แอดมินผ่าน LINE ได้)`
+      };
+    }
+    targetUid = matchedEmp.uid;
+    empId = matchedEmp.empId;
+    label = matchedEmp.empName || matchedEmp.displayName || cleanId;
+  }
+
+  if (targetUid === ADMIN_UID) {
+    return { status: 'error', message: 'บัญชีนี้เป็นแอดมินหลัก (Super Admin) อยู่แล้ว' };
+  }
+
+  const currentList = getExtraAdminsList();
+  if (currentList.some(a => a.uid === targetUid)) {
+    return { status: 'error', message: `"${label}" เป็นแอดมินอยู่แล้ว` };
+  }
+
+  const nowStr = Utilities.formatDate(new Date(), 'Asia/Bangkok', 'dd/MM/yyyy HH:mm');
+  const newEntry = { uid: targetUid, label: label, empId: empId, addedAt: nowStr };
+  currentList.push(newEntry);
+  saveExtraAdminsList(currentList);
+
+  return {
+    status: 'success',
+    message: `เพิ่ม "${label}" เป็นแอดมินเรียบร้อยแล้ว`,
+    superAdminUid: ADMIN_UID,
+    admins: currentList,
+    addedAdmin: newEntry
+  };
+}
+
+function removeExtraAdmin(payload) {
+  if (!isAdminAuthorized(payload)) {
+    return { status: 'forbidden', message: 'ไม่มีสิทธิ์ลบแอดมิน (เฉพาะแอดมินเท่านั้น)' };
+  }
+  const targetUid = String((payload && payload.targetUid) || '').trim();
+  if (!targetUid) {
+    return { status: 'error', message: 'กรุณาระบุ LINE UID ของแอดมินที่ต้องการลบ' };
+  }
+  if (targetUid === ADMIN_UID) {
+    return { status: 'error', message: 'ไม่สามารถลบแอดมินหลัก (Super Admin) ได้' };
+  }
+
+  const currentList = getExtraAdminsList();
+  const nextList = currentList.filter(a => a.uid !== targetUid);
+  if (nextList.length === currentList.length) {
+    return { status: 'error', message: 'ไม่พบรายชื่อแอดมินที่ต้องการลบ' };
+  }
+  saveExtraAdminsList(nextList);
+
+  return {
+    status: 'success',
+    message: 'ลบสิทธิ์แอดมินเรียบร้อยแล้ว',
+    superAdminUid: ADMIN_UID,
+    admins: nextList
+  };
 }
 const LINE_DRIVE_FOLDER_ID = '1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L';
 const LINE_DEFAULT_FOLDER_NAME = 'LINE_Bot_Uploads';
@@ -135,7 +279,7 @@ function getRegistrationSystemStatus() {
  */
 function setRegistrationSchedule(openingDateTime, closingDateTime, requesterUid, manualStatus) {
   const cleanUid = String(requesterUid || '').trim();
-  if (cleanUid !== ADMIN_UID) {
+  if (!isAdminUid(cleanUid)) {
     return {
       status: 'forbidden',
       message: 'ไม่มีสิทธิ์ในการเปลี่ยนการตั้งค่าระบบ (เฉพาะแอดมินเท่านั้น)'
@@ -447,7 +591,7 @@ function saveRegistrationData(payload) {
 
     // ตรวจสอบสถานะการเปิด-ปิดระบบลงทะเบียน
     const sysStatusInfo = getRegistrationSystemStatus();
-    if (!sysStatusInfo.isOpen && uid !== ADMIN_UID) {
+    if (!sysStatusInfo.isOpen && !isAdminUid(uid)) {
       if (sysStatusInfo.isBeforeOpeningTime && sysStatusInfo.openingDateTime) {
         return {
           status: 'error',
@@ -1150,9 +1294,24 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify({
       status: 'success',
       ...statusInfo,
-      isAdmin: requesterUid === ADMIN_UID,
+      isAdmin: isAdminUid(requesterUid),
+      isSuperAdmin: requesterUid === ADMIN_UID,
       serverTime: new Date().toISOString()
     })).setMimeType(ContentService.MimeType.JSON);
+  }
+
+  // กรณีจัดการรายชื่อแอดมินผ่าน GET API (getAdmins / addAdmin / removeAdmin)
+  if (params.action === 'getAdmins') {
+    return ContentService.createTextOutput(JSON.stringify(getAdminManagementList(params)))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  if (params.action === 'addAdmin') {
+    return ContentService.createTextOutput(JSON.stringify(addExtraAdmin(params)))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  if (params.action === 'removeAdmin') {
+    return ContentService.createTextOutput(JSON.stringify(removeExtraAdmin(params)))
+      .setMimeType(ContentService.MimeType.JSON);
   }
 
   // กรณีแอดมินตั้งวันเวลาเปิด-ปิดระบบ หรือสลับเปิด-ปิดระบบ
@@ -1295,9 +1454,24 @@ function doPost(e) {
       return ContentService.createTextOutput(JSON.stringify({
         status: 'success',
         ...statusInfo,
-        isAdmin: requesterUid === ADMIN_UID,
+        isAdmin: isAdminUid(requesterUid),
+        isSuperAdmin: requesterUid === ADMIN_UID,
         serverTime: new Date().toISOString()
       })).setMimeType(ContentService.MimeType.JSON);
+    }
+
+    // กรณีจัดการรายชื่อแอดมินผ่าน POST API (getAdmins / addAdmin / removeAdmin)
+    if (payload.action === 'getAdmins') {
+      return ContentService.createTextOutput(JSON.stringify(getAdminManagementList(payload)))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    if (payload.action === 'addAdmin') {
+      return ContentService.createTextOutput(JSON.stringify(addExtraAdmin(payload)))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    if (payload.action === 'removeAdmin') {
+      return ContentService.createTextOutput(JSON.stringify(removeExtraAdmin(payload)))
+        .setMimeType(ContentService.MimeType.JSON);
     }
 
     // กรณีแอดมินตั้งวันเวลาเปิด-ปิดระบบผ่าน POST: action = setSchedule, setClosingDateTime หรือ toggleSystemStatus

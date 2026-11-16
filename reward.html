@@ -2009,7 +2009,21 @@
         const profile = await liff.getProfile();
         const uid = String((profile && profile.userId) || '').trim();
 
-        if (uid === ADMIN_UID) {
+        let isAuthorizedAdmin = (uid === ADMIN_UID);
+        if (!isAuthorizedAdmin && uid) {
+          try {
+            const checkRes = await fetch(`${GAS_WEB_APP_URL}?action=getSystemStatus&uid=${encodeURIComponent(uid)}&_t=${Date.now()}`, {
+              method: 'GET',
+              redirect: 'follow'
+            });
+            const checkJson = await checkRes.json();
+            isAuthorizedAdmin = Boolean(checkJson && checkJson.isAdmin === true);
+          } catch (admErr) {
+            console.warn('Extra admin check warning:', admErr);
+          }
+        }
+
+        if (isAuthorizedAdmin) {
           currentAdminUid = uid;
           if (overlay) overlay.classList.add('hidden');
           loadAllData();
