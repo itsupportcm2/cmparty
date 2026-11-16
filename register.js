@@ -27,6 +27,17 @@ const GIFT_SHEET_NAME = 'gift';
 const REWARD_SHEET_GID = 195154721;
 const SHIFT_ATTEND_ANSWER_EXACT = 'ไม่ได้ไปเพราะอยู่ กะ';
 const SHIFT_AUTO_REG_STATUS = 'ลงทะเบียนอัตโนมัติ (อยู่กะ)';
+// แผนกที่ลงทะเบียนร่วมงานได้ แต่ไม่มีสิทธิ์รับรางวัล
+const EXCLUDED_REWARD_DEPARTMENTS = ['1.บริหาร'];
+
+function isExcludedFromRewardDepartment(department) {
+  const normDept = String(department || '').replace(/\s+/g, '').trim();
+  if (!normDept) return false;
+  return EXCLUDED_REWARD_DEPARTMENTS.some(d => {
+    const normTarget = String(d || '').replace(/\s+/g, '').trim();
+    return normDept === normTarget || normDept.indexOf(normTarget) !== -1;
+  });
+}
 
 // บัญชีแอดมินสำหรับจัดการเปิด-ปิดระบบลงทะเบียน
 const ADMIN_UID = 'U1dcbd47c6981745c2f41c5691cde7ff3';
@@ -1823,6 +1834,13 @@ function saveRewardRecord(payload) {
       branch = regEmp.branch || '';
       uid = regEmp.uid || '';
       pictureUrl = regEmp.pictureUrl || '';
+
+      if (isExcludedFromRewardDepartment(department)) {
+        return {
+          status: 'error',
+          message: `แผนก "${department}" ไม่มีสิทธิ์รับรางวัล (${empName} รหัส ${empId})`
+        };
+      }
     }
 
     // กรณีไม่ได้ระบุ rowIndex มา ให้ค้นหาจากชื่อรางวัลที่ยังไม่มีผู้รับ หรือเพิ่มแถวใหม่ (Create)
@@ -2019,6 +2037,17 @@ function saveBatchRewards(payload) {
           empId: empId,
           status: 'error',
           message: `ไม่พบรหัสพนักงาน ${empId} ใน Sheet Register`
+        });
+        continue;
+      }
+
+      if (isExcludedFromRewardDepartment(regEmp.department)) {
+        results.push({
+          rowIndex: rowIdx,
+          rewardName: finalRewardName,
+          empId: empId,
+          status: 'error',
+          message: `แผนก "${regEmp.department}" ไม่มีสิทธิ์รับรางวัล`
         });
         continue;
       }

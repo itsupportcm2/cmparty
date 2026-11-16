@@ -333,6 +333,10 @@
                 <i id="syncShiftIcon" class="fa-solid fa-rotate text-[10px]"></i>
                 <span>ซิงก์อยู่กะ</span>
               </button>
+              <span id="autoExcludedDeptBadge" class="hidden inline-flex items-center gap-1 text-[11px] font-semibold text-rose-700 bg-rose-50 px-2.5 py-1 rounded-full border border-rose-200">
+                <i class="fa-solid fa-ban text-[10px]"></i>
+                <span>งดสุ่มแผนก 1.บริหาร <b id="autoExcludedDeptCount">0</b> คน</span>
+              </span>
             </div>
 
             <!-- สวิตช์สลับโหมด 1-Click vs ยืนยันก่อนบันทึก -->
@@ -556,7 +560,17 @@
     const REWARD_SHEET_GID = '195154721';
     const LIFF_ID = '2012486224-eFJTgFwr';
     const ADMIN_UID = 'U1dcbd47c6981745c2f41c5691cde7ff3';
+    const EXCLUDED_REWARD_DEPARTMENTS = ['1.บริหาร'];
     let currentAdminUid = '';
+
+    function isExcludedRewardEmployee(emp) {
+      const normDept = String((emp && emp.department) || '').replace(/\s+/g, '').trim();
+      if (!normDept) return false;
+      return EXCLUDED_REWARD_DEPARTMENTS.some(d => {
+        const normTarget = String(d || '').replace(/\s+/g, '').trim();
+        return normDept === normTarget || normDept.indexOf(normTarget) !== -1;
+      });
+    }
 
     let rewardsList = [];
     let employeesMap = {}; // { empId: { empId, empName, department, branch, uid, pictureUrl } }
@@ -903,6 +917,19 @@
           return;
         }
 
+        if (isExcludedRewardEmployee(emp)) {
+          currentMatchedEmployee = null;
+          matchIcon.classList.add('hidden');
+          nameEl.innerHTML = `<span class="text-rose-800 font-bold">${escapeHtml(emp.empName || '-')}</span> <span class="text-[11px] text-gray-500 font-normal">(${escapeHtml(cleanId)})</span>`;
+          deptEl.innerText = emp.department || '-';
+          branchEl.innerText = emp.branch || '-';
+          previewBox.className = 'mt-3 p-3 rounded-2xl bg-amber-50/90 border-2 border-rose-300 flex flex-wrap items-center justify-between gap-2 text-xs shadow-sm';
+          uidBadge.className = 'text-[11px] px-2.5 py-1 rounded-full bg-rose-100 text-rose-800 border border-rose-300 font-bold flex items-center gap-1.5';
+          uidBadge.innerHTML = `<i class="fa-solid fa-ban text-rose-600"></i><span>แผนก "${escapeHtml(emp.department)}" ร่วมงานได้ แต่ไม่มีสิทธิ์รับรางวัล</span>`;
+          validateSaveButton();
+          return;
+        }
+
         currentMatchedEmployee = emp;
         matchIcon.classList.remove('hidden');
         nameEl.innerText = emp.empName || '-';
@@ -944,6 +971,17 @@
       const rewardObj = rewardsList.find(r => r.rowIndex === rowIndex);
 
       if (!rewardObj || !currentMatchedEmployee) return;
+
+      if (isExcludedRewardEmployee(currentMatchedEmployee)) {
+        Swal.fire({
+          icon: 'warning',
+          title: 'ไม่มีสิทธิ์รับรางวัล',
+          text: `แผนก "${currentMatchedEmployee.department}" ลงทะเบียนร่วมงานได้ แต่ไม่สามารถรับรางวัลได้ครับ`,
+          confirmButtonColor: '#f43f5e'
+        });
+        validateSaveButton();
+        return;
+      }
 
       // ตรวจสอบว่าพนักงานท่านนี้ได้รับรางวัลไปแล้วหรือไม่ (ป้องกันการบันทึกซ้ำ)
       const cleanEmpId = String(currentMatchedEmployee.empId || '').trim();
@@ -1407,6 +1445,7 @@
       return Object.values(employeesMap).filter(emp => {
         const cleanId = String(emp.empId || '').trim();
         if (!cleanId || wonIds.has(cleanId)) return false;
+        if (isExcludedRewardEmployee(emp)) return false;
         if (!includeShift && isShiftAutoEmployee(emp)) return false;
         if (requireUid && (!emp.uid || emp.uid.trim() === '' || emp.uid === 'TEST_USER')) return false;
         return true;
@@ -1422,14 +1461,19 @@
       const uidEligible = filteredEligible.filter(e => e.uid && e.uid.trim() !== '' && e.uid !== 'TEST_USER');
       const shiftPoolCount = getEligibleEmployees({ requireUid: false, includeShift: true })
         .filter(isShiftAutoEmployee).length;
+      const excludedDeptCount = Object.values(employeesMap).filter(isExcludedRewardEmployee).length;
 
       const countEl = document.getElementById('autoEligibleCount');
       const uidCountEl = document.getElementById('autoEligibleUidCount');
       const shiftCountEl = document.getElementById('autoEligibleShiftCount');
+      const excludedDeptBadge = document.getElementById('autoExcludedDeptBadge');
+      const excludedDeptCountEl = document.getElementById('autoExcludedDeptCount');
 
       if (countEl) countEl.innerText = filteredEligible.length;
       if (uidCountEl) uidCountEl.innerText = uidEligible.length;
       if (shiftCountEl) shiftCountEl.innerText = shiftPoolCount;
+      if (excludedDeptCountEl) excludedDeptCountEl.innerText = excludedDeptCount;
+      if (excludedDeptBadge) excludedDeptBadge.classList.toggle('hidden', excludedDeptCount === 0);
       updateAutoDrawActionButton();
     }
 
@@ -2022,6 +2066,17 @@
                 </div>
               `,
               confirmButtonText: 'ตกลง',
+              confirmButtonColor: '#f43f5e'
+            });
+            return;
+          }
+
+          const matchedEmp = employeesMap[cleanId];
+          if (matchedEmp && isExcludedRewardEmployee(matchedEmp)) {
+            Swal.fire({
+              icon: 'warning',
+              title: 'ไม่มีสิทธิ์รับรางวัล',
+              text: `แผนก "${matchedEmp.department}" ลงทะเบียนร่วมงานได้ แต่ไม่สามารถรับรางวัลได้ครับ`,
               confirmButtonColor: '#f43f5e'
             });
             return;
