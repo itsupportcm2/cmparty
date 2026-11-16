@@ -25,6 +25,8 @@ const SOURCE_SHEET_NAME = 'การตอบแบบฟอร์ม 1';
 const TARGET_SHEET_NAME = 'Register';
 const GIFT_SHEET_NAME = 'gift';
 const REWARD_SHEET_GID = 195154721;
+const SHIFT_ATTEND_ANSWER_EXACT = 'ไม่ได้ไปเพราะอยู่ กะ';
+const SHIFT_AUTO_REG_STATUS = 'ลงทะเบียนอัตโนมัติ (อยู่กะ)';
 
 // บัญชีแอดมินสำหรับจัดการเปิด-ปิดระบบลงทะเบียน
 const ADMIN_UID = 'U1dcbd47c6981745c2f41c5691cde7ff3';
@@ -1225,6 +1227,10 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(deleteRewardRecord(params)))
       .setMimeType(ContentService.MimeType.JSON);
   }
+  if (params.action === 'syncShiftWorkers') {
+    return ContentService.createTextOutput(JSON.stringify(handleSyncShiftWorkersAction(params)))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 
   // เปิดหน้าเว็บแกลเลอรีภาพกิจกรรม (gallery.html) เมื่อส่ง ?page=gallery หรือ ?page=photos
   if (params.page === 'gallery' || params.page === 'photos') {
@@ -1342,6 +1348,10 @@ function doPost(e) {
       return ContentService.createTextOutput(JSON.stringify(deleteRewardRecord(payload)))
         .setMimeType(ContentService.MimeType.JSON);
     }
+    if (payload.action === 'syncShiftWorkers') {
+      return ContentService.createTextOutput(JSON.stringify(handleSyncShiftWorkersAction(payload)))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
 
     // 4. บันทึกข้อมูลการลงทะเบียนลงใน Sheet "Register"
     const saveResult = saveRegistrationData(payload);
@@ -1439,7 +1449,7 @@ function getRegisteredEmployeesFromRegisterSheet(ss) {
     return { uidMap: uidMap, employeesMap: employeesMap };
   }
 
-  const lastCol = Math.max(8, regSheet.getLastColumn());
+  const lastCol = Math.max(9, regSheet.getLastColumn());
   const headers = regSheet.getRange(1, 1, 1, lastCol).getValues()[0];
   const headerC = String(headers[2] || '');
   const headerD = String(headers[3] || '');
@@ -1456,6 +1466,7 @@ function getRegisteredEmployeesFromRegisterSheet(ss) {
     const uid = String(regData[i][5] || '').trim();
     const displayName = String(regData[i][6] || '').trim();
     const pic = String(regData[i][7] || '').trim();
+    const regStatus = String(regData[i][8] || '').trim();
 
     const empName = isColCName ? colC : colD;
     const department = isColCName ? colD : colC;
@@ -1468,11 +1479,188 @@ function getRegisteredEmployeesFromRegisterSheet(ss) {
       branch: branch,
       uid: uid,
       displayName: displayName,
-      pictureUrl: pic
+      pictureUrl: pic,
+      regStatus: regStatus
     };
   }
 
   return { uidMap: uidMap, employeesMap: employeesMap };
+}
+
+/**
+ * ซิงก์พนักงานที่ตอบแบบฟอร์มว่า "ไม่ได้ไปเพราะอยู่ กะ" จาก Sheet "การตอบแบบฟอร์ม 1"
+ * เข้าสู่ Sheet "Register" อัตโนมัติ (เฉพาะรหัสที่ยังไม่ได้ลงทะเบียน และไม่เก็บข้อมูลอื่นเพิ่ม)
+ */
+function syncShiftWorkersToRegister(forceSync) {
+  const cache = CacheService.getScriptCache();
+  const cacheKey = 'SHIFT_AUTO_SYNC_RECENT';
+  if (!forceSync && cache.get(cacheKey)) {
+    return { status: 'success', skippedThrottle: true, addedCount: 0, addedIds: [] };
+  }
+
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(8000)) {
+    return { status: 'success', skippedLock: true, addedCount: 0, addedIds: [] };
+  }
+
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const sourceSheet = getSheetSafely(ss, SOURCE_SHEET_NAME);
+    if (!sourceSheet || sourceSheet.getLastRow() < 2) {
+      cache.put(cacheKey, '1', 60);
+      return { status: 'success', addedCount: 0, addedIds: [] };
+    }
+
+    const srcLastRow = sourceSheet.getLastRow();
+    const srcMaxCols = Math.max(6, sourceSheet.getLastColumn());
+    const srcHeaders = sourceSheet.getRange(1, 1, 1, srcMaxCols).getValues()[0];
+    const srcData = sourceSheet.getRange(2, 1, srcLastRow - 1, srcMaxCols).getValues();
+
+    let attendColIdx = 5;
+    for (let h = 0; h < srcHeaders.length; h++) {
+      const hText = String(srcHeaders[h] || '').trim();
+      if (hText.indexOf('สนใจร่วมงาน') !== -1 || hText.indexOf('ร่วมงานหรือไม่') !== -1) {
+        attendColIdx = h;
+        break;
+      }
+    }
+
+    const headerC = String(srcHeaders[2] || '');
+    const headerD = String(srcHeaders[3] || '');
+    const isColCName = headerC.indexOf('ชื่อ') !== -1 && headerD.indexOf('แผนก') !== -1;
+
+    // เก็บคำตอบแถวล่าสุดต่อ 1 รหัสพนักงาน (ป้องกันกรณีกรอกฟอร์มหลายรอบ)
+    const latestByEmpId = {};
+    for (let i = 0; i < srcData.length; i++) {
+      const row = srcData[i];
+      const empId = String(row[1] || '').trim().replace(/\.0$/, '');
+      if (!empId || empId === 'รหัสพนักงาน') continue;
+
+      const rowColC = String(row[2] || '').trim();
+      const rowColD = String(row[3] || '').trim();
+      const branch = String(row[4] || '').trim();
+      const rawAttend = String(row[attendColIdx] || '').trim();
+
+      latestByEmpId[empId] = {
+        empId: empId,
+        empName: isColCName ? rowColC : rowColD,
+        department: isColCName ? rowColD : rowColC,
+        branch: branch,
+        rawAttend: rawAttend
+      };
+    }
+
+    const shiftCandidates = Object.keys(latestByEmpId)
+      .map(id => latestByEmpId[id])
+      .filter(emp => emp.rawAttend === SHIFT_ATTEND_ANSWER_EXACT);
+
+    if (shiftCandidates.length === 0) {
+      cache.put(cacheKey, '1', 60);
+      return { status: 'success', addedCount: 0, addedIds: [] };
+    }
+
+    let regSheet = getSheetSafely(ss, TARGET_SHEET_NAME);
+    if (!regSheet) {
+      regSheet = ss.insertSheet(TARGET_SHEET_NAME);
+    }
+
+    const headers = [
+      'ประทับเวลา',
+      'รหัสพนักงาน',
+      'แผนก',
+      'ชื่อ-สกุล',
+      'สาขา',
+      'LINE UID',
+      'ชื่อ LINE',
+      'รูปโปรไฟล์ LINE',
+      'สถานะ'
+    ];
+
+    const regLastRow = regSheet.getLastRow();
+    const firstCellVal = regLastRow > 0 ? String(regSheet.getRange(1, 1).getValue() || '').trim() : '';
+    if (regLastRow === 0 || firstCellVal === '') {
+      regSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+      regSheet.getRange(1, 1, 1, headers.length)
+        .setFontWeight('bold')
+        .setBackground('#991b1b')
+        .setFontColor('#ffffff');
+      regSheet.setFrozenRows(1);
+    }
+
+    const existingEmpIds = new Set();
+    const currentLastRow = regSheet.getLastRow();
+    if (currentLastRow >= 2) {
+      const existingIdsCol = regSheet.getRange(2, 2, currentLastRow - 1, 1).getValues();
+      for (let r = 0; r < existingIdsCol.length; r++) {
+        const id = String(existingIdsCol[r][0] || '').trim().replace(/\.0$/, '');
+        if (id) existingEmpIds.add(id);
+      }
+    }
+
+    const now = new Date();
+    const newRows = [];
+    const addedIds = [];
+    for (let c = 0; c < shiftCandidates.length; c++) {
+      const emp = shiftCandidates[c];
+      if (existingEmpIds.has(emp.empId)) continue;
+      existingEmpIds.add(emp.empId);
+      addedIds.push(emp.empId);
+      newRows.push([
+        now,
+        emp.empId,
+        emp.department,
+        emp.empName,
+        emp.branch,
+        '',
+        '',
+        '',
+        SHIFT_AUTO_REG_STATUS
+      ]);
+    }
+
+    if (newRows.length > 0) {
+      const startRow = Math.max(2, regSheet.getLastRow() + 1);
+      regSheet.getRange(startRow, 1, newRows.length, headers.length).setValues(newRows);
+    }
+
+    cache.put(cacheKey, '1', 60);
+    return {
+      status: 'success',
+      addedCount: newRows.length,
+      addedIds: addedIds,
+      totalShiftInForm: shiftCandidates.length
+    };
+  } catch (err) {
+    console.error('Error in syncShiftWorkersToRegister:', err);
+    return { status: 'error', message: err.message };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+function handleSyncShiftWorkersAction(payload) {
+  if (!isAdminAuthorized(payload)) {
+    return { status: 'error', message: 'ไม่มีสิทธิ์ดำเนินการ (อนุญาตเฉพาะแอดมินเท่านั้น)' };
+  }
+  return syncShiftWorkersToRegister(true);
+}
+
+/**
+ * กด Run ฟังก์ชันนี้ 1 ครั้งใน Apps Script Editor เพื่อตั้งเวลาซิงก์พนักงานอยู่กะอัตโนมัติทุก 5 นาที
+ */
+function setupShiftAutoSyncTrigger() {
+  const triggers = ScriptApp.getProjectTriggers();
+  for (let i = 0; i < triggers.length; i++) {
+    if (triggers[i].getHandlerFunction() === 'syncShiftWorkersToRegister') {
+      ScriptApp.deleteTrigger(triggers[i]);
+    }
+  }
+  ScriptApp.newTrigger('syncShiftWorkersToRegister')
+    .timeBased()
+    .everyMinutes(5)
+    .create();
+  syncShiftWorkersToRegister(true);
+  Logger.log('✅ ตั้งเวลาซิงก์พนักงานอยู่กะอัตโนมัติทุก 5 นาทีสำเร็จ');
 }
 
 /**
@@ -1511,6 +1699,13 @@ function checkRegisteredEmployeeById(empId) {
  */
 function getRewardInitData() {
   try {
+    // ซิงก์คนที่มีเงื่อนไข "ไม่ได้ไปเพราะอยู่ กะ" เข้า Sheet Register อัตโนมัติ (จำกัดความถี่ไม่เกิน 1 ครั้ง/นาที)
+    try {
+      syncShiftWorkersToRegister(false);
+    } catch (syncErr) {
+      console.warn('Auto shift sync warning in getRewardInitData:', syncErr);
+    }
+
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
 
     // 1. ดึงรายชื่อพนักงานและ LINE UID จาก Sheet "Register" เท่านั้น

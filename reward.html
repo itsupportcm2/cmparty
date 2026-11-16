@@ -313,6 +313,26 @@
                 />
                 <span>เฉพาะคนมี LINE UID</span>
               </label>
+              <label class="inline-flex items-center gap-1.5 text-[11px] font-semibold text-amber-800 bg-amber-50 px-2.5 py-1 rounded-full border border-amber-200 cursor-pointer hover:bg-amber-100/75 transition" title="รวมพนักงานที่ตอบแบบฟอร์มว่า 'ไม่ได้ไปเพราะอยู่ กะ'">
+                <input
+                  type="checkbox"
+                  id="autoIncludeShiftCheck"
+                  checked
+                  onchange="updateAutoDrawPoolSummary()"
+                  class="accent-amber-500 rounded cursor-pointer"
+                />
+                <span>รวมคนอยู่กะ (<b id="autoEligibleShiftCount">0</b> คน)</span>
+              </label>
+              <button
+                type="button"
+                id="btnSyncShiftWorkers"
+                onclick="syncShiftWorkersNow()"
+                class="inline-flex items-center gap-1 text-[11px] font-semibold text-teal-700 bg-teal-50 hover:bg-teal-100 px-2.5 py-1 rounded-full border border-teal-200 cursor-pointer transition"
+                title="ดึงรายชื่อ 'ไม่ได้ไปเพราะอยู่ กะ' จาก Sheet การตอบแบบฟอร์ม 1 เข้ามารวมทันที"
+              >
+                <i id="syncShiftIcon" class="fa-solid fa-rotate text-[10px]"></i>
+                <span>ซิงก์อยู่กะ</span>
+              </button>
             </div>
 
             <!-- สวิตช์สลับโหมด 1-Click vs ยืนยันก่อนบันทึก -->
@@ -592,6 +612,7 @@
         const uid = cleanCell(c[5]);
         const displayName = cleanCell(c[6]);
         const pic = cleanCell(c[7]);
+        const regStatus = cleanCell(c[8]);
 
         const empName = isColCName ? valC : valD;
         const department = isColCName ? valD : valC;
@@ -604,7 +625,8 @@
           branch,
           uid,
           displayName,
-          pictureUrl: pic
+          pictureUrl: pic,
+          regStatus
         };
       }
       return { newEmpMap, uidMap };
@@ -1330,7 +1352,49 @@
       return rewardsList.filter(r => !r.empId || r.empId.trim() === '');
     }
 
-    function getEligibleEmployees({ requireUid = false, extraExcludedIds = null } = {}) {
+    function isShiftAutoEmployee(emp) {
+      return String((emp && emp.regStatus) || '').indexOf('อยู่กะ') !== -1;
+    }
+
+    async function syncShiftWorkersNow(silent = false) {
+      const btn = document.getElementById('btnSyncShiftWorkers');
+      const icon = document.getElementById('syncShiftIcon');
+      if (btn) btn.disabled = true;
+      if (icon) icon.classList.add('fa-spin');
+
+      let syncedOk = false;
+      try {
+        const res = await callGasApi({ action: 'syncShiftWorkers' });
+        if (res && res.status === 'success') {
+          syncedOk = true;
+          await loadAllData(false);
+          if (!silent) {
+            Swal.fire({
+              toast: true,
+              position: 'top-end',
+              icon: 'success',
+              title: res.addedCount > 0
+                ? `ซิงก์พนักงานอยู่กะเพิ่ม ${res.addedCount} คนเรียบร้อย!`
+                : 'รายชื่อพนักงานอยู่กะอัปเดตล่าสุดแล้ว',
+              showConfirmButton: false,
+              timer: 2200
+            });
+          }
+        } else if (!silent && res && res.message) {
+          Swal.fire({ icon: 'error', title: 'ซิงก์ไม่สำเร็จ', text: res.message, confirmButtonColor: '#f43f5e' });
+        }
+      } catch (err) {
+        console.warn('syncShiftWorkersNow warning:', err);
+      } finally {
+        if (!syncedOk && silent) {
+          await loadAllData(false);
+        }
+        if (btn) btn.disabled = false;
+        if (icon) icon.classList.remove('fa-spin');
+      }
+    }
+
+    function getEligibleEmployees({ requireUid = false, includeShift = true, extraExcludedIds = null } = {}) {
       const wonIds = new Set(
         rewardsList
           .filter(r => r.empId && r.empId.trim() !== '')
@@ -1343,19 +1407,29 @@
       return Object.values(employeesMap).filter(emp => {
         const cleanId = String(emp.empId || '').trim();
         if (!cleanId || wonIds.has(cleanId)) return false;
+        if (!includeShift && isShiftAutoEmployee(emp)) return false;
         if (requireUid && (!emp.uid || emp.uid.trim() === '' || emp.uid === 'TEST_USER')) return false;
         return true;
       });
     }
 
     function updateAutoDrawPoolSummary() {
-      const allEligible = getEligibleEmployees({ requireUid: false });
-      const uidEligible = allEligible.filter(e => e.uid && e.uid.trim() !== '' && e.uid !== 'TEST_USER');
+      const includeShiftEl = document.getElementById('autoIncludeShiftCheck');
+      const includeShift = includeShiftEl ? Boolean(includeShiftEl.checked) : true;
+      const requireUid = Boolean((document.getElementById('autoRequireUidCheck') || {}).checked);
+
+      const filteredEligible = getEligibleEmployees({ requireUid, includeShift });
+      const uidEligible = filteredEligible.filter(e => e.uid && e.uid.trim() !== '' && e.uid !== 'TEST_USER');
+      const shiftPoolCount = getEligibleEmployees({ requireUid: false, includeShift: true })
+        .filter(isShiftAutoEmployee).length;
+
       const countEl = document.getElementById('autoEligibleCount');
       const uidCountEl = document.getElementById('autoEligibleUidCount');
+      const shiftCountEl = document.getElementById('autoEligibleShiftCount');
 
-      if (countEl) countEl.innerText = allEligible.length;
+      if (countEl) countEl.innerText = filteredEligible.length;
       if (uidCountEl) uidCountEl.innerText = uidEligible.length;
+      if (shiftCountEl) shiftCountEl.innerText = shiftPoolCount;
       updateAutoDrawActionButton();
     }
 
@@ -1517,8 +1591,8 @@
       if (btnText) btnText.innerText = 'กำลังซิงค์รายชื่อล่าสุด & สุ่มรางวัล...';
 
       try {
-        // ซิงค์ข้อมูลล่าสุดจาก Sheet Register & gift เสมอก่อนสุ่ม เพื่อรวมคนที่เพิ่งลงทะเบียนหน้างาน
-        await loadAllData(false);
+        // ซิงก์พนักงานอยู่กะ + โหลดรายชื่อล่าสุดจาก Sheet Register & gift เสมอก่อนสุ่ม
+        await syncShiftWorkersNow(true);
 
         const prizesToDraw = isRerollAll && pendingDrawList.length > 0
           ? pendingDrawList
@@ -1537,7 +1611,9 @@
         }
 
         const requireUid = Boolean((document.getElementById('autoRequireUidCheck') || {}).checked);
-        const eligible = getEligibleEmployees({ requireUid });
+        const includeShiftEl = document.getElementById('autoIncludeShiftCheck');
+        const includeShift = includeShiftEl ? Boolean(includeShiftEl.checked) : true;
+        const eligible = getEligibleEmployees({ requireUid, includeShift });
 
         if (eligible.length < prizesToDraw.length) {
           Swal.fire({
@@ -1602,7 +1678,9 @@
                 <span class="text-slate-400 text-[11px]">${escapeHtml(emp.department || '-')} (${escapeHtml(emp.branch || '-')})</span>
                 ${hasUid
                   ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700 font-semibold"><i class="fa-brands fa-line mr-1"></i>พร้อมส่ง LINE</span>'
-                  : '<span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">ไม่มี LINE UID</span>'}
+                  : (isShiftAutoEmployee(emp)
+                    ? '<span class="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 font-semibold">🕒 อยู่กะ (ลงทะเบียนออโต้)</span>'
+                    : '<span class="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 font-medium">ไม่มี LINE UID</span>')}
               </div>
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
@@ -1638,6 +1716,8 @@
       }
 
       const requireUid = Boolean((document.getElementById('autoRequireUidCheck') || {}).checked);
+      const includeShiftEl = document.getElementById('autoIncludeShiftCheck');
+      const includeShift = includeShiftEl ? Boolean(includeShiftEl.checked) : true;
       const excluded = new Set(roundSkippedEmpIds);
       pendingDrawList.forEach((item, i) => {
         if (i !== idx && item.emp && item.emp.empId) {
@@ -1645,7 +1725,7 @@
         }
       });
 
-      const eligible = getEligibleEmployees({ requireUid, extraExcludedIds: excluded });
+      const eligible = getEligibleEmployees({ requireUid, includeShift, extraExcludedIds: excluded });
       if (eligible.length === 0) {
         Swal.fire({
           icon: 'warning',
@@ -1867,6 +1947,7 @@
           currentAdminUid = uid;
           if (overlay) overlay.classList.add('hidden');
           loadAllData();
+          syncShiftWorkersNow(true);
           return;
         }
 

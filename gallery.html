@@ -2341,6 +2341,10 @@
         if (!empId || empId === 'รหัสพนักงาน' || seen.has(empId)) continue;
         seen.add(empId);
 
+        // ซ่อนผู้ที่ลงทะเบียนอัตโนมัติเพราะอยู่กะ (แสดงเฉพาะคนที่มาสแกนเข้างานจริง)
+        const regStatus = cleanGvizCell(c[8]);
+        if (regStatus.indexOf('อยู่กะ') !== -1) continue;
+
         const valC = cleanGvizCell(c[2]);
         const valD = cleanGvizCell(c[3]);
         const displayName = cleanGvizCell(c[6]) || valC || valD || empId;
@@ -2374,16 +2378,18 @@
           fetchedList = parseRegisterGvizAttendees(resNoSpace.value);
         }
 
-        // 2. Fallback ผ่าน GAS Web App หาก Gviz อ่านไม่สำเร็จ
+        // 2. Fallback ผ่าน GAS Web App หาก Gviz อ่านไม่สำเร็จ (ใช้ GAS_WEB_APP_URL ก่อนแล้วค่อย fallback)
         if (!fetchedList) {
-          const gasRes = await fetch(`${BACKUP_GAS_WEB_APP_URL}?action=getRewardInitData&_t=${Date.now()}`, { cache: 'no-store' });
+          const gasRes = await fetch(`${GAS_WEB_APP_URL}?action=getRewardInitData&_t=${Date.now()}`, { cache: 'no-store' });
           const gasJson = await gasRes.json();
           if (gasJson && gasJson.status === 'success' && gasJson.employees) {
-            fetchedList = Object.values(gasJson.employees).map(emp => ({
-              empId: String(emp.empId || '').trim(),
-              displayName: String(emp.displayName || emp.empName || emp.empId || '').trim(),
-              pictureUrl: String(emp.pictureUrl || '').trim()
-            })).filter(item => item.empId);
+            fetchedList = Object.values(gasJson.employees)
+              .filter(emp => emp && emp.empId && String(emp.regStatus || '').indexOf('อยู่กะ') === -1)
+              .map(emp => ({
+                empId: String(emp.empId || '').trim(),
+                displayName: String(emp.displayName || emp.empName || emp.empId || '').trim(),
+                pictureUrl: String(emp.pictureUrl || '').trim()
+              }));
           }
         }
 
