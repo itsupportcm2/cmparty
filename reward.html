@@ -139,8 +139,16 @@
         <!-- Summary Counters -->
         <div class="flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm">
           <div class="bg-sky-50/90 backdrop-blur px-3 py-2 rounded-2xl border-2 border-sky-200 text-center shadow-2xs" title="จำนวนผู้ลงทะเบียนจาก Sheet Register">
-            <span class="block text-[11px] font-semibold text-sky-600">ผู้ลงทะเบียน (Register)</span>
+            <span class="block text-[11px] font-semibold text-sky-600">ผู้ลงทะเบียนทั้งหมด</span>
             <span id="statRegistered" class="font-extrabold text-lg text-sky-700">0</span>
+          </div>
+          <div class="bg-teal-50/90 backdrop-blur px-3 py-2 rounded-2xl border-2 border-teal-200 text-center shadow-2xs" title="จำนวนผู้ลงทะเบียนอัตโนมัติ (ไม่ได้ไปเพราะอยู่ กะ)">
+            <span class="block text-[11px] font-semibold text-teal-700">อยู่กะ (ออโต้)</span>
+            <span id="statShiftWorkers" class="font-extrabold text-lg text-teal-700">0</span>
+          </div>
+          <div class="bg-purple-50/90 backdrop-blur px-3 py-2 rounded-2xl border-2 border-purple-200 text-center shadow-2xs" title="จำนวนผู้ลงทะเบียนแผนก 1.บริหาร (ร่วมงานได้ แต่ไม่มีสิทธิ์รับรางวัล)">
+            <span class="block text-[11px] font-semibold text-purple-700">แผนก 1.บริหาร</span>
+            <span id="statExcludedMgmt" class="font-extrabold text-lg text-purple-700">0</span>
           </div>
           <div class="bg-rose-50/90 backdrop-blur px-3 py-2 rounded-2xl border-2 border-rose-200 text-center shadow-2xs">
             <span class="block text-[11px] font-semibold text-rose-600">รางวัลทั้งหมด</span>
@@ -803,13 +811,20 @@
 
     // อัปเดตตัวเลขสรุป, รายชื่อผู้ลงทะเบียนจาก Sheet Register และ Dropdown เลือกรางวัล (ตัดรายการที่มีคนรับไปแล้วออกทันที)
     function updateStatsAndDropdown() {
-      const registeredCount = Object.keys(employeesMap).length;
+      const allEmps = Object.values(employeesMap);
+      const registeredCount = allEmps.length;
+      const shiftCount = allEmps.filter(isShiftAutoEmployee).length;
+      const mgmtCount = allEmps.filter(isExcludedRewardEmployee).length;
       const total = rewardsList.length;
       const assigned = rewardsList.filter(r => r.empId && r.empId.trim() !== '').length;
       const remaining = total - assigned;
 
       const statRegEl = document.getElementById('statRegistered');
+      const statShiftEl = document.getElementById('statShiftWorkers');
+      const statMgmtEl = document.getElementById('statExcludedMgmt');
       if (statRegEl) statRegEl.innerText = registeredCount;
+      if (statShiftEl) statShiftEl.innerText = shiftCount;
+      if (statMgmtEl) statMgmtEl.innerText = mgmtCount;
       document.getElementById('statTotal').innerText = total;
       document.getElementById('statAssigned').innerText = assigned;
       document.getElementById('statRemaining').innerText = remaining;
