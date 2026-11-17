@@ -165,6 +165,16 @@
             <span class="block text-[11px] font-semibold text-amber-600">คงเหลือ</span>
             <span id="statRemaining" class="font-extrabold text-lg text-amber-700">0</span>
           </div>
+          <button
+            type="button"
+            id="rewardSoundBtn"
+            onclick="toggleRewardSound()"
+            class="bg-amber-50/95 hover:bg-amber-100 px-3 py-2.5 rounded-2xl border-2 border-amber-300 text-center font-bold text-amber-800 shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
+            title="เปิด/ปิดเสียงเอฟเฟกต์สุ่มรางวัล"
+          >
+            <i id="rewardSoundIcon" class="fa-solid fa-volume-high text-xs text-amber-600"></i>
+            <span class="text-xs hidden sm:inline">เสียงเอฟเฟกต์</span>
+          </button>
           <a
             href="gallery.html"
             class="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 px-3.5 py-2.5 rounded-2xl border-2 border-white text-center font-bold text-white shadow-md shadow-rose-500/20 transition flex items-center gap-1.5"
@@ -424,6 +434,19 @@
             </button>
           </div>
 
+          <!-- Slot / Spin Roulette Strip (1.3s suspense animation when drawing) -->
+          <div id="autoSpinRollerBox" class="hidden rounded-2xl bg-gradient-to-r from-rose-600 via-amber-500 to-emerald-600 p-1 shadow-xl">
+            <div class="rounded-[14px] bg-[#241016] px-4 py-4 text-center space-y-1.5">
+              <div class="text-[11px] font-bold tracking-wider uppercase text-amber-300 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-dharmachakra fa-spin"></i>
+                <span>🎰 กำลังสุ่มรายชื่อผู้โชคดี...</span>
+              </div>
+              <div id="autoSpinNameText" class="text-lg sm:text-2xl font-extrabold text-white truncate drop-shadow">
+                🎄 Lucky Draw...
+              </div>
+            </div>
+          </div>
+
           <!-- Pending Winners Preview Card (สำหรับโหมดโชว์ชื่อก่อนกดยืนยัน) -->
           <div id="autoPendingBox" class="hidden rounded-2xl bg-gradient-to-b from-amber-50/80 to-white border-2 border-amber-300 p-4 space-y-3 shadow-sm">
             <div class="flex flex-wrap items-center justify-between gap-2 border-b border-amber-200 pb-2.5">
@@ -534,6 +557,9 @@
     </header>
 
   </div>
+
+  <!-- Christmas Confetti Canvas -->
+  <canvas id="rewardConfettiCanvas" class="hidden fixed inset-0 w-full h-full pointer-events-none z-50" aria-hidden="true"></canvas>
 
   <!-- Admin Authentication Gate Overlay (เฉพาะ Admin UID เท่านั้น) -->
   <div id="adminAuthOverlay" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gradient-to-br from-[#fff1f2] via-[#fffdf9] to-[#ecfdf5] backdrop-blur-md">
@@ -1700,11 +1726,17 @@
         }));
 
         const isOneClick = !isRerollAll && Boolean((document.getElementById('autoOneClickSwitch') || {}).checked);
+        await playLuckySpinRoulette(eligible, isOneClick ? '⚡ กำลังสุ่ม & บันทึกผล...' : '🎰 กำลังหมุนสุ่มรายชื่อผู้โชคดี...');
+
         if (isOneClick) {
           await commitBatchDrawToServer(drawnItems);
+          playRewardWinnerSound();
+          launchRewardConfetti();
         } else {
           pendingDrawList = drawnItems;
           renderPendingDrawList();
+          playRewardWinnerSound();
+          launchRewardConfetti();
         }
       } finally {
         updateAutoDrawActionButton();
@@ -1959,6 +1991,144 @@
         flake.style.fontSize = (Math.random() * 9 + 10) + 'px';
         container.appendChild(flake);
       }
+    }
+
+    let rewardSoundEnabled = true;
+    let rewardAudioCtx = null;
+
+    function toggleRewardSound() {
+      rewardSoundEnabled = !rewardSoundEnabled;
+      const btn = document.getElementById('rewardSoundBtn');
+      const icon = document.getElementById('rewardSoundIcon');
+      if (icon) {
+        icon.className = rewardSoundEnabled
+          ? 'fa-solid fa-volume-high text-xs text-amber-600'
+          : 'fa-solid fa-volume-xmark text-xs text-slate-400';
+      }
+      if (btn) {
+        btn.className = rewardSoundEnabled
+          ? 'bg-amber-50/95 hover:bg-amber-100 px-3 py-2.5 rounded-2xl border-2 border-amber-300 text-center font-bold text-amber-800 shadow-2xs transition flex items-center gap-1.5 cursor-pointer'
+          : 'bg-slate-100 hover:bg-slate-200 px-3 py-2.5 rounded-2xl border-2 border-slate-300 text-center font-bold text-slate-500 shadow-2xs transition flex items-center gap-1.5 cursor-pointer';
+      }
+      if (rewardSoundEnabled) playSpinTickSound(880);
+    }
+
+    function getRewardAudioContext() {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return null;
+      if (!rewardAudioCtx) rewardAudioCtx = new AudioCtx();
+      if (rewardAudioCtx.state === 'suspended') {
+        rewardAudioCtx.resume().catch(() => {});
+      }
+      return rewardAudioCtx;
+    }
+
+    function playSpinTickSound(freq = 520) {
+      if (!rewardSoundEnabled) return;
+      try {
+        const ctx = getRewardAudioContext();
+        if (!ctx) return;
+        const now = ctx.currentTime;
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, now);
+        gain.gain.setValueAtTime(0.06, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.055);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.06);
+      } catch (e) {}
+    }
+
+    function playRewardWinnerSound() {
+      if (!rewardSoundEnabled) return;
+      try {
+        const ctx = getRewardAudioContext();
+        if (!ctx) return;
+        const notes = [523.25, 659.25, 783.99, 1046.5, 1318.5]; // C5-E5-G5-C6-E6 fanfare
+        const now = ctx.currentTime;
+        notes.forEach((freq, idx) => {
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.075);
+          gain.gain.setValueAtTime(0.001, now + idx * 0.075);
+          gain.gain.exponentialRampToValueAtTime(0.14, now + idx * 0.075 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.075 + 0.55);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now + idx * 0.075);
+          osc.stop(now + idx * 0.075 + 0.6);
+        });
+      } catch (e) {}
+    }
+
+    async function playLuckySpinRoulette(eligiblePool) {
+      const box = document.getElementById('autoSpinRollerBox');
+      const nameEl = document.getElementById('autoSpinNameText');
+      if (!box || !nameEl || !eligiblePool || eligiblePool.length === 0) return;
+
+      box.classList.remove('hidden');
+      const totalSteps = 16;
+      for (let step = 0; step < totalSteps; step++) {
+        const randEmp = eligiblePool[Math.floor(Math.random() * eligiblePool.length)];
+        nameEl.textContent = `${randEmp.empName || '-'} (${randEmp.empId || ''})`;
+        playSpinTickSound(440 + step * 28);
+        const delayMs = step < 10 ? 55 : 85 + (step - 10) * 18;
+        await new Promise(r => setTimeout(r, delayMs));
+      }
+      box.classList.add('hidden');
+    }
+
+    function launchRewardConfetti() {
+      const canvas = document.getElementById('rewardConfettiCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      canvas.classList.remove('hidden');
+
+      const colors = ['#f43f5e', '#10b981', '#fbbf24', '#38bdf8', '#fb7185', '#ffffff'];
+      const pieces = Array.from({ length: 110 }, () => ({
+        x: Math.random() * canvas.width,
+        y: -20 - Math.random() * canvas.height * 0.35,
+        vx: (Math.random() - 0.5) * 4.5,
+        vy: 3.5 + Math.random() * 4.5,
+        w: 7 + Math.random() * 6,
+        h: 4 + Math.random() * 4,
+        rot: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.25,
+        color: colors[Math.floor(Math.random() * colors.length)]
+      }));
+
+      const renderFrame = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let alive = 0;
+        for (const p of pieces) {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.08;
+          p.rot += p.vRot;
+          if (p.y < canvas.height + 30) alive++;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          ctx.restore();
+        }
+        if (alive > 0) {
+          requestAnimationFrame(renderFrame);
+        } else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          canvas.classList.add('hidden');
+        }
+      };
+      requestAnimationFrame(renderFrame);
     }
 
     function adminLiffLogin() {

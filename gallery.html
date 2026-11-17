@@ -287,6 +287,21 @@
       animation: ssBubbleFloat 1.6s ease-in-out infinite;
       z-index: 30;
     }
+
+    /* 🎅 Flying Santa Sleigh across upper slideshow stage */
+    @keyframes ssSantaSleighFly {
+      0% { transform: translate3d(-260px, 14px, 0) rotate(-3deg) scale(0.92); opacity: 0; }
+      8% { opacity: 1; }
+      25% { transform: translate3d(25vw, -6px, 0) rotate(2deg) scale(1); }
+      50% { transform: translate3d(52vw, 10px, 0) rotate(-2deg) scale(0.98); }
+      75% { transform: translate3d(78vw, -8px, 0) rotate(2deg) scale(1); }
+      92% { opacity: 1; }
+      100% { transform: translate3d(calc(100vw + 260px), 8px, 0) rotate(-2deg) scale(0.92); opacity: 0; }
+    }
+
+    .ss-santa-fly-active {
+      animation: ssSantaSleighFly 11.5s linear forwards;
+    }
   </style>
 </head>
 <body class="relative min-h-screen pb-16 flex flex-col justify-between selection:bg-rose-300 selection:text-rose-950">
@@ -595,6 +610,45 @@
     <!-- Fireworks Celebration Canvas (when a new attendee registers) -->
     <canvas id="ssFireworksCanvas" class="hidden absolute inset-0 w-full h-full pointer-events-none z-[25]" aria-hidden="true"></canvas>
 
+    <!-- Flying Santa Sleigh Layer -->
+    <div id="ssSantaFlyLayer" class="hidden absolute top-14 left-0 z-[26] pointer-events-none select-none flex items-center gap-1.5 drop-shadow-[0_6px_14px_rgba(253,224,71,0.45)]" aria-hidden="true">
+      <span class="text-xs sm:text-sm bg-rose-600/90 text-amber-200 font-bold px-2.5 py-0.5 rounded-full border border-amber-300/80 shadow">✨ Ho Ho Ho! CM Party 🎄</span>
+      <svg viewBox="0 0 180 56" class="w-36 sm:w-44 h-12 sm:h-14 overflow-visible">
+        <!-- Trail Sparkles -->
+        <circle cx="8" cy="30" r="2.2" fill="#fde047" opacity="0.85"/>
+        <circle cx="18" cy="22" r="1.8" fill="#fb7185" opacity="0.8"/>
+        <circle cx="24" cy="36" r="2.4" fill="#a7f3d0" opacity="0.85"/>
+        <!-- Reins -->
+        <path d="M88 26 Q114 30 144 26" stroke="#fde047" stroke-width="1.6" fill="none" stroke-dasharray="3 2"/>
+        <!-- Sleigh -->
+        <path d="M28 38 C36 48, 78 48, 88 36 L82 24 L42 24 L36 30 Z" fill="#e11d48" stroke="#fde047" stroke-width="1.8"/>
+        <path d="M24 46 C34 52, 84 52, 94 42" stroke="#fde047" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+        <!-- Santa inside Sleigh -->
+        <circle cx="58" cy="18" r="7.5" fill="#ffe4c4"/>
+        <path d="M51 14 C53 6, 63 6, 65 14 Z" fill="#e11d48"/>
+        <circle cx="66" cy="10" r="2.6" fill="#ffffff"/>
+        <rect x="50" y="13" width="16" height="3.2" rx="1.6" fill="#ffffff"/>
+        <path d="M52 20 Q58 28 64 20" fill="#ffffff"/>
+        <!-- Gift sack -->
+        <circle cx="43" cy="20" r="6" fill="#059669" stroke="#fde047" stroke-width="1.2"/>
+        <!-- Reindeer 1 & 2 -->
+        <g transform="translate(115, 16)">
+          <ellipse cx="14" cy="14" rx="9" ry="5.5" fill="#92400e"/>
+          <circle cx="24" cy="8" r="4.5" fill="#92400e"/>
+          <circle cx="28" cy="8" r="2.2" fill="#ef4444"/>
+          <path d="M22 4 L19 -2 M24 4 L27 -2" stroke="#fde68a" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M8 18 L5 26 M12 19 L11 26 M19 19 L22 25" stroke="#78350f" stroke-width="2" stroke-linecap="round"/>
+        </g>
+        <g transform="translate(145, 11)">
+          <ellipse cx="14" cy="14" rx="9" ry="5.5" fill="#b45309"/>
+          <circle cx="24" cy="8" r="4.5" fill="#b45309"/>
+          <circle cx="28.5" cy="8" r="2.4" fill="#ef4444"/>
+          <path d="M22 4 L19 -2 M24 4 L27 -2" stroke="#fde68a" stroke-width="1.8" stroke-linecap="round"/>
+          <path d="M8 18 L5 26 M12 19 L11 26 M19 19 L22 25" stroke="#78350f" stroke-width="2" stroke-linecap="round"/>
+        </g>
+      </svg>
+    </div>
+
     <!-- Top Floating Bar (Header) -->
     <div id="ssTopBar" class="relative z-20 flex items-center justify-between px-4 sm:px-6 py-3 bg-gradient-to-b from-[#1e1021]/90 via-[#1e1021]/45 to-transparent transition-opacity duration-300">
       <!-- Left: Logo & Event Title -->
@@ -635,6 +689,17 @@
 
       <!-- Right: Action Buttons & Settings Drawer Toggle -->
       <div class="flex items-center gap-1.5 sm:gap-2">
+        <!-- Sound Effects Toggle Button -->
+        <button
+          type="button"
+          id="ssSoundBtn"
+          onclick="toggleSlideshowSoundButton(); event.stopPropagation();"
+          class="w-9 h-9 rounded-2xl bg-amber-400/20 hover:bg-amber-400/35 text-amber-200 flex items-center justify-center transition border border-amber-300/40 cursor-pointer"
+          title="เปิด/ปิดเสียงกระดิ่งและพลุ (Sound FX)"
+        >
+          <i id="ssSoundIcon" class="fa-solid fa-volume-high text-xs"></i>
+        </button>
+
         <!-- Manual Sync New Photos Inside Slideshow -->
         <button
           type="button"
@@ -728,7 +793,27 @@
 
       <!-- Center Slide Image Display with Fixed Auto-Fit Party Stage Frame -->
       <div class="w-full h-full flex items-center justify-center py-1">
-        <div id="ssStageScreenFrame" class="ss-stage-screen-frame w-[92vw] max-w-5xl h-[65vh] sm:h-[69vh] flex items-center justify-center transition-all duration-500">
+        <div id="ssStageScreenFrame" class="ss-stage-screen-frame relative w-[92vw] max-w-5xl h-[65vh] sm:h-[69vh] flex items-center justify-center transition-all duration-500">
+          <!-- Cute Christmas Corner Garlands, Bow & Bells on Stage Frame -->
+          <div id="ssFrameBowDecor" class="pointer-events-none select-none">
+            <!-- Top-Left Holly & Gold Bell -->
+            <svg viewBox="0 0 64 64" class="w-11 h-11 sm:w-14 sm:h-14 absolute -top-4 -left-4 z-20 drop-shadow-lg">
+              <path d="M18 32 C10 22, 16 12, 28 20 C34 10, 46 14, 38 28 Z" fill="#059669" stroke="#a7f3d0" stroke-width="1.2"/>
+              <path d="M30 34 C40 42, 50 32, 40 22 C48 14, 38 6, 28 18 Z" fill="#047857" stroke="#a7f3d0" stroke-width="1.2"/>
+              <circle cx="27" cy="24" r="4" fill="#e11d48"/>
+              <circle cx="34" cy="22" r="3.6" fill="#f43f5e"/>
+              <circle cx="30" cy="29" r="3.8" fill="#be123c"/>
+              <path d="M24 34 C18 44, 16 50, 26 52 C36 50, 34 44, 28 34 Z" fill="#fbbf24" stroke="#fef08a" stroke-width="1.2"/>
+              <circle cx="26" cy="53" r="2.6" fill="#fde047"/>
+            </svg>
+            <!-- Top-Right Cute Red Bow & Pine -->
+            <svg viewBox="0 0 64 64" class="w-11 h-11 sm:w-14 sm:h-14 absolute -top-4 -right-4 z-20 drop-shadow-lg">
+              <path d="M18 20 C26 10, 38 14, 32 28 C44 18, 54 24, 42 34 Z" fill="#059669" stroke="#a7f3d0" stroke-width="1.2"/>
+              <path d="M30 28 C16 18, 12 34, 28 32 C18 44, 24 52, 31 36 Z" fill="#e11d48" stroke="#fecdd3" stroke-width="1.2"/>
+              <path d="M34 28 C48 18, 52 34, 36 32 C46 44, 40 52, 33 36 Z" fill="#f43f5e" stroke="#fecdd3" stroke-width="1.2"/>
+              <circle cx="32" cy="31" r="4.5" fill="#fde047" stroke="#ffffff" stroke-width="1.2"/>
+            </svg>
+          </div>
           <div id="ssImageContainer" class="relative w-full h-full flex items-center justify-center overflow-hidden rounded-2xl bg-black/60">
             <!-- Blurred Pillar-Fill Background for Portrait/Landscape Auto-Fit -->
             <img
@@ -962,6 +1047,24 @@
             <span>แสดง QR สแกนลงทะเบียนมุมจอ</span>
           </span>
           <input type="checkbox" id="ssToggleQrOverlay" checked onchange="toggleSlideshowQr(this.checked)" class="accent-emerald-400 cursor-pointer w-4 h-4" />
+        </label>
+
+        <!-- Flying Santa Sleigh Toggle -->
+        <label class="flex items-center justify-between cursor-pointer">
+          <span class="flex items-center gap-1.5 text-rose-100">
+            <span>🛷</span>
+            <span>เลื่อนซานต้าบินผ่านจอเป็นระยะ</span>
+          </span>
+          <input type="checkbox" id="ssToggleSantaFly" checked onchange="toggleSantaFly(this.checked)" class="accent-rose-400 cursor-pointer w-4 h-4" />
+        </label>
+
+        <!-- Sound Effects Toggle -->
+        <label class="flex items-center justify-between cursor-pointer">
+          <span class="flex items-center gap-1.5 text-amber-200">
+            <i class="fa-solid fa-bell text-amber-300 text-xs"></i>
+            <span>เสียงกระดิ่ง/พลุตอนมีคนเข้างาน</span>
+          </span>
+          <input type="checkbox" id="ssToggleSound" checked onchange="toggleSlideshowSound(this.checked)" class="accent-amber-400 cursor-pointer w-4 h-4" />
         </label>
       </div>
 
@@ -1211,6 +1314,11 @@
     let showCaptionText = true;
     let showStageCrowd = true;
     let showFireworksOnJoin = true;
+    let showSantaFly = true;
+    let showSoundFx = true;
+    let santaFlyTimer = null;
+    let santaFlyInitTimer = null;
+    let ssAudioCtx = null;
 
     // สถานะระบบพลุเฉลิมฉลอง (Fireworks State)
     let fwAnimFrameId = null;
@@ -1860,6 +1968,7 @@
       startSlideshowAutoTimer();
       startAutoSyncTimer();
       startStageCrowdSystem();
+      startSantaFlyTimer();
 
       // Setup Mouse Activity Tracker for Auto-hiding Controls
       document.addEventListener('mousemove', resetSlideshowControlsActivity);
@@ -1875,6 +1984,7 @@
       isSlideshowActive = false;
       stopSlideshowAutoTimer();
       stopStageCrowdSystem();
+      stopSantaFlyTimer();
       hideNewPhotoSpotlight();
       priorityNewPhotoIds = [];
 
@@ -2144,9 +2254,111 @@
       }
     }
 
+    function toggleSantaFly(enabled) {
+      showSantaFly = enabled;
+      if (enabled && isSlideshowActive) {
+        startSantaFlyTimer();
+        triggerSantaFlyPass();
+      } else {
+        stopSantaFlyTimer();
+      }
+    }
+
+    function updateSoundButtonUI() {
+      const btn = document.getElementById('ssSoundBtn');
+      const icon = document.getElementById('ssSoundIcon');
+      const chk = document.getElementById('ssToggleSound');
+      if (chk) chk.checked = showSoundFx;
+      if (icon) {
+        icon.className = showSoundFx ? 'fa-solid fa-volume-high text-xs' : 'fa-solid fa-volume-xmark text-xs';
+      }
+      if (btn) {
+        btn.className = showSoundFx
+          ? 'w-9 h-9 rounded-2xl bg-amber-400/20 hover:bg-amber-400/35 text-amber-200 flex items-center justify-center transition border border-amber-300/40 cursor-pointer'
+          : 'w-9 h-9 rounded-2xl bg-white/10 hover:bg-white/20 text-slate-300 flex items-center justify-center transition border border-white/20 cursor-pointer';
+      }
+    }
+
+    function toggleSlideshowSound(enabled) {
+      showSoundFx = enabled;
+      updateSoundButtonUI();
+      if (enabled) playChristmasBellChime();
+    }
+
+    function toggleSlideshowSoundButton() {
+      toggleSlideshowSound(!showSoundFx);
+    }
+
+    function playChristmasBellChime() {
+      if (!showSoundFx) return;
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        if (!ssAudioCtx) ssAudioCtx = new AudioCtx();
+        if (ssAudioCtx.state === 'suspended') {
+          ssAudioCtx.resume().catch(() => {});
+        }
+        const notes = [1046.5, 1318.5, 1567.98, 2093.0]; // C6-E6-G6-C7 sparkle
+        const now = ssAudioCtx.currentTime;
+        notes.forEach((freq, idx) => {
+          const osc = ssAudioCtx.createOscillator();
+          const gain = ssAudioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.08);
+          gain.gain.setValueAtTime(0.001, now + idx * 0.08);
+          gain.gain.exponentialRampToValueAtTime(0.11, now + idx * 0.08 + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.08 + 0.55);
+          osc.connect(gain);
+          gain.connect(ssAudioCtx.destination);
+          osc.start(now + idx * 0.08);
+          osc.stop(now + idx * 0.08 + 0.6);
+        });
+      } catch (e) {}
+    }
+
+    function triggerSantaFlyPass() {
+      const layer = document.getElementById('ssSantaFlyLayer');
+      if (!layer || !isSlideshowActive || !showSantaFly) return;
+      layer.classList.remove('hidden', 'ss-santa-fly-active');
+      void layer.offsetWidth;
+      layer.classList.add('ss-santa-fly-active');
+      setTimeout(() => {
+        if (layer) {
+          layer.classList.remove('ss-santa-fly-active');
+          layer.classList.add('hidden');
+        }
+      }, 11800);
+    }
+
+    function startSantaFlyTimer() {
+      stopSantaFlyTimer();
+      if (!showSantaFly || !isSlideshowActive) return;
+      santaFlyInitTimer = setTimeout(() => triggerSantaFlyPass(), 4500);
+      santaFlyTimer = setInterval(() => {
+        if (isSlideshowActive && showSantaFly) triggerSantaFlyPass();
+      }, 48000);
+    }
+
+    function stopSantaFlyTimer() {
+      if (santaFlyInitTimer) {
+        clearTimeout(santaFlyInitTimer);
+        santaFlyInitTimer = null;
+      }
+      if (santaFlyTimer) {
+        clearInterval(santaFlyTimer);
+        santaFlyTimer = null;
+      }
+      const layer = document.getElementById('ssSantaFlyLayer');
+      if (layer) {
+        layer.classList.remove('ss-santa-fly-active');
+        layer.classList.add('hidden');
+      }
+    }
+
     function launchStageFireworks() {
       const canvas = document.getElementById('ssFireworksCanvas');
       if (!canvas || !isSlideshowActive) return;
+      playChristmasBellChime();
 
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
@@ -2290,9 +2502,9 @@
       }
       if (screenFrame) {
         if (showStageCrowd) {
-          screenFrame.className = 'ss-stage-screen-frame w-[92vw] max-w-5xl h-[65vh] sm:h-[69vh] flex items-center justify-center transition-all duration-500';
+          screenFrame.className = 'ss-stage-screen-frame relative w-[92vw] max-w-5xl h-[65vh] sm:h-[69vh] flex items-center justify-center transition-all duration-500';
         } else {
-          screenFrame.className = 'w-[92vw] max-w-6xl h-[78vh] flex items-center justify-center transition-all duration-500';
+          screenFrame.className = 'relative w-[92vw] max-w-6xl h-[78vh] flex items-center justify-center transition-all duration-500';
         }
       }
       if (bottomBar) {

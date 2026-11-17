@@ -164,9 +164,24 @@
       border: 2.5px solid #ffffff;
       box-shadow: 0 8px 18px -4px rgba(217, 119, 6, 0.38);
     }
+
+    @keyframes floatWishUp {
+      0% { opacity: 1; transform: translate(-50%, 0) scale(0.85); }
+      100% { opacity: 0; transform: translate(-50%, -68px) scale(1.35) rotate(10deg); }
+    }
+    .cute-floating-wish {
+      position: fixed;
+      pointer-events: none;
+      z-index: 60;
+      font-size: 20px;
+      animation: floatWishUp 0.9s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
   </style>
 </head>
 <body class="relative flex flex-col items-center justify-center p-4 py-8 text-slate-700 selection:bg-rose-200 selection:text-rose-900">
+
+  <!-- Confetti Canvas (for celebratory registration success) -->
+  <canvas id="indexConfettiCanvas" class="hidden fixed inset-0 w-full h-full pointer-events-none z-50" aria-hidden="true"></canvas>
 
   <!-- Snowflakes Container -->
   <div id="snow-container" aria-hidden="true"></div>
@@ -615,7 +630,21 @@
             </div>
           </div>
 
-          <p class="relative z-10 text-xs text-rose-600/90 mt-3.5 flex items-center justify-center gap-1.5 font-semibold">
+          <!-- ปุ่มเขย่ากระดิ่งคริสต์มาสเล่นระหว่างรอ Countdown -->
+          <div class="relative z-10 mt-3.5">
+            <button
+              type="button"
+              id="btnCountdownBell"
+              onclick="ringCountdownBell(event)"
+              class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-full bg-gradient-to-r from-amber-100 via-rose-100 to-emerald-100 hover:from-amber-200 hover:to-emerald-200 border-2 border-white text-rose-700 font-bold text-xs shadow-md active:scale-90 transition cursor-pointer"
+            >
+              <span id="cdBellEmoji" class="text-base transition-transform duration-150">🔔</span>
+              <span>เขย่ากระดิ่งรอเข้างาน</span>
+              <span id="cdBellCountBadge" class="px-2 py-0.5 rounded-full bg-rose-500 text-white text-[10px] font-extrabold shadow-2xs">0</span>
+            </button>
+          </div>
+
+          <p class="relative z-10 text-xs text-rose-600/90 mt-3 flex items-center justify-center gap-1.5 font-semibold">
             <span class="animate-bounce">🎁</span>
             <span>ระบบจะพาเข้าหน้าลงทะเบียนอัตโนมัติเมื่อถึงเวลาค่ะ</span>
             <span class="animate-bounce" style="animation-delay: 0.2s;">✨</span>
@@ -696,6 +725,107 @@
   </div>
 
   <script>
+    let countdownBellCount = 0;
+    let indexAudioCtx = null;
+
+    function playIndexBellChime(notes = [1046.5, 1318.5, 1567.98]) {
+      try {
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (!AudioCtx) return;
+        if (!indexAudioCtx) indexAudioCtx = new AudioCtx();
+        if (indexAudioCtx.state === 'suspended') {
+          indexAudioCtx.resume().catch(() => {});
+        }
+        const now = indexAudioCtx.currentTime;
+        notes.forEach((freq, idx) => {
+          const osc = indexAudioCtx.createOscillator();
+          const gain = indexAudioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, now + idx * 0.065);
+          gain.gain.setValueAtTime(0.001, now + idx * 0.065);
+          gain.gain.exponentialRampToValueAtTime(0.09, now + idx * 0.065 + 0.015);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.065 + 0.45);
+          osc.connect(gain);
+          gain.connect(indexAudioCtx.destination);
+          osc.start(now + idx * 0.065);
+          osc.stop(now + idx * 0.065 + 0.5);
+        });
+      } catch (e) {}
+    }
+
+    function ringCountdownBell(ev) {
+      countdownBellCount++;
+      const badge = document.getElementById('cdBellCountBadge');
+      const emoji = document.getElementById('cdBellEmoji');
+      if (badge) badge.innerText = countdownBellCount;
+      if (emoji) {
+        emoji.style.transform = countdownBellCount % 2 === 0 ? 'rotate(20deg) scale(1.25)' : 'rotate(-20deg) scale(1.25)';
+        setTimeout(() => { emoji.style.transform = ''; }, 160);
+      }
+      playIndexBellChime([1174.66, 1567.98]);
+
+      const icons = ['🎄', '💖', '✨', '🎁', '❄️', '🔔', '🎅🏻'];
+      const rect = ev && ev.currentTarget ? ev.currentTarget.getBoundingClientRect() : null;
+      const x = ev && ev.clientX ? ev.clientX : (rect ? rect.left + rect.width / 2 : window.innerWidth / 2);
+      const y = ev && ev.clientY ? ev.clientY : (rect ? rect.top : window.innerHeight / 2);
+      for (let i = 0; i < 3; i++) {
+        const el = document.createElement('span');
+        el.className = 'cute-floating-wish';
+        el.textContent = icons[Math.floor(Math.random() * icons.length)];
+        el.style.left = `${x + (Math.random() - 0.5) * 44}px`;
+        el.style.top = `${y - 8 + (Math.random() - 0.5) * 14}px`;
+        document.body.appendChild(el);
+        setTimeout(() => el.remove(), 950);
+      }
+    }
+
+    function launchIndexConfetti() {
+      const canvas = document.getElementById('indexConfettiCanvas');
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+      canvas.classList.remove('hidden');
+
+      const colors = ['#e11d48', '#10b981', '#fbbf24', '#f472b6', '#38bdf8', '#ffffff'];
+      const pieces = Array.from({ length: 85 }, () => ({
+        x: Math.random() * canvas.width,
+        y: -15 - Math.random() * 140,
+        vx: (Math.random() - 0.5) * 4,
+        vy: 3.2 + Math.random() * 4.2,
+        w: 6 + Math.random() * 5,
+        h: 4 + Math.random() * 4,
+        rot: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.22,
+        color: colors[Math.floor(Math.random() * colors.length)]
+      }));
+
+      const frame = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        let alive = 0;
+        for (const p of pieces) {
+          p.x += p.vx;
+          p.y += p.vy;
+          p.vy += 0.08;
+          p.rot += p.vRot;
+          if (p.y < canvas.height + 25) alive++;
+          ctx.save();
+          ctx.translate(p.x, p.y);
+          ctx.rotate(p.rot);
+          ctx.fillStyle = p.color;
+          ctx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+          ctx.restore();
+        }
+        if (alive > 0) requestAnimationFrame(frame);
+        else {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          canvas.classList.add('hidden');
+        }
+      };
+      requestAnimationFrame(frame);
+    }
+
     // ==========================================
     // ตั้งค่า LIFF ID และ URL ของ Google Apps Script Web App
     // ==========================================
@@ -2677,6 +2807,8 @@
         const result = await callBackendSaveRegistration(payload);
 
         if (result && result.status === 'success') {
+          launchIndexConfetti();
+          playIndexBellChime([1046.5, 1318.5, 1567.98, 2093.0]);
           // หากหลังบ้านส่ง Push Flex Message ผ่านบอท LINE สำเร็จแล้ว ไม่ต้องส่งซ้ำด้วย liff.sendMessages
           if (!result.lineSent) {
             await sendRegistrationMessageToChat({
