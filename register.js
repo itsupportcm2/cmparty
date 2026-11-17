@@ -3554,7 +3554,7 @@ function createWelcomeFlexMessage(profile) {
         ]
       }
     }
-  };
+  }, 'elf');
 }
 
 /**
@@ -3827,7 +3827,7 @@ function createGalleryFlexMessage() {
         ]
       }
     }
-  };
+  }, 'photo');
 }
 
 function createJsonResponse(obj) {
