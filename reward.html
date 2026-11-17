@@ -530,6 +530,15 @@
             <i id="refreshIcon" class="fa-solid fa-arrows-rotate text-rose-500"></i>
             <span>รีเฟรช</span>
           </button>
+          <button
+            type="button"
+            onclick="exportRewardsCsv()"
+            class="px-3.5 py-2 rounded-full bg-emerald-50 border-2 border-emerald-200 hover:bg-emerald-100 text-xs font-bold text-emerald-700 flex items-center gap-1.5 shadow-2xs transition cursor-pointer"
+            title="ดาวน์โหลดไฟล์สรุปผลรางวัล (เปิดใน Excel ได้ทันที)"
+          >
+            <i class="fa-solid fa-file-excel text-emerald-600"></i>
+            <span>Export CSV</span>
+          </button>
         </div>
       </div>
 
@@ -1995,6 +2004,59 @@
 
     let rewardSoundEnabled = true;
     let rewardAudioCtx = null;
+
+    function exportRewardsCsv() {
+      if (!Array.isArray(rewardsList) || rewardsList.length === 0) {
+        Swal.fire({
+          icon: 'info',
+          title: 'ยังไม่มีข้อมูลรางวัล',
+          text: 'ไม่พบรายการรางวัลสำหรับส่งออกไฟล์ครับ',
+          confirmButtonColor: '#f43f5e'
+        });
+        return;
+      }
+
+      const escapeCsv = (val) => {
+        const str = String(val === null || val === undefined ? '' : val);
+        return `"${str.replace(/"/g, '""')}"`;
+      };
+
+      const headers = ['ลำดับ', 'ชื่อรางวัล', 'รหัสพนักงาน', 'ชื่อ-สกุล', 'แผนก', 'สาขา', 'สถานะ'];
+      const rows = rewardsList.map((r, idx) => {
+        const hasWinner = Boolean(r.empId && String(r.empId).trim() !== '');
+        const statusText = hasWinner ? 'แจกแล้ว' : 'ยังไม่แจก';
+        return [
+          idx + 1,
+          r.rewardName || '',
+          r.empId || '',
+          r.empName || '',
+          r.department || '',
+          r.branch || '',
+          statusText
+        ].map(escapeCsv).join(',');
+      });
+
+      const csvContent = '\uFEFF' + [headers.map(escapeCsv).join(','), ...rows].join('\r\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      const dateStamp = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `CM_Party_2026_Rewards_${dateStamp}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: `ดาวน์โหลดสรุปรางวัล (${rewardsList.length} รายการ) สำเร็จ!`,
+        showConfirmButton: false,
+        timer: 2200
+      });
+    }
 
     function toggleRewardSound() {
       rewardSoundEnabled = !rewardSoundEnabled;

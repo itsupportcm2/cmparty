@@ -2617,6 +2617,43 @@ function handleTextMessage(event) {
   }
 
   if (!empIdToSearch) {
+    // 4. กรณีพิมพ์คำทักทาย/ขอความช่วยเหลือ/ลงทะเบียน -> ส่งเมนู Quick Reply แนะนำ 3 ปุ่มหลัก
+    const helpKeywords = ['เมนู', 'ช่วยเหลือ', 'วิธีใช้', 'แนะนำ', 'สวัสดี', 'ทัก', 'ลงทะเบียน', 'ลงทะเบียนร่วมงาน', 'help', 'menu', 'hi', 'hello', 'start', '?', 'คำสั่ง'];
+    const isHelpPrompt = helpKeywords.some(kw => lowerCommand === kw || lowerCommand.indexOf(kw) === 0);
+    if (isHelpPrompt) {
+      const helpQuickReply = {
+        items: [
+          {
+            type: 'action',
+            action: {
+              type: 'uri',
+              label: '📝 ลงทะเบียนร่วมงาน',
+              uri: LIFF_REGISTER_URL
+            }
+          },
+          {
+            type: 'action',
+            action: {
+              type: 'message',
+              label: '📸 ภาพกิจกรรมในงาน',
+              text: 'ภาพกิจกรรมในงาน'
+            }
+          },
+          {
+            type: 'action',
+            action: {
+              type: 'message',
+              label: '🎁 ตรวจสอบรางวัล',
+              text: 'ตรวจสอบรางวัล'
+            }
+          }
+        ]
+      };
+      const helpText = '🎄 ยินดีต้อนรับสู่ CM Party 2026 ค่ะ!\nเลือกเมนูที่ต้องการด้านล่างได้เลย (หรือส่งรูปภาพมาที่แชทนี้เพื่อขึ้นจอแกลเลอรีในงานได้ทันที 📸)';
+      replyLineMessage(replyToken, [
+        buildQuotedRewardTextMessage(helpText, userQuoteToken, helpQuickReply)
+      ]);
+    }
     return;
   }
 
