@@ -190,6 +190,34 @@ const ADMIN_UID = 'U1dcbd47c6981745c2f41c5691cde7ff3';
 const LIFF_REGISTER_URL = 'https://liff.line.me/2012486224-eFJTgFwr';
 const GALLERY_WEB_URL = 'https://cmparty.vercel.app/gallery.html';
 
+// คาแรกเตอร์ผู้ส่ง (LINE Icon & Nickname Switch - ความยาว <= 20 ตัวอักษร และไม่มีคำว่า "LINE")
+const BOT_SENDERS = {
+  elf: {
+    name: 'เอลฟ์ต้อนรับ 🎄',
+    iconUrl: 'https://cmparty.vercel.app/assets/sender-elf.png'
+  },
+  santa: {
+    name: 'Santa แจกรางวัล 🎁',
+    iconUrl: 'https://cmparty.vercel.app/assets/sender-santa.png'
+  },
+  photo: {
+    name: 'ช่างภาพปาร์ตี้ 📸',
+    iconUrl: 'https://cmparty.vercel.app/assets/sender-photo.png'
+  }
+};
+
+function withBotSender(msgObj, senderKey) {
+  const senderCfg = BOT_SENDERS[senderKey];
+  if (!msgObj || !senderCfg) return msgObj;
+  return {
+    ...msgObj,
+    sender: {
+      name: senderCfg.name,
+      iconUrl: senderCfg.iconUrl
+    }
+  };
+}
+
 /**
  * แปลง Date/Time String (เช่น "2026-12-25T09:00") เป็น Timestamp (ms) ตามเวลาประเทศไทย (UTC+7)
  */
@@ -762,7 +790,7 @@ function buildChristmasGlassFlexMessage(opts) {
     footerBox.spacing = opts.footerSpacing;
   }
 
-  return {
+  const flexMsg = {
     type: 'flex',
     altText: opts.altText,
     contents: {
@@ -877,6 +905,7 @@ function buildChristmasGlassFlexMessage(opts) {
       }
     }
   };
+  return opts.senderKey ? withBotSender(flexMsg, opts.senderKey) : flexMsg;
 }
 
 function buildFlexInfoRow(label, value, valueColor, valueSize, valueWeight, spacing) {
@@ -923,6 +952,7 @@ function pushRegistrationFlexMessage(uid, info) {
   const timestamp = String(info.timestamp || Utilities.formatDate(new Date(), 'Asia/Bangkok', 'dd/MM/yyyy HH:mm:ss'));
 
   const ticketFlexMessage = buildChristmasGlassFlexMessage({
+    senderKey: 'elf',
     altText: `บัตรเข้างาน CM Party - ${empName} (รหัส ${empId}) ลงทะเบียนสำเร็จแล้ว`,
     bgImageUrl: 'https://cmparty.vercel.app/assets/flex-envelope.jpg',
     badgeText: 'VIP PASS',
@@ -2370,6 +2400,7 @@ function pushRewardFlexMessage(uid, info) {
 
   const nowStr = Utilities.formatDate(new Date(), 'Asia/Bangkok', 'dd/MM/yyyy HH:mm:ss');
   const flexMsg = buildChristmasGlassFlexMessage({
+    senderKey: 'santa',
     altText: `🎉 ขอแสดงความยินดี! คุณได้รับรางวัล: ${info.rewardName}`,
     bgImageUrl: 'https://cmparty.vercel.app/assets/flex-giftbox.jpg',
     badgeText: 'LUCKY DRAW WINNER',
@@ -2651,7 +2682,7 @@ function handleTextMessage(event) {
       };
       const helpText = '🎄 ยินดีต้อนรับสู่ CM Party 2026 ค่ะ!\nเลือกเมนูที่ต้องการด้านล่างได้เลย (หรือส่งรูปภาพมาที่แชทนี้เพื่อขึ้นจอแกลเลอรีในงานได้ทันที 📸)';
       replyLineMessage(replyToken, [
-        buildQuotedRewardTextMessage(helpText, userQuoteToken, helpQuickReply)
+        buildQuotedRewardTextMessage(helpText, userQuoteToken, helpQuickReply, 'elf')
       ]);
     }
     return;
@@ -2717,7 +2748,7 @@ function handleTextMessage(event) {
 /**
  * สร้างข้อความ Text พร้อมแนบ quoteToken (อ้างอิงข้อความผู้ใช้) และ quickReply สำหรับระบบตรวจสอบรางวัล
  */
-function buildQuotedRewardTextMessage(text, quoteToken, quickReply) {
+function buildQuotedRewardTextMessage(text, quoteToken, quickReply, senderKey = 'santa') {
   const msg = {
     type: 'text',
     text: String(text || '')
@@ -2728,7 +2759,7 @@ function buildQuotedRewardTextMessage(text, quoteToken, quickReply) {
   if (quickReply && Array.isArray(quickReply.items) && quickReply.items.length > 0) {
     msg.quickReply = quickReply;
   }
-  return msg;
+  return senderKey ? withBotSender(msg, senderKey) : msg;
 }
 
 /**
@@ -2931,6 +2962,7 @@ function createGiftCheckFlexMessage(empId, rewardsList) {
   }));
 
   return buildChristmasGlassFlexMessage({
+    senderKey: 'santa',
     altText: `🎉 ผลการตรวจสอบรางวัล รหัส ${first.empId}: ได้รับ ${allPrizeNames}`,
     bgImageUrl: 'https://cmparty.vercel.app/assets/flex-giftbox.jpg',
     badgeText: 'REWARD CHECK',
@@ -3005,6 +3037,7 @@ function createNoRewardFlexMessage(empId, empInfo) {
   }
 
   return buildChristmasGlassFlexMessage({
+    senderKey: 'santa',
     altText: `ผลการตรวจสอบรางวัล รหัส ${empId}: ท่านไม่ได้รางวัลค่ะ`,
     bgImageUrl: 'https://cmparty.vercel.app/assets/flex-giftbox.jpg',
     badgeText: 'REWARD CHECK',
@@ -3116,18 +3149,18 @@ function handleImageMessage(event) {
     } catch (cacheClearErr) {}
 
     replyLineMessage(replyToken, [
-      {
+      withBotSender({
         type: 'text',
         text: 'อัพโหลดรูปสำเร็จ'
-      }
+      }, 'photo')
     ]);
   } catch (err) {
     console.error('Error handling image:', err);
     replyLineMessage(replyToken, [
-      {
+      withBotSender({
         type: 'text',
         text: '❌ เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ: ' + err.message
-      }
+      }, 'photo')
     ]);
   }
 }
@@ -3293,7 +3326,7 @@ function replyMustAddFriendMessage(replyToken) {
     }
   };
 
-  replyLineMessage(replyToken, [flexMessage]);
+  replyLineMessage(replyToken, [withBotSender(flexMessage, 'elf')]);
 }
 
 function getLineMessageContent(messageId) {
@@ -3357,7 +3390,7 @@ function createWelcomeFlexMessage(profile) {
   const statusMessage = profile.statusMessage || 'ยินดีต้อนรับเข้าสู่ระบบอัปโหลดรูปภาพ!';
   const userId = profile.userId || '-';
 
-  return {
+  return withBotSender({
     type: 'flex',
     altText: `ยินดีต้อนรับคุณ ${displayName}!`,
     contents: {
@@ -3539,7 +3572,7 @@ function createGalleryFlexMessage() {
     }
   } catch (e) {}
 
-  return {
+  return withBotSender({
     type: 'flex',
     altText: '📸 ภาพความประทับใจในงาน CM Party 2026 - กดเพื่อดูรูปกิจกรรมในงาน',
     contents: {
