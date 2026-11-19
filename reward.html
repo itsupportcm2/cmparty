@@ -2563,7 +2563,94 @@
           ? 'bg-amber-50/95 hover:bg-amber-100 px-3 py-2.5 rounded-2xl border-2 border-amber-300 text-center font-bold text-amber-800 shadow-2xs transition flex items-center gap-1.5 cursor-pointer'
           : 'bg-slate-100 hover:bg-slate-200 px-3 py-2.5 rounded-2xl border-2 border-slate-300 text-center font-bold text-slate-500 shadow-2xs transition flex items-center gap-1.5 cursor-pointer';
       }
-      if (rewardSoundEnabled) playSpinTickSound(880);
+      if (!rewardSoundEnabled) {
+        stopBigRevealAudio();
+      } else {
+        playSpinTickSound(880);
+      }
+    }
+
+    const REWARD_SFX_BASE_URL = (
+      window.location.protocol === 'file:' ||
+      window.location.hostname.indexOf('googleusercontent.com') !== -1 ||
+      window.location.hostname.indexOf('script.google.com') !== -1
+    ) ? 'https://cmparty.vercel.app/assets/' : 'assets/';
+
+    const rewardSfxPool = {};
+    let rewardSfxTimers = [];
+    let rewardSfxIntervals = [];
+
+    function initRewardSfxPool() {
+      const files = {
+        cheer: 'sfx-cheer.ogg',
+        cheerApplause: 'sfx-cheer-applause.ogg',
+        applause: 'sfx-applause.wav',
+        fireworks: 'sfx-fireworks.ogg'
+      };
+      Object.keys(files).forEach(key => {
+        if (!rewardSfxPool[key]) {
+          try {
+            const audio = new Audio(REWARD_SFX_BASE_URL + files[key]);
+            audio.preload = 'auto';
+            rewardSfxPool[key] = audio;
+          } catch (e) {}
+        }
+      });
+    }
+
+    function stopBigRevealAudio() {
+      rewardSfxTimers.forEach(t => clearTimeout(t));
+      rewardSfxTimers = [];
+      rewardSfxIntervals.forEach(iv => clearInterval(iv));
+      rewardSfxIntervals = [];
+      Object.values(rewardSfxPool).forEach(audio => {
+        if (!audio) return;
+        audio._sfxActive = false;
+        try {
+          audio.pause();
+          audio.currentTime = 0;
+        } catch (e) {}
+      });
+    }
+
+    function playRewardSfxClipWithFade(audioEl, { delayMs = 0, volume = 0.8, maxDurationMs = 5500, fadeMs = 900 } = {}) {
+      if (!audioEl || !rewardSoundEnabled) return;
+      const startTimer = setTimeout(() => {
+        if (!rewardSoundEnabled) return;
+        audioEl._sfxActive = true;
+        try {
+          audioEl.pause();
+          audioEl.currentTime = 0;
+        } catch (e) {}
+        audioEl.volume = Math.max(0, Math.min(1, volume));
+        try {
+          const p = audioEl.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        } catch (e) {}
+
+        const fadeStartDelay = Math.max(200, maxDurationMs - fadeMs);
+        const fadeTimer = setTimeout(() => {
+          const steps = 16;
+          const stepMs = Math.max(25, Math.floor(fadeMs / steps));
+          let stepCount = 0;
+          const fadeInterval = setInterval(() => {
+            stepCount++;
+            const ratio = Math.max(0, 1 - (stepCount / steps));
+            try { audioEl.volume = Math.max(0, Math.min(1, volume * ratio)); } catch (e) {}
+            if (stepCount >= steps || !audioEl._sfxActive) {
+              clearInterval(fadeInterval);
+              audioEl._sfxActive = false;
+              try {
+                audioEl.pause();
+                audioEl.currentTime = 0;
+              } catch (e) {}
+            }
+          }, stepMs);
+          rewardSfxIntervals.push(fadeInterval);
+        }, fadeStartDelay);
+        rewardSfxTimers.push(fadeTimer);
+      }, delayMs);
+      rewardSfxTimers.push(startTimer);
     }
 
     function getRewardAudioContext() {
@@ -2620,6 +2707,14 @@
 
     function playBigRevealAnnouncementSound() {
       if (!rewardSoundEnabled) return;
+      stopBigRevealAudio();
+      initRewardSfxPool();
+
+      playRewardSfxClipWithFade(rewardSfxPool.cheer, { delayMs: 180, volume: 0.85, maxDurationMs: 3600, fadeMs: 650 });
+      playRewardSfxClipWithFade(rewardSfxPool.cheerApplause, { delayMs: 260, volume: 0.80, maxDurationMs: 5800, fadeMs: 1000 });
+      playRewardSfxClipWithFade(rewardSfxPool.applause, { delayMs: 320, volume: 0.68, maxDurationMs: 5800, fadeMs: 1000 });
+      playRewardSfxClipWithFade(rewardSfxPool.fireworks, { delayMs: 360, volume: 0.78, maxDurationMs: 5800, fadeMs: 1100 });
+
       try {
         const ctx = getRewardAudioContext();
         if (!ctx) return;
@@ -2668,46 +2763,60 @@
             osc.stop(startAt + n.dur + 0.04);
           });
 
-          // 3. เสียงจุดพลุแตกประกายรอบแรก (Firework pop + crackle ที่ 0.44s และ 0.78s)
-          const bufferSize = Math.floor(ctx.sampleRate * 0.28);
+          // 3. เสียงจรวดพุ่ง + จุดพลุแตกประกายเสริมความกระหึ่ม 3 ลูก (0.35s, 0.72s, 1.15s)
+          const bufferSize = Math.floor(ctx.sampleRate * 0.32);
           const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
           const output = noiseBuffer.getChannelData(0);
           for (let j = 0; j < bufferSize; j++) {
-            output[j] = (Math.random() * 2 - 1) * Math.exp(-j / (ctx.sampleRate * 0.08));
+            output[j] = (Math.random() * 2 - 1) * Math.exp(-j / (ctx.sampleRate * 0.09));
           }
 
-          [0.44, 0.78].forEach((delaySec, idx) => {
+          [0.35, 0.72, 1.15].forEach((delaySec, idx) => {
             const pAt = t0 + delaySec;
+
+            // เสียงหวีดพุ่งขึ้นฟ้าก่อนระเบิด
+            const whistleOsc = ctx.createOscillator();
+            const whistleGain = ctx.createGain();
+            whistleOsc.type = 'sine';
+            whistleOsc.frequency.setValueAtTime(520 + idx * 90, Math.max(t0, pAt - 0.14));
+            whistleOsc.frequency.exponentialRampToValueAtTime(1650 + idx * 140, pAt);
+            whistleGain.gain.setValueAtTime(0.001, Math.max(t0, pAt - 0.14));
+            whistleGain.gain.linearRampToValueAtTime(0.032, Math.max(t0, pAt - 0.06));
+            whistleGain.gain.exponentialRampToValueAtTime(0.0001, pAt + 0.01);
+            whistleOsc.connect(whistleGain);
+            whistleGain.connect(ctx.destination);
+            whistleOsc.start(Math.max(t0, pAt - 0.14));
+            whistleOsc.stop(pAt + 0.02);
 
             // Boom ทุ้มนุ่มๆ
             const boomOsc = ctx.createOscillator();
             const boomGain = ctx.createGain();
             boomOsc.type = 'sine';
-            boomOsc.frequency.setValueAtTime(140 - idx * 15, pAt);
-            boomOsc.frequency.exponentialRampToValueAtTime(38, pAt + 0.22);
+            boomOsc.frequency.setValueAtTime(145 - idx * 12, pAt);
+            boomOsc.frequency.exponentialRampToValueAtTime(36, pAt + 0.24);
             boomGain.gain.setValueAtTime(0.001, pAt);
             boomGain.gain.linearRampToValueAtTime(0.14, pAt + 0.015);
-            boomGain.gain.exponentialRampToValueAtTime(0.0001, pAt + 0.24);
+            boomGain.gain.exponentialRampToValueAtTime(0.0001, pAt + 0.26);
             boomOsc.connect(boomGain);
             boomGain.connect(ctx.destination);
             boomOsc.start(pAt);
-            boomOsc.stop(pAt + 0.26);
+            boomOsc.stop(pAt + 0.28);
 
             // Crackle ซ่าๆ
             const noise = ctx.createBufferSource();
             noise.buffer = noiseBuffer;
             const filter = ctx.createBiquadFilter();
             filter.type = 'bandpass';
-            filter.frequency.setValueAtTime(1900 + idx * 500, pAt);
-            filter.Q.setValueAtTime(0.9, pAt);
+            filter.frequency.setValueAtTime(1850 + idx * 450, pAt);
+            filter.Q.setValueAtTime(0.85, pAt);
             const nGain = ctx.createGain();
-            nGain.gain.setValueAtTime(0.09, pAt);
-            nGain.gain.exponentialRampToValueAtTime(0.0001, pAt + 0.26);
+            nGain.gain.setValueAtTime(0.095, pAt);
+            nGain.gain.exponentialRampToValueAtTime(0.0001, pAt + 0.28);
             noise.connect(filter);
             filter.connect(nGain);
             nGain.connect(ctx.destination);
             noise.start(pAt);
-            noise.stop(pAt + 0.27);
+            noise.stop(pAt + 0.29);
           });
         };
 
@@ -3325,6 +3434,7 @@
 
     function closeBigWinnerReveal() {
       isBigRevealOpen = false;
+      stopBigRevealAudio();
       stopBigRevealContinuousFx();
       const overlay = document.getElementById('bigWinnerRevealOverlay');
       if (overlay) overlay.classList.add('hidden');
