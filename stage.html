@@ -146,7 +146,7 @@
       class="px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-300 hover:to-yellow-200 text-rose-950 font-extrabold text-xs sm:text-sm border-2 border-white shadow-[0_10px_30px_rgba(251,191,36,0.55)] animate-bounce cursor-pointer flex items-center gap-2"
     >
       <span>🔊</span>
-      <span>คลิกที่นี่ 1 ครั้ง เพื่อเปิดเสียงประกาศผล &amp; เต็มจอ</span>
+      <span>คลิกที่นี่ 1 ครั้ง เพื่อเปิดเพลงคริสต์มาส เสียงประกาศผล &amp; เต็มจอ</span>
     </button>
   </div>
 
@@ -163,6 +163,17 @@
     >
       <i class="fa-solid fa-music text-rose-300"></i>
       <span class="hidden sm:inline">ทดสอบเสียง</span>
+    </button>
+
+    <button
+      type="button"
+      id="stageBgmBtn"
+      onclick="toggleStageBgm()"
+      class="px-3.5 py-2 rounded-full bg-black/55 hover:bg-black/75 backdrop-blur-md border border-emerald-300/45 text-emerald-200 font-bold text-xs shadow-lg transition flex items-center gap-1.5 cursor-pointer"
+      title="เปิด / ปิด เพลงบรรเลงคริสต์มาสหน้ารอผล (B)"
+    >
+      <i id="stageBgmIcon" class="fa-solid fa-compact-disc text-emerald-300"></i>
+      <span id="stageBgmText" class="hidden sm:inline">เพลงรอผล: เปิด</span>
     </button>
 
     <button
@@ -263,6 +274,15 @@
           <span class="block text-[11px] text-emerald-200 font-semibold">แจกไปแล้ว</span>
           <span id="stageStatAssigned" class="text-xl sm:text-2xl font-extrabold text-emerald-300">0</span>
         </div>
+      </div>
+
+      <!-- Subtle Christmas BGM Now Playing Indicator -->
+      <div
+        id="stageBgmNowPlaying"
+        class="hidden inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-emerald-300/35 text-xs text-emerald-200 font-semibold shadow"
+      >
+        <span>🎵</span>
+        <span id="stageBgmTrackLabel">กำลังบรรเลงเพลงธีมคริสต์มาส...</span>
       </div>
     </section>
 
@@ -588,6 +608,220 @@
       stageSfxTimers.push(startTimer);
     }
 
+    /*
+     * Standby Christmas BGM Attribution (CC BY 3.0):
+     * - "We Wish You A Merry Christmas" by Jason Shaw (audionautix.com) via Wikimedia Commons
+     * - "Jingle Bells (Calm)" by Kevin MacLeod (incompetech.com) via Wikimedia Commons
+     */
+    const STAGE_BGM_PLAYLIST = [
+      { file: 'bgm-christmas-1.mp3', title: 'We Wish You A Merry Christmas (Symphony)' },
+      { file: 'bgm-christmas-2.ogg', title: 'Jingle Bells (Calm Instrumental)' }
+    ];
+    const STAGE_BGM_TARGET_VOL = 0.28;
+    let stageBgmEnabled = true;
+    let stageBgmIndex = 0;
+    let stageBgmAudio = null;
+    let stageBgmFadeInterval = null;
+    let stageBgmStartDelayTimer = null;
+    let stageBgmResumeTimer = null;
+
+    function updateBgmPlayingIndicator(isPlaying) {
+      const box = document.getElementById('stageBgmNowPlaying');
+      const label = document.getElementById('stageBgmTrackLabel');
+      const icon = document.getElementById('stageBgmIcon');
+      const track = STAGE_BGM_PLAYLIST[stageBgmIndex] || STAGE_BGM_PLAYLIST[0];
+
+      if (box && label) {
+        if (isPlaying && stageBgmEnabled && stageSoundEnabled && currentStageState.mode === 'standby') {
+          label.innerText = `กำลังบรรเลง: ${track.title}`;
+          box.classList.remove('hidden');
+        } else {
+          box.classList.add('hidden');
+        }
+      }
+
+      if (icon) {
+        if (!stageBgmEnabled) {
+          icon.className = 'fa-solid fa-compact-disc text-slate-400';
+        } else if (isPlaying) {
+          icon.className = 'fa-solid fa-compact-disc fa-spin text-emerald-300';
+        } else {
+          icon.className = 'fa-solid fa-compact-disc text-emerald-300';
+        }
+      }
+    }
+
+    function ensureStageBgmAudio() {
+      if (stageBgmAudio) return stageBgmAudio;
+      const track = STAGE_BGM_PLAYLIST[stageBgmIndex] || STAGE_BGM_PLAYLIST[0];
+      stageBgmAudio = new Audio(SFX_BASE_URL + track.file);
+      stageBgmAudio.preload = 'auto';
+      stageBgmAudio.volume = 0;
+
+      stageBgmAudio.addEventListener('ended', () => {
+        if (!stageSoundEnabled || !stageBgmEnabled || currentStageState.mode !== 'standby') {
+          updateBgmPlayingIndicator(false);
+          return;
+        }
+        stageBgmIndex = (stageBgmIndex + 1) % STAGE_BGM_PLAYLIST.length;
+        const nextTrack = STAGE_BGM_PLAYLIST[stageBgmIndex];
+        stageBgmAudio.src = SFX_BASE_URL + nextTrack.file;
+        stageBgmAudio.volume = 0;
+        stageBgmAudio.play().then(() => {
+          fadeStageBgmVolume(STAGE_BGM_TARGET_VOL, 1000, false);
+          updateBgmPlayingIndicator(true);
+        }).catch(() => {
+          if (stageBgmIndex !== 0) {
+            stageBgmIndex = 0;
+            stageBgmAudio.src = SFX_BASE_URL + STAGE_BGM_PLAYLIST[0].file;
+            stageBgmAudio.play().then(() => {
+              fadeStageBgmVolume(STAGE_BGM_TARGET_VOL, 1000, false);
+              updateBgmPlayingIndicator(true);
+            }).catch(() => updateBgmPlayingIndicator(false));
+          } else {
+            updateBgmPlayingIndicator(false);
+          }
+        });
+      });
+
+      stageBgmAudio.addEventListener('error', () => {
+        if (stageBgmIndex !== 0) {
+          stageBgmIndex = 0;
+          stageBgmAudio.src = SFX_BASE_URL + STAGE_BGM_PLAYLIST[0].file;
+          if (stageSoundEnabled && stageBgmEnabled && currentStageState.mode === 'standby') {
+            stageBgmAudio.play().then(() => {
+              fadeStageBgmVolume(STAGE_BGM_TARGET_VOL, 1000, false);
+              updateBgmPlayingIndicator(true);
+            }).catch(() => updateBgmPlayingIndicator(false));
+          }
+        } else {
+          updateBgmPlayingIndicator(false);
+        }
+      });
+
+      return stageBgmAudio;
+    }
+
+    function fadeStageBgmVolume(targetVol, durationMs, pauseOnZero = false) {
+      if (stageBgmFadeInterval) {
+        clearInterval(stageBgmFadeInterval);
+        stageBgmFadeInterval = null;
+      }
+      if (!stageBgmAudio) return;
+
+      const startVol = Number(stageBgmAudio.volume) || 0;
+      const steps = 16;
+      const stepMs = Math.max(20, Math.floor(durationMs / steps));
+      let stepCount = 0;
+
+      stageBgmFadeInterval = setInterval(() => {
+        stepCount++;
+        const ratio = Math.min(1, stepCount / steps);
+        const nextVol = startVol + (targetVol - startVol) * ratio;
+        try {
+          stageBgmAudio.volume = Math.max(0, Math.min(1, nextVol));
+        } catch (e) {}
+
+        if (stepCount >= steps) {
+          clearInterval(stageBgmFadeInterval);
+          stageBgmFadeInterval = null;
+          if (pauseOnZero && targetVol <= 0.001) {
+            try { stageBgmAudio.pause(); } catch (e) {}
+            updateBgmPlayingIndicator(false);
+          }
+        }
+      }, stepMs);
+    }
+
+    function startStageBgm(delayFadeMs = 0) {
+      if (!stageSoundEnabled || !stageBgmEnabled || currentStageState.mode !== 'standby') return;
+      if (stageBgmResumeTimer) {
+        clearTimeout(stageBgmResumeTimer);
+        stageBgmResumeTimer = null;
+      }
+      if (stageBgmStartDelayTimer) {
+        clearTimeout(stageBgmStartDelayTimer);
+        stageBgmStartDelayTimer = null;
+      }
+
+      const audio = ensureStageBgmAudio();
+      if (!audio.paused) {
+        fadeStageBgmVolume(STAGE_BGM_TARGET_VOL, 800, false);
+        updateBgmPlayingIndicator(true);
+        return;
+      }
+
+      audio.volume = 0;
+      const p = audio.play();
+      if (p && typeof p.then === 'function') {
+        p.then(() => {
+          if (!stageSoundEnabled || !stageBgmEnabled || currentStageState.mode !== 'standby') {
+            audio.pause();
+            updateBgmPlayingIndicator(false);
+            return;
+          }
+          if (delayFadeMs > 0) {
+            stageBgmStartDelayTimer = setTimeout(() => {
+              if (stageSoundEnabled && stageBgmEnabled && currentStageState.mode === 'standby') {
+                fadeStageBgmVolume(STAGE_BGM_TARGET_VOL, 1200, false);
+                updateBgmPlayingIndicator(true);
+              }
+            }, delayFadeMs);
+          } else {
+            fadeStageBgmVolume(STAGE_BGM_TARGET_VOL, 1200, false);
+            updateBgmPlayingIndicator(true);
+          }
+        }).catch(() => {
+          updateBgmPlayingIndicator(false);
+        });
+      }
+    }
+
+    function stopStageBgm(immediate = false) {
+      if (stageBgmResumeTimer) {
+        clearTimeout(stageBgmResumeTimer);
+        stageBgmResumeTimer = null;
+      }
+      if (stageBgmStartDelayTimer) {
+        clearTimeout(stageBgmStartDelayTimer);
+        stageBgmStartDelayTimer = null;
+      }
+      if (stageBgmFadeInterval) {
+        clearInterval(stageBgmFadeInterval);
+        stageBgmFadeInterval = null;
+      }
+
+      updateBgmPlayingIndicator(false);
+      if (!stageBgmAudio) return;
+
+      if (immediate) {
+        try { stageBgmAudio.pause(); } catch (e) {}
+      } else if (!stageBgmAudio.paused) {
+        fadeStageBgmVolume(0, 350, true);
+      }
+    }
+
+    function toggleStageBgm() {
+      stageBgmEnabled = !stageBgmEnabled;
+      const btn = document.getElementById('stageBgmBtn');
+      const text = document.getElementById('stageBgmText');
+
+      if (text) text.innerText = stageBgmEnabled ? 'เพลงรอผล: เปิด' : 'เพลงรอผล: ปิด';
+      if (btn) {
+        btn.className = stageBgmEnabled
+          ? 'px-3.5 py-2 rounded-full bg-black/55 hover:bg-black/75 backdrop-blur-md border border-emerald-300/45 text-emerald-200 font-bold text-xs shadow-lg transition flex items-center gap-1.5 cursor-pointer'
+          : 'px-3.5 py-2 rounded-full bg-black/55 hover:bg-black/75 backdrop-blur-md border border-white/20 text-slate-400 font-bold text-xs shadow-lg transition flex items-center gap-1.5 cursor-pointer';
+      }
+
+      if (!stageBgmEnabled) {
+        stopStageBgm(false);
+      } else if (currentStageState.mode === 'standby' && stageSoundEnabled) {
+        startStageBgm();
+      } else {
+        updateBgmPlayingIndicator(false);
+      }
+    }
+
     function getStageAudioContext() {
       const AudioCtx = window.AudioContext || window.webkitAudioContext;
       if (!AudioCtx) return null;
@@ -597,6 +831,9 @@
 
     function unlockStageAudioAndFullscreen() {
       primeStageAudioTracks();
+      if (currentStageState.mode === 'standby' && stageSoundEnabled && stageBgmEnabled) {
+        startStageBgm(380);
+      }
       try {
         const ctx = getStageAudioContext();
         if (ctx) {
@@ -670,8 +907,17 @@
 
     function playStageAnnouncementSound() {
       if (!stageSoundEnabled) return;
+      stopStageBgm(false);
       stopStageCelebrationAudio();
       initStageSfxPool();
+
+      if (currentStageState.mode === 'standby' && stageBgmEnabled) {
+        stageBgmResumeTimer = setTimeout(() => {
+          if (currentStageState.mode === 'standby' && stageSoundEnabled && stageBgmEnabled) {
+            startStageBgm();
+          }
+        }, 6200);
+      }
 
       // เสียงจริง: เสียงเฮ + เสียงตบมือ + เสียงพลุ
       playClipWithFade(stageSfxPool.cheer, { delayMs: 180, volume: 0.85, maxDurationMs: 3600, fadeMs: 650 });
@@ -805,9 +1051,13 @@
       }
       if (text) text.innerText = stageSoundEnabled ? 'เสียง: เปิด' : 'เสียง: ปิด';
       if (!stageSoundEnabled) {
+        stopStageBgm(true);
         stopStageCelebrationAudio();
       } else {
         playStageTickSound(880);
+        if (currentStageState.mode === 'standby' && stageBgmEnabled) {
+          startStageBgm(150);
+        }
       }
     }
 
@@ -1213,6 +1463,7 @@
       const mode = state.mode || 'standby';
 
       if (mode === 'rolling') {
+        stopStageBgm(false);
         stopStageCelebrationAudio();
         stopStageContinuousFx();
         if (standbyView) standbyView.classList.add('hidden');
@@ -1230,6 +1481,7 @@
       stopStageRollingLoop();
 
       if (mode === 'winner' && Array.isArray(state.winners) && state.winners.length > 0) {
+        stopStageBgm(false);
         if (standbyView) standbyView.classList.add('hidden');
         if (rollingView) rollingView.classList.add('hidden');
         if (winnerView) winnerView.classList.remove('hidden');
@@ -1350,6 +1602,12 @@
         statsBar.classList.remove('hidden');
       } else if (statsBar) {
         statsBar.classList.add('hidden');
+      }
+
+      if (stageAudioUnlocked && stageSoundEnabled && stageBgmEnabled) {
+        startStageBgm();
+      } else {
+        updateBgmPlayingIndicator(false);
       }
     }
 
@@ -1480,6 +1738,8 @@
         toggleStageFullscreen();
       } else if (e.key === 'm' || e.key === 'M') {
         toggleStageSound();
+      } else if (e.key === 'b' || e.key === 'B') {
+        toggleStageBgm();
       } else if (e.key === ' ') {
         if (currentStageState.mode === 'winner') {
           e.preventDefault();
