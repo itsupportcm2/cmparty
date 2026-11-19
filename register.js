@@ -1218,12 +1218,7 @@ function getGalleryImages(bypassCache) {
             name: name,
             size: file.getSize(),
             date: formattedDate,
-            timestamp: createdDate ? createdDate.getTime() : 0,
-            url: `https://lh5.googleusercontent.com/d/${fileId}`,
-            fallbackUrl: `https://lh3.googleusercontent.com/d/${fileId}`,
-            thumbnailUrl: `https://lh5.googleusercontent.com/d/${fileId}=w800`,
-            driveThumbnailUrl: `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`,
-            driveViewUrl: file.getUrl() || `https://drive.google.com/file/d/${fileId}/view`
+            timestamp: createdDate ? createdDate.getTime() : 0
           });
         }
       }
@@ -1260,11 +1255,11 @@ function getGalleryImages(bypassCache) {
       serverTimestamp: Date.now()
     };
 
-    // จำผลลัพธ์ลง Cache 10 วินาทีเพื่อรองรับคนดูจำนวนมากพร้อมอัปเดตรูปใหม่ได้รวดเร็ว
+    // จำผลลัพธ์แบบกระชับลง Cache 15 วินาที (รองรับรูปได้ ~800+ ภาพใน Cache เดียว และล้างทันทีเมื่อมีภาพอัปโหลดใหม่)
     try {
       const jsonStr = JSON.stringify(result);
       if (jsonStr.length < 95000) {
-        cache.put(cacheKey, jsonStr, 10);
+        cache.put(cacheKey, jsonStr, 15);
       }
     } catch (cachePutErr) {}
 
@@ -2534,6 +2529,9 @@ const STAGE_DISPLAY_CACHE_KEY = 'STAGE_DISPLAY_STATE_CACHE';
 function getDefaultStageDisplayState() {
   return {
     version: 0,
+    clientId: '',
+    clientSeq: 0,
+    serverSeq: 0,
     mode: 'standby',
     prizeLabel: '',
     rollingNames: [],
@@ -2590,20 +2588,49 @@ function getStageDisplayState() {
 }
 
 /**
- * อัปเดตสถานะหน้าจอใหญ่ประกาศผลรางวัลจากหลังเวที (เฉพาะแอดมินเท่านั้น)
+ * อัปเดตสถานะหน้าจอใหญ่ประกาศผลรางวัลจากหลังเวที (เฉพาะแอดมินเท่านั้น + Lock & Stale-Write Guard)
  */
 function setStageDisplayState(payload) {
   if (!isAdminAuthorized(payload)) {
     return { status: 'error', message: 'ไม่มีสิทธิ์ดำเนินการ (อนุญาตเฉพาะแอดมินเท่านั้น)' };
   }
 
+  const lock = LockService.getScriptLock();
   try {
+    lock.waitLock(5000);
     let rawState = payload && payload.state ? payload.state : {};
     if (typeof rawState === 'string') {
       rawState = JSON.parse(rawState);
     }
     if (!rawState || typeof rawState !== 'object') {
       rawState = {};
+    }
+
+    const props = PropertiesService.getScriptProperties();
+    let existing = null;
+    try {
+      const existingRaw = props.getProperty(STAGE_DISPLAY_PROP_KEY);
+      if (existingRaw) existing = JSON.parse(existingRaw);
+    } catch (readErr) {}
+
+    const incomingClientId = String(rawState.clientId || '').trim().slice(0, 64);
+    const incomingClientSeq = Math.max(0, parseInt(rawState.clientSeq, 10) || 0);
+
+    // ป้องกัน Request เก่าที่ถึงช้ากว่าเขียนทับคำสั่งใหม่ (Out-of-order Race Condition)
+    if (
+      existing &&
+      existing.clientId &&
+      incomingClientId &&
+      existing.clientId === incomingClientId &&
+      incomingClientSeq > 0 &&
+      incomingClientSeq < (Number(existing.clientSeq) || 0)
+    ) {
+      return {
+        status: 'success',
+        staleIgnored: true,
+        state: existing,
+        serverTime: Date.now()
+      };
     }
 
     const rawMode = String(rawState.mode || 'standby').trim().toLowerCase();
@@ -2645,8 +2672,13 @@ function setStageDisplayState(payload) {
 
     const now = Date.now();
     const parsedVer = Number(rawState.version);
+    const serverSeq = (Number(existing && existing.serverSeq) || 0) + 1;
+
     const cleanState = {
       version: (parsedVer > 0) ? parsedVer : now,
+      clientId: incomingClientId,
+      clientSeq: incomingClientSeq,
+      serverSeq: serverSeq,
       mode: mode,
       prizeLabel: String(rawState.prizeLabel || '').trim().slice(0, 120),
       rollingNames: rollingNames,
@@ -2658,19 +2690,22 @@ function setStageDisplayState(payload) {
     };
 
     const jsonStr = JSON.stringify(cleanState);
-    PropertiesService.getScriptProperties().setProperty(STAGE_DISPLAY_PROP_KEY, jsonStr);
+    props.setProperty(STAGE_DISPLAY_PROP_KEY, jsonStr);
     try {
       CacheService.getScriptCache().put(STAGE_DISPLAY_CACHE_KEY, jsonStr, 600);
     } catch (cacheErr) {}
 
     return {
       status: 'success',
+      staleIgnored: false,
       state: cleanState,
       serverTime: now
     };
   } catch (err) {
     console.error('Error in setStageDisplayState:', err);
     return { status: 'error', message: err.message };
+  } finally {
+    lock.releaseLock();
   }
 }
 
@@ -3328,6 +3363,20 @@ function saveLivePartyWish(userId, rawWishText) {
   }
 
   const cache = CacheService.getScriptCache();
+
+  // ป้องกันการส่งคำอวยพรซ้ำถี่เกินไป (Cooldown 15 วินาทีต่อคน)
+  if (userId && userId !== 'anon') {
+    try {
+      if (cache.get('WISH_COOLDOWN_' + userId)) {
+        return {
+          success: false,
+          cooldown: true,
+          message: 'ส่งคำอวยพรถี่เกินไปนิดนึงค่ะ รอสัก 15 วินาทีแล้วส่งใหม่อีกครั้งนะคะ ✨'
+        };
+      }
+    } catch (cdErr) {}
+  }
+
   let empId = '';
   let displayName = '';
 
@@ -3411,6 +3460,11 @@ function saveLivePartyWish(userId, rawWishText) {
 
     props.setProperty(LIVE_WISHES_PROP_KEY, JSON.stringify(list));
     cache.remove(LIVE_WISHES_CACHE_KEY);
+    if (userId && userId !== 'anon') {
+      try {
+        cache.put('WISH_COOLDOWN_' + userId, '1', 15);
+      } catch (cdPutErr) {}
+    }
   } finally {
     lock.releaseLock();
   }

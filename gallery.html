@@ -947,7 +947,7 @@
           <span>🎅</span>
           <span id="ssCrowdCountText">กำลังโหลดรายชื่อผู้ร่วมงาน...</span>
         </div>
-        <div class="hidden md:inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-rose-500/20 border border-rose-300/35 text-[10px] text-rose-100/95 font-medium shadow-xs">
+        <div id="ssWishHintPill" class="hidden md:inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-rose-500/20 border border-rose-300/35 text-[10px] text-rose-100/95 font-medium shadow-xs">
           <span>💬</span>
           <span>พิมพ์ "อวยพร" ในแชท LINE เพื่อส่งคำอวยพรขึ้นหัวตุ๊กตา!</span>
         </div>
@@ -1099,6 +1099,15 @@
             <span>เสียงกระดิ่ง/พลุตอนมีคนเข้างาน</span>
           </span>
           <input type="checkbox" id="ssToggleSound" checked onchange="toggleSlideshowSound(this.checked)" class="accent-amber-400 cursor-pointer w-4 h-4" />
+        </label>
+
+        <!-- Live Party Wishes Emergency Toggle -->
+        <label class="flex items-center justify-between cursor-pointer">
+          <span class="flex items-center gap-1.5 text-rose-100">
+            <span>💬</span>
+            <span>คำอวยพรบนหัวตุ๊กตา (Live Wishes)</span>
+          </span>
+          <input type="checkbox" id="ssToggleLiveWishes" checked onchange="toggleLiveWishes(this.checked)" class="accent-rose-400 cursor-pointer w-4 h-4" />
         </label>
       </div>
 
@@ -1372,6 +1381,7 @@
 
     // สถานะคำอวยพรขึ้นหัวตุ๊กตาแบบเรียลไทม์ (Live Party Wishes)
     const STAGE_WISH_DISPLAY_MS = 3 * 60 * 1000;
+    let showLiveWishes = true;
     let stageWishesByEmpId = new Map();
     let stageWishesByName = new Map();
     let knownWishIds = new Set();
@@ -1479,6 +1489,20 @@
       }
     }
 
+    function hydrateGalleryImageItem(img) {
+      if (!img || !img.id) return img;
+      const id = String(img.id).trim();
+      return {
+        ...img,
+        id,
+        url: img.url || `https://lh5.googleusercontent.com/d/${id}`,
+        fallbackUrl: img.fallbackUrl || `https://lh3.googleusercontent.com/d/${id}`,
+        thumbnailUrl: img.thumbnailUrl || `https://lh5.googleusercontent.com/d/${id}=w800`,
+        driveThumbnailUrl: img.driveThumbnailUrl || `https://drive.google.com/thumbnail?id=${id}&sz=w1000`,
+        driveViewUrl: img.driveViewUrl || `https://drive.google.com/file/d/${id}/view`
+      };
+    }
+
     // ดึงรายการรูปภาพจาก Google Apps Script Backend
     async function fetchGalleryDataFromApi(forceRefresh = false) {
       let result = null;
@@ -1513,6 +1537,10 @@
             console.warn('Fetch getGalleryImages error:', fetchErr);
           }
         }
+      }
+
+      if (result && Array.isArray(result.images)) {
+        result.images = result.images.map(hydrateGalleryImageItem);
       }
 
       return result;
@@ -1679,7 +1707,8 @@
       updateLiveSyncBadges('checking');
 
       try {
-        const forceFresh = manual || fromSlideshow || isSlideshowActive;
+        // การซิงก์อัตโนมัติใช้ Cache (15 วิ, ล้างทันทีที่มีคนอัปโหลดภาพผ่าน LINE) เพื่อรองรับคนดูจำนวนมากได้ลื่น
+        const forceFresh = Boolean(manual);
         const result = await fetchGalleryDataFromApi(forceFresh);
 
         if (!result || result.status !== 'success' || !Array.isArray(result.images)) {
@@ -2777,7 +2806,7 @@
     }
 
     async function syncStageWishes() {
-      if (isWishSyncing || !isSlideshowActive) return;
+      if (!showLiveWishes || isWishSyncing || !isSlideshowActive) return;
       isWishSyncing = true;
 
       try {
@@ -2847,8 +2876,26 @@
       }
     }
 
+    function toggleLiveWishes(enabled) {
+      showLiveWishes = Boolean(enabled);
+      const hintPill = document.getElementById('ssWishHintPill');
+      if (hintPill) {
+        hintPill.classList.toggle('md:inline-flex', showLiveWishes);
+      }
+      if (!showLiveWishes) {
+        if (isSlideshowActive && showStageCrowd && stageAttendees.length > 0) {
+          renderStageCrowdWave(false);
+        }
+      } else if (isSlideshowActive && showStageCrowd) {
+        syncStageWishes();
+        if (stageAttendees.length > 0) {
+          renderStageCrowdWave(false);
+        }
+      }
+    }
+
     function getActiveWishForAttendee(attendee) {
-      if (!attendee) return null;
+      if (!showLiveWishes || !attendee) return null;
       const now = Date.now();
       let wish = null;
       if (attendee.empId && stageWishesByEmpId.has(attendee.empId)) {

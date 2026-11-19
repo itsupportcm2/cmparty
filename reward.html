@@ -1244,7 +1244,7 @@
       const empInput = document.getElementById('empIdInput');
       empInput.focus();
       validateSaveButton();
-      syncStandbyContextToStage();
+      syncStandbyContextToStage(true);
     }
 
     // ค้นหาข้อมูลพนักงานทันทีที่พิมพ์ (0ms จากหน่วยความจำ + Fallback API)
@@ -1285,12 +1285,12 @@
         if (alreadyWon) {
           currentMatchedEmployee = null;
           matchIcon.classList.add('hidden');
-          nameEl.innerHTML = `<span class="text-red-700 font-bold">${emp.empName || '-'}</span> <span class="text-[11px] text-gray-500 font-normal">(${cleanId})</span>`;
+          nameEl.innerHTML = `<span class="text-red-700 font-bold">${escapeHtml(emp.empName || '-')}</span> <span class="text-[11px] text-gray-500 font-normal">(${escapeHtml(cleanId)})</span>`;
           deptEl.innerText = emp.department || '-';
           branchEl.innerText = emp.branch || '-';
           previewBox.className = 'mt-3 p-3 rounded-2xl bg-amber-50 border-2 border-amber-400 flex flex-wrap items-center justify-between gap-2 text-xs shadow-sm';
           uidBadge.className = 'text-[11px] px-2.5 py-1 rounded-full bg-red-100 text-red-800 border border-red-300 font-bold flex items-center gap-1.5';
-          uidBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-600"></i><span>รหัสนี้ได้รับรางวัลไปแล้ว โปรดตรวจสอบใหม่อีกครั้ง (รางวัล: ${alreadyWon.rewardName})</span>`;
+          uidBadge.innerHTML = `<i class="fa-solid fa-triangle-exclamation text-red-600"></i><span>รหัสนี้ได้รับรางวัลไปแล้ว โปรดตรวจสอบใหม่อีกครั้ง (รางวัล: ${escapeHtml(alreadyWon.rewardName)})</span>`;
           validateSaveButton();
           return;
         }
@@ -1374,8 +1374,8 @@
           title: 'รหัสนี้ได้รับรางวัลไปแล้ว โปรดตรวจสอบใหม่อีกครั้ง',
           html: `
             <div class="text-left text-xs space-y-2 bg-amber-50 p-4 rounded-xl border border-amber-300 text-gray-800 mt-2">
-              <p><b>พนักงาน:</b> ${currentMatchedEmployee.empName} (รหัส: <span class="text-red-700 font-bold">${cleanEmpId}</span>)</p>
-              <p><b>ได้รับรางวัล:</b> <span class="text-red-700 font-bold">"${alreadyWon.rewardName}"</span> ไปแล้ว</p>
+              <p><b>พนักงาน:</b> ${escapeHtml(currentMatchedEmployee.empName)} (รหัส: <span class="text-red-700 font-bold">${escapeHtml(cleanEmpId)}</span>)</p>
+              <p><b>ได้รับรางวัล:</b> <span class="text-red-700 font-bold">"${escapeHtml(alreadyWon.rewardName)}"</span> ไปแล้ว</p>
               <p class="text-[11px] text-amber-800 pt-1">⚠️ ระบบไม่อนุญาตให้รับรางวัลซ้ำ กรุณาตรวจสอบใหม่อีกครั้ง</p>
             </div>
           `,
@@ -1533,7 +1533,7 @@
       const confirm = await Swal.fire({
         icon: 'warning',
         title: 'ล้างรายชื่อผู้รับรางวัล?',
-        html: `ต้องการลบชื่อ <b>${empName}</b> ออกจากรางวัล<br><b>"${rewardName}"</b> ใช่หรือไม่?`,
+        html: `ต้องการลบชื่อ <b>${escapeHtml(empName)}</b> ออกจากรางวัล<br><b>"${escapeHtml(rewardName)}"</b> ใช่หรือไม่?`,
         showCancelButton: true,
         confirmButtonText: 'ใช่, ล้างข้อมูล',
         cancelButtonText: 'ยกเลิก',
@@ -1808,7 +1808,7 @@
                   ` : ''}
                   <button
                     type="button"
-                    onclick="handleClearWinner(${item.rowIndex}, '${escapeJs(item.rewardName)}', '${escapeJs(item.empName)}')"
+                    onclick="handleClearWinner(${item.rowIndex}, '${escapeHtml(escapeJs(item.rewardName))}', '${escapeHtml(escapeJs(item.empName))}')"
                     class="p-1.5 rounded-full bg-rose-100 text-rose-600 hover:bg-rose-200 text-xs transition cursor-pointer"
                     title="ล้างผู้รับรางวัลเพื่อให้รางวัลกลับเข้ามาในตัวเลือก"
                   >
@@ -2001,7 +2001,7 @@
       }
     }
 
-    function renderAutoDrawPrizeList() {
+    function renderAutoDrawPrizeList(isUserAction = false) {
       const container = document.getElementById('autoPrizeCheckboxList');
       if (!container) return;
 
@@ -2039,14 +2039,14 @@
       }
 
       updateAutoDrawPoolSummary();
-      syncStandbyContextToStage();
+      syncStandbyContextToStage(isUserAction);
     }
 
     function toggleAutoPrizeSelection(rowIndex, isChecked) {
       const idx = Number(rowIndex);
       if (isChecked) selectedDrawRowIndices.add(idx);
       else selectedDrawRowIndices.delete(idx);
-      renderAutoDrawPrizeList();
+      renderAutoDrawPrizeList(true);
     }
 
     function autoSelectBatchCount(count) {
@@ -2058,7 +2058,7 @@
 
       selectedDrawRowIndices.clear();
       pool.slice(0, count).forEach(r => selectedDrawRowIndices.add(Number(r.rowIndex)));
-      renderAutoDrawPrizeList();
+      renderAutoDrawPrizeList(true);
     }
 
     function autoSelectAllRemaining() {
@@ -2069,12 +2069,12 @@
         : unassigned;
 
       pool.forEach(r => selectedDrawRowIndices.add(Number(r.rowIndex)));
-      renderAutoDrawPrizeList();
+      renderAutoDrawPrizeList(true);
     }
 
     function autoClearSelectedPrizes() {
       selectedDrawRowIndices.clear();
-      renderAutoDrawPrizeList();
+      renderAutoDrawPrizeList(true);
     }
 
     // สุ่มตัวเลขแบบ Unbiased Cryptographically Secure Random
@@ -3419,11 +3419,17 @@
     // ==========================================
     const STAGE_CHANNEL_NAME = 'cm_party_stage_v1';
     const STAGE_STORAGE_KEY = 'cm_party_stage_state_v1';
+    const STAGE_CLIENT_ID = 'adm_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
     const stageBroadcastChannel = ('BroadcastChannel' in window) ? new BroadcastChannel(STAGE_CHANNEL_NAME) : null;
     let stageCloudSyncTimer = null;
+    let stageClientSeq = 0;
+    let hasHydratedStageState = false;
 
     let currentStageState = {
       version: 0,
+      clientId: STAGE_CLIENT_ID,
+      clientSeq: 0,
+      serverSeq: 0,
       mode: 'standby',
       prizeLabel: '',
       rollingNames: [],
@@ -3556,10 +3562,13 @@
     function broadcastStageState(partialUpdate, { skipCloud = false, debounceCloud = false } = {}) {
       const now = Date.now();
       const nextVersion = Math.max(now, (Number(currentStageState.version) || 0) + 1);
+      stageClientSeq += 1;
       const merged = {
         ...currentStageState,
         ...partialUpdate,
         version: nextVersion,
+        clientId: STAGE_CLIENT_ID,
+        clientSeq: stageClientSeq,
         updatedAt: now
       };
 
@@ -3582,10 +3591,21 @@
       // 2. Cross-device Cloud Sync via GAS CacheService
       if (skipCloud || !currentAdminUid) return;
 
+      const payloadSnapshot = currentStageState;
       const sendCloud = () => {
         callGasApi({
           action: 'setStageState',
-          state: currentStageState
+          state: payloadSnapshot
+        }).then(res => {
+          if (res && res.status === 'success' && res.state) {
+            const srvSeq = Number(res.state.serverSeq) || 0;
+            if (srvSeq > (Number(currentStageState.serverSeq) || 0)) {
+              currentStageState.serverSeq = srvSeq;
+              try {
+                localStorage.setItem(STAGE_STORAGE_KEY, JSON.stringify(currentStageState));
+              } catch (e) {}
+            }
+          }
         }).catch(err => console.warn('Cloud stage sync warning:', err));
       };
 
@@ -3601,8 +3621,51 @@
       }
     }
 
-    function syncStandbyContextToStage() {
+    async function hydrateStageStateOnInit() {
+      try {
+        let bestState = null;
+
+        try {
+          const localStr = localStorage.getItem(STAGE_STORAGE_KEY);
+          if (localStr) {
+            const localObj = JSON.parse(localStr);
+            if (localObj && localObj.updatedAt && (Date.now() - Number(localObj.updatedAt) < 6 * 60 * 60 * 1000)) {
+              bestState = localObj;
+            }
+          }
+        } catch (e) {}
+
+        try {
+          const cloudRes = await callGasApi({ action: 'getStageState' });
+          if (cloudRes && cloudRes.status === 'success' && cloudRes.state && Number(cloudRes.state.updatedAt || 0) > 0) {
+            const cloudObj = cloudRes.state;
+            const cloudSeq = Number(cloudObj.serverSeq) || 0;
+            const bestSeq = Number(bestState && bestState.serverSeq) || 0;
+            if (!bestState || cloudSeq > bestSeq || (cloudSeq === bestSeq && Number(cloudObj.updatedAt || 0) > Number(bestState.updatedAt || 0))) {
+              bestState = cloudObj;
+            }
+          }
+        } catch (cloudErr) {
+          console.warn('hydrateStageStateOnInit cloud warning:', cloudErr);
+        }
+
+        if (bestState && typeof bestState === 'object') {
+          currentStageState = {
+            ...currentStageState,
+            ...bestState,
+            clientId: STAGE_CLIENT_ID
+          };
+          updateStageRemoteUI(currentStageState);
+        }
+      } finally {
+        hasHydratedStageState = true;
+      }
+    }
+
+    function syncStandbyContextToStage(isUserAction = false) {
       if (!isStageAutoSyncEnabled()) return;
+      // ป้องกันการเขียน Standby ทับผู้ชนะบนจอระหว่างรีเฟรชหน้า (F5) ก่อนซิงค์สถานะเดิมกลับมา
+      if (!hasHydratedStageState && !isUserAction) return;
       if (currentStageState.mode !== 'standby') return;
       const prizeLabel = getSelectedStagePrizeLabel();
       const stats = getStageStatsSnapshot();
@@ -3763,6 +3826,7 @@
         if (isAuthorizedAdmin) {
           currentAdminUid = uid;
           if (overlay) overlay.classList.add('hidden');
+          hydrateStageStateOnInit();
           loadAllData();
           syncShiftWorkersNow(true);
           return;
@@ -3776,7 +3840,7 @@
         if (titleEl) titleEl.innerText = 'ไม่มีสิทธิ์เข้าถึงหน้านี้';
         if (descEl) {
           const nameText = profile && profile.displayName ? profile.displayName : 'ผู้ใช้งานทั่วไป';
-          descEl.innerHTML = `บัญชี <b>${nameText}</b> ไม่ใช่บัญชีแอดมินที่ได้รับอนุญาต<br/><span class="text-[11px] text-rose-500">ระบบสุ่มและจัดการรางวัลอนุญาตเฉพาะ Admin UID เท่านั้น</span>`;
+          descEl.innerHTML = `บัญชี <b>${escapeHtml(nameText)}</b> ไม่ใช่บัญชีแอดมินที่ได้รับอนุญาต<br/><span class="text-[11px] text-rose-500">ระบบสุ่มและจัดการรางวัลอนุญาตเฉพาะ Admin UID เท่านั้น</span>`;
         }
         if (actionsEl) {
           actionsEl.innerHTML = `
@@ -3833,8 +3897,8 @@
               title: 'รหัสนี้ได้รับรางวัลไปแล้ว โปรดตรวจสอบใหม่อีกครั้ง',
               html: `
                 <div class="text-left text-xs space-y-2 bg-amber-50 p-4 rounded-xl border border-amber-300 text-gray-800 mt-2">
-                  <p><b>พนักงาน:</b> ${empName} (รหัส: <span class="text-red-700 font-bold">${cleanId}</span>)</p>
-                  <p><b>ได้รับรางวัล:</b> <span class="text-red-700 font-bold">"${alreadyWon.rewardName}"</span> ไปแล้ว</p>
+                  <p><b>พนักงาน:</b> ${escapeHtml(empName)} (รหัส: <span class="text-red-700 font-bold">${escapeHtml(cleanId)}</span>)</p>
+                  <p><b>ได้รับรางวัล:</b> <span class="text-red-700 font-bold">"${escapeHtml(alreadyWon.rewardName)}"</span> ไปแล้ว</p>
                   <p class="text-[11px] text-amber-800 pt-1">⚠️ ระบบไม่อนุญาตให้รับรางวัลซ้ำ กรุณาตรวจสอบใหม่อีกครั้ง</p>
                 </div>
               `,

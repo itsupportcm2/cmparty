@@ -405,6 +405,9 @@
 
     let currentStageState = {
       version: 0,
+      clientId: '',
+      clientSeq: 0,
+      serverSeq: 0,
       mode: 'standby',
       prizeLabel: '',
       rollingNames: [],
@@ -414,6 +417,8 @@
       stats: null,
       updatedAt: 0
     };
+    let lastAppliedServerSeq = 0;
+    const lastClientSeqMap = new Map();
     let lastCelebratedKey = '';
     let rollingDisplayTimer = null;
     let rollingStepIdx = 0;
@@ -1209,17 +1214,45 @@
     function applyIncomingStageState(incoming, source) {
       if (!incoming || typeof incoming !== 'object') return;
       const incomingVersion = Number(incoming.version) || 0;
-      if (incomingVersion > 0 && incomingVersion < currentStageState.version) return;
+      const incServerSeq = Number(incoming.serverSeq) || 0;
+      const incClientId = String(incoming.clientId || '').trim();
+      const incClientSeq = Number(incoming.clientSeq) || 0;
 
-      const sameVersion = incomingVersion === currentStageState.version;
-      if (sameVersion && Number(incoming.celebrateNonce || 0) <= Number(currentStageState.celebrateNonce || 0) && Number(incoming.activeIndex || 0) === Number(currentStageState.activeIndex || 0) && incoming.mode === currentStageState.mode) {
-        return;
+      if (source === 'local') {
+        if (incClientId && incClientSeq > 0) {
+          const prevSeq = lastClientSeqMap.get(incClientId) || 0;
+          if (incClientSeq <= prevSeq) return;
+          lastClientSeqMap.set(incClientId, incClientSeq);
+        } else if (incomingVersion > 0 && incomingVersion < currentStageState.version) {
+          return;
+        }
+        if (incServerSeq > lastAppliedServerSeq) {
+          lastAppliedServerSeq = incServerSeq;
+        }
+      } else if (source === 'cloud') {
+        if (incServerSeq > 0) {
+          if (incServerSeq <= lastAppliedServerSeq) return;
+          lastAppliedServerSeq = incServerSeq;
+
+          if (incClientId && incClientSeq > 0) {
+            const prevClientSeq = lastClientSeqMap.get(incClientId) || 0;
+            if (incClientSeq <= prevClientSeq) {
+              // เคยแสดงสถานะนี้แล้วจาก Local 0ms แค่บันทึก serverSeq ล่าสุดโดยไม่ยิงเอฟเฟกต์ซ้ำ
+              currentStageState.serverSeq = incServerSeq;
+              return;
+            }
+            lastClientSeqMap.set(incClientId, incClientSeq);
+          }
+        } else {
+          if (incomingVersion <= currentStageState.version) return;
+        }
       }
 
       currentStageState = {
         ...currentStageState,
         ...incoming,
-        version: Math.max(incomingVersion, currentStageState.version)
+        version: Math.max(incomingVersion, currentStageState.version),
+        serverSeq: Math.max(incServerSeq, Number(currentStageState.serverSeq) || 0)
       };
 
       if (source === 'local') {
