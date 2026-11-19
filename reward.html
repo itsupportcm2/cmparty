@@ -238,11 +238,11 @@
             type="button"
             id="bigRevealToggleBtn"
             onclick="toggleBigRevealAuto()"
-            class="bg-rose-50/95 hover:bg-rose-100 px-3 py-2.5 rounded-2xl border-2 border-rose-300 text-center font-bold text-rose-800 shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
-            title="เปิด/ปิด การเด้งจอใหญ่ประกาศผลอัตโนมัติ (Big Winner Reveal)"
+            class="bg-slate-100 hover:bg-slate-200 px-3 py-2.5 rounded-2xl border-2 border-slate-300 text-center font-bold text-slate-500 shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
+            title="เปิด/ปิด การเด้งจอใหญ่ซ้อนในหน้าแอดมิน (ปกติจะส่งขึ้นหน้า stage.html ให้อัตโนมัติอยู่แล้ว)"
           >
-            <i id="bigRevealToggleIcon" class="fa-solid fa-tv text-xs text-rose-500"></i>
-            <span id="bigRevealToggleText" class="text-xs hidden sm:inline">จอใหญ่: เปิด</span>
+            <i id="bigRevealToggleIcon" class="fa-solid fa-tv text-xs text-slate-400"></i>
+            <span id="bigRevealToggleText" class="text-xs hidden sm:inline">จอใหญ่ในหน้านี้: ปิด</span>
           </button>
           <a
             href="gallery.html"
@@ -252,6 +252,97 @@
             <i class="fa-solid fa-camera-retro text-amber-200"></i>
             <span class="text-xs">ภาพกิจกรรม</span>
           </a>
+        </div>
+      </div>
+
+      <!-- Backstage Remote Control Bar สำหรับจอโปรเจคเตอร์แยก (stage.html) -->
+      <div
+        id="stageRemoteBar"
+        class="px-5 sm:px-6 py-3 bg-gradient-to-r from-slate-900 via-rose-950 to-slate-900 text-white border-b border-rose-200/30 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 text-xs"
+      >
+        <div class="flex flex-wrap items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-400/20 border border-amber-300/45 text-amber-200 font-bold text-[11px]">
+            <span>📺</span>
+            <span>รีโมตจอใหญ่ (stage.html)</span>
+          </span>
+          <span
+            id="stageRemoteStatusText"
+            class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-emerald-200 font-semibold text-[11px]"
+          >
+            หน้ารอผล (Standby)
+          </span>
+
+          <div id="stageRemoteNav" class="hidden items-center gap-1 bg-white/10 rounded-full px-2 py-0.5 border border-white/20">
+            <button
+              type="button"
+              onclick="stepStageWinner(-1)"
+              class="px-2 py-0.5 rounded-full hover:bg-white/20 text-white font-bold cursor-pointer transition"
+              title="แสดงผู้โชคดีคนก่อนหน้าบนจอ stage.html"
+            >
+              ⬅ ก่อนหน้า
+            </button>
+            <span id="stageRemoteNavText" class="px-1.5 font-extrabold text-amber-200">1 / 1</span>
+            <button
+              type="button"
+              onclick="stepStageWinner(1)"
+              class="px-2 py-0.5 rounded-full hover:bg-white/20 text-white font-bold cursor-pointer transition"
+              title="แสดงผู้โชคดีคนถัดไปบนจอ stage.html"
+            >
+              ถัดไป ➡
+            </button>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <label class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 border border-white/15 cursor-pointer select-none">
+            <input
+              type="checkbox"
+              id="stageAutoSyncCheck"
+              checked
+              class="accent-amber-400 cursor-pointer"
+            />
+            <span class="text-[11px] font-medium text-rose-100">ส่งขึ้นจอ stage.html อัตโนมัติ</span>
+          </label>
+
+          <button
+            type="button"
+            onclick="openStageWindow()"
+            class="px-3 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-300 hover:to-yellow-300 text-rose-950 font-extrabold shadow-xs transition flex items-center gap-1 cursor-pointer"
+            title="เปิดหน้าต่างจอโปรเจคเตอร์แยก (ลากไปจอที่ 2 แล้วกด F เพื่อเต็มจอ)"
+          >
+            <i class="fa-solid fa-up-right-from-square text-[11px]"></i>
+            <span>เปิดหน้าจอใหญ่</span>
+          </button>
+
+          <button
+            type="button"
+            onclick="copyStageUrl()"
+            class="px-2.5 py-1.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-semibold transition flex items-center gap-1 cursor-pointer"
+            title="คัดลอกลิงก์ stage.html สำหรับเปิดบนคอมโปรเจคเตอร์อีกเครื่อง"
+          >
+            <i class="fa-regular fa-copy text-[11px]"></i>
+            <span>คัดลอกลิงก์</span>
+          </button>
+
+          <button
+            type="button"
+            onclick="pushStageStandby()"
+            class="px-3 py-1.5 rounded-full bg-emerald-500/25 hover:bg-emerald-500/40 border border-emerald-300/45 text-emerald-100 font-bold transition flex items-center gap-1 cursor-pointer"
+            title="เคลียร์ชื่อผู้โชคดีและกลับสู่หน้ารอผลรางวัลบน stage.html"
+          >
+            <span>🎄</span>
+            <span>กลับหน้ารอผล</span>
+          </button>
+
+          <button
+            type="button"
+            onclick="pushStageCelebrateAgain()"
+            class="px-3 py-1.5 rounded-full bg-rose-500/35 hover:bg-rose-500/55 border border-rose-300/45 text-rose-100 font-bold transition flex items-center gap-1 cursor-pointer"
+            title="ยิงพลุและเล่นเสียงเปิดตัวซ้ำบน stage.html"
+          >
+            <span>🎊</span>
+            <span>ยิงพลุ/เสียงซ้ำ</span>
+          </button>
         </div>
       </div>
 
@@ -1048,6 +1139,8 @@
           else if (securedPayload.action === 'deleteReward') runner.deleteRewardRecord(securedPayload);
           else if (securedPayload.action === 'syncShiftWorkers') runner.handleSyncShiftWorkersAction(securedPayload);
           else if (securedPayload.action === 'resendRewardLine') runner.resendRewardLineNotification(securedPayload);
+          else if (securedPayload.action === 'setStageState') runner.setStageDisplayState(securedPayload);
+          else if (securedPayload.action === 'getStageState') runner.getStageDisplayState();
           else runner.checkRegisteredEmployeeById(securedPayload.empId);
         });
       }
@@ -1143,6 +1236,7 @@
       }
       validateSaveButton();
       renderAutoDrawPrizeList();
+      syncStandbyContextToStage();
     }
 
     // เมื่อเปลี่ยนรางวัลใน Dropdown
@@ -1150,6 +1244,7 @@
       const empInput = document.getElementById('empIdInput');
       empInput.focus();
       validateSaveButton();
+      syncStandbyContextToStage();
     }
 
     // ค้นหาข้อมูลพนักงานทันทีที่พิมพ์ (0ms จากหน่วยความจำ + Fallback API)
@@ -1356,13 +1451,23 @@
               showConfirmButton: false,
               timer: 2800
             });
+            const quickWinnerItem = {
+              rewardName: payload.rewardName,
+              empId: payload.empId,
+              empName: payload.empName,
+              department: payload.department,
+              branch: payload.branch,
+              displayName: (currentMatchedEmployee && currentMatchedEmployee.displayName) || '',
+              pictureUrl: payload.pictureUrl,
+              statusText: res.lineSent ? '✅ ส่งการ์ดแจ้งเตือน LINE แล้ว' : '✅ บันทึกรางวัลเรียบร้อย',
+              statusTone: 'saved'
+            };
+            if (isStageAutoSyncEnabled()) {
+              pushStageWinners([quickWinnerItem], 0);
+            }
             if (bigRevealAutoEnabled) {
-              openBigWinnerReveal([{
-                ...payload,
-                statusText: res.lineSent ? '✅ ส่งการ์ดแจ้งเตือน LINE แล้ว' : '✅ บันทึกรางวัลเรียบร้อย',
-                statusTone: 'saved'
-              }]);
-            } else {
+              openBigWinnerReveal([quickWinnerItem]);
+            } else if (!isStageAutoSyncEnabled()) {
               playRewardWinnerSound();
               launchRewardConfetti();
             }
@@ -1934,6 +2039,7 @@
       }
 
       updateAutoDrawPoolSummary();
+      syncStandbyContextToStage();
     }
 
     function toggleAutoPrizeSelection(rowIndex, isChecked) {
@@ -2059,9 +2165,27 @@
         } else {
           pendingDrawList = drawnItems;
           renderPendingDrawList();
+          const pendingRevealItems = pendingDrawList.map(p => {
+            const emp = p.emp || {};
+            return {
+              rewardName: p.rewardName,
+              empId: emp.empId,
+              empName: emp.empName,
+              department: emp.department,
+              branch: emp.branch,
+              displayName: emp.displayName,
+              pictureUrl: emp.pictureUrl,
+              regStatus: emp.regStatus,
+              statusText: '✨ ผลสุ่มรอบนี้ (รอยืนยันบันทึก)',
+              statusTone: 'pending'
+            };
+          });
+          if (isStageAutoSyncEnabled()) {
+            pushStageWinners(pendingRevealItems, 0);
+          }
           if (bigRevealAutoEnabled) {
             openPendingBigReveal();
-          } else {
+          } else if (!isStageAutoSyncEnabled()) {
             playRewardWinnerSound();
             launchRewardConfetti();
           }
@@ -2250,28 +2374,42 @@
             return;
           }
 
-          const savedRevealItems = successRows.map(r => ({
-            rewardName: r.rewardName,
-            empId: r.empId,
-            empName: r.empName,
-            department: r.department,
-            branch: r.branch,
-            pictureUrl: r.pictureUrl || '',
-            statusText: r.lineSent ? '✅ ส่งการ์ดแจ้งเตือน LINE แล้ว' : '✅ บันทึกรางวัลเรียบร้อย',
-            statusTone: 'saved'
-          }));
+          const savedRevealItems = successRows.map(r => {
+            const regEmp = (r.empId && employeesMap) ? employeesMap[String(r.empId).trim()] : null;
+            return {
+              rewardName: r.rewardName,
+              empId: r.empId,
+              empName: r.empName,
+              department: r.department,
+              branch: r.branch,
+              displayName: (regEmp && regEmp.displayName) || '',
+              pictureUrl: r.pictureUrl || (regEmp && regEmp.pictureUrl) || '',
+              statusText: r.lineSent ? '✅ ส่งการ์ดแจ้งเตือน LINE แล้ว' : '✅ บันทึกรางวัลเรียบร้อย',
+              statusTone: 'saved'
+            };
+          });
 
-          if (options && options.autoReveal && bigRevealAutoEnabled && savedRevealItems.length > 0) {
-            openBigWinnerReveal(savedRevealItems);
-            Swal.fire({
-              toast: true,
-              position: 'top-end',
-              icon: failedRows.length > 0 ? 'warning' : 'success',
-              title: `สุ่มและบันทึกสำเร็จ ${res.savedCount} รายการ • ส่ง LINE แล้ว ${res.lineSentCount || 0} คน`,
-              showConfirmButton: false,
-              timer: 3200
-            });
-            return;
+          if (options && options.autoReveal) {
+            if (isStageAutoSyncEnabled() && savedRevealItems.length > 0) {
+              pushStageWinners(savedRevealItems, 0);
+            }
+            if (bigRevealAutoEnabled && savedRevealItems.length > 0) {
+              openBigWinnerReveal(savedRevealItems);
+            }
+            if ((isStageAutoSyncEnabled() || bigRevealAutoEnabled) && savedRevealItems.length > 0) {
+              Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: failedRows.length > 0 ? 'warning' : 'success',
+                title: `สุ่มและบันทึกสำเร็จ ${res.savedCount} รายการ • ส่ง LINE แล้ว ${res.lineSentCount || 0} คน`,
+                showConfirmButton: false,
+                timer: 3200
+              });
+              return;
+            }
+          } else if (isStageAutoSyncEnabled() && savedRevealItems.length > 0 && currentStageState.mode === 'winner') {
+            // กรณีกดยืนยันหลังจากพรีวิวบน stage.html ไว้แล้ว ให้อัปเดตสถานะบนจอใหญ่โดยไม่ยิงเสียงซ้ำ
+            pushStageWinners(savedRevealItems, currentStageState.activeIndex || 0, { keepCelebration: true });
           }
 
           const summaryLines = successRows.slice(0, 12).map((r, i) => `
@@ -2305,11 +2443,14 @@
             confirmButtonText: 'ตกลง',
             confirmButtonColor: '#10b981',
             showDenyButton: savedRevealItems.length > 0,
-            denyButtonText: '<i class="fa-solid fa-tv mr-1"></i> เปิดจอใหญ่ประกาศผล',
+            denyButtonText: '<i class="fa-solid fa-tv mr-1"></i> ส่งขึ้นจอใหญ่',
             denyButtonColor: '#f59e0b'
           }).then((modalResult) => {
             if (modalResult.isDenied && savedRevealItems.length > 0) {
-              openBigWinnerReveal(savedRevealItems);
+              pushStageWinners(savedRevealItems, 0, { showToast: true });
+              if (bigRevealAutoEnabled) {
+                openBigWinnerReveal(savedRevealItems);
+              }
             }
           });
         } else {
@@ -2583,12 +2724,18 @@
       const nameEl = document.getElementById('autoSpinNameText');
       if (!box || !nameEl || !eligiblePool || eligiblePool.length === 0) return;
 
+      if (isStageAutoSyncEnabled()) {
+        pushStageRolling(getSelectedStagePrizeLabel(), eligiblePool);
+      }
+
       box.classList.remove('hidden');
       const totalSteps = 16;
       for (let step = 0; step < totalSteps; step++) {
         const randEmp = eligiblePool[Math.floor(Math.random() * eligiblePool.length)];
         nameEl.textContent = `${randEmp.empName || '-'} (${randEmp.empId || ''})`;
-        playSpinTickSound(440 + step * 28);
+        if (!isStageAutoSyncEnabled() || bigRevealAutoEnabled) {
+          playSpinTickSound(440 + step * 28);
+        }
         const delayMs = step < 10 ? 55 : 85 + (step - 10) * 18;
         await new Promise(r => setTimeout(r, delayMs));
       }
@@ -2664,7 +2811,7 @@
     // ==========================================
     // Big Winner Reveal (หน้าจอประกาศผลผู้โชคดีบนจอใหญ่ + พลุ/กระดาษโปรยออโต้ต่อเนื่อง)
     // ==========================================
-    let bigRevealAutoEnabled = true;
+    let bigRevealAutoEnabled = false;
     let bigRevealQueue = [];
     let bigRevealIndex = 0;
     let isBigRevealOpen = false;
@@ -2987,7 +3134,7 @@
           : 'fa-solid fa-tv text-xs text-slate-400';
       }
       if (text) {
-        text.innerText = bigRevealAutoEnabled ? 'จอใหญ่: เปิด' : 'จอใหญ่: ปิด';
+        text.innerText = bigRevealAutoEnabled ? 'จอใหญ่ในหน้านี้: เปิด' : 'จอใหญ่ในหน้านี้: ปิด';
       }
       if (btn) {
         btn.className = bigRevealAutoEnabled
@@ -3248,18 +3395,307 @@
           displayName: emp.displayName,
           pictureUrl: emp.pictureUrl,
           regStatus: emp.regStatus,
-          uid: emp.uid,
           statusText: '✨ ผลสุ่มรอบนี้ (รอยืนยันบันทึก)',
           statusTone: 'pending'
         };
       });
-      openBigWinnerReveal(items, 0);
+      pushStageWinners(items, 0, { showToast: true });
+      if (bigRevealAutoEnabled) {
+        openBigWinnerReveal(items, 0);
+      }
     }
 
     function openWinnerRevealFromRow(rowIndex) {
       const item = rewardsList.find(r => Number(r.rowIndex) === Number(rowIndex));
       if (!item || !item.empId) return;
-      openBigWinnerReveal([item], 0);
+      pushStageWinners([item], 0, { showToast: true });
+      if (bigRevealAutoEnabled) {
+        openBigWinnerReveal([item], 0);
+      }
+    }
+
+    // ==========================================
+    // Dual-Screen Stage Display Controller (stage.html Backstage Sync Engine)
+    // ==========================================
+    const STAGE_CHANNEL_NAME = 'cm_party_stage_v1';
+    const STAGE_STORAGE_KEY = 'cm_party_stage_state_v1';
+    const stageBroadcastChannel = ('BroadcastChannel' in window) ? new BroadcastChannel(STAGE_CHANNEL_NAME) : null;
+    let stageCloudSyncTimer = null;
+
+    let currentStageState = {
+      version: 0,
+      mode: 'standby',
+      prizeLabel: '',
+      rollingNames: [],
+      winners: [],
+      activeIndex: 0,
+      celebrateNonce: 0,
+      stats: null,
+      updatedAt: 0
+    };
+
+    function isStageAutoSyncEnabled() {
+      const el = document.getElementById('stageAutoSyncCheck');
+      return el ? Boolean(el.checked) : true;
+    }
+
+    function getStagePageUrl() {
+      if (window.location.protocol === 'http:' || window.location.protocol === 'https:') {
+        return new URL('stage.html', window.location.href).href;
+      }
+      return `${GAS_WEB_APP_URL}?page=stage`;
+    }
+
+    function openStageWindow() {
+      const url = getStagePageUrl();
+      window.open(url, 'cmPartyStageDisplay', 'noopener');
+      // ส่งสถานะปัจจุบันซ้ำอีกรอบหลังหน้าต่างใหม่เปิดโหลดเสร็จ
+      setTimeout(() => {
+        try {
+          if (stageBroadcastChannel) stageBroadcastChannel.postMessage(currentStageState);
+          localStorage.setItem(STAGE_STORAGE_KEY, JSON.stringify({ ...currentStageState, updatedAt: Date.now() }));
+        } catch (e) {}
+      }, 900);
+    }
+
+    async function copyStageUrl() {
+      const url = getStagePageUrl();
+      try {
+        await navigator.clipboard.writeText(url);
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'คัดลอกลิงก์จอใหญ่ (stage.html) แล้ว!',
+          text: url,
+          showConfirmButton: false,
+          timer: 2400
+        });
+      } catch (err) {
+        Swal.fire({
+          icon: 'info',
+          title: 'ลิงก์หน้าจอใหญ่ (stage.html)',
+          html: `<input type="text" readonly value="${escapeHtml(url)}" class="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-slate-50 select-all" onclick="this.select()" />`,
+          confirmButtonColor: '#e11d48'
+        });
+      }
+    }
+
+    function getStageStatsSnapshot() {
+      const eligible = getEligibleEmployees({ requireUid: false, includeShift: true });
+      const total = rewardsList.length;
+      const assigned = rewardsList.filter(r => r.empId && r.empId.trim() !== '').length;
+      return {
+        eligibleCount: eligible.length,
+        remainingPrizes: Math.max(0, total - assigned),
+        assignedPrizes: assigned
+      };
+    }
+
+    function getSelectedStagePrizeLabel() {
+      if (currentEntryMode === 'auto') {
+        const selectedPrizes = getUnassignedRewards().filter(r => selectedDrawRowIndices.has(Number(r.rowIndex)));
+        if (selectedPrizes.length === 1) return selectedPrizes[0].rewardName || '';
+        if (selectedPrizes.length > 1) return `${selectedPrizes[0].rewardName} (และอีก ${selectedPrizes.length - 1} รางวัล)`;
+        return '';
+      }
+      const select = document.getElementById('rewardSelect');
+      const rowIndex = select ? parseInt(select.value, 10) : 0;
+      const rewardObj = rewardsList.find(r => r.rowIndex === rowIndex);
+      return rewardObj ? (rewardObj.rewardName || '') : '';
+    }
+
+    function sanitizeStageWinner(raw) {
+      const clean = buildWinnerRevealItem(raw);
+      return {
+        rewardName: clean.rewardName,
+        empId: clean.empId,
+        empName: clean.empName,
+        department: clean.department,
+        branch: clean.branch,
+        displayName: clean.displayName,
+        pictureUrl: clean.pictureUrl,
+        statusText: clean.statusText,
+        statusTone: clean.statusTone
+      };
+    }
+
+    function updateStageRemoteUI(state) {
+      const statusEl = document.getElementById('stageRemoteStatusText');
+      const navEl = document.getElementById('stageRemoteNav');
+      const navTextEl = document.getElementById('stageRemoteNavText');
+
+      if (statusEl) {
+        if (state.mode === 'rolling') {
+          statusEl.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-rose-500/35 border border-rose-300/50 text-amber-200 font-bold text-[11px] animate-pulse';
+          statusEl.innerText = `🎰 กำลังหมุนสุ่ม: ${state.prizeLabel || 'รางวัลพิเศษ'}`;
+        } else if (state.mode === 'winner' && Array.isArray(state.winners) && state.winners.length > 0) {
+          const w = state.winners[state.activeIndex] || state.winners[0];
+          statusEl.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/25 border border-amber-300/55 text-amber-200 font-bold text-[11px]';
+          statusEl.innerText = `🏆 กำลังแสดง: ${w.empName} (${w.rewardName})`;
+        } else {
+          statusEl.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-emerald-200 font-semibold text-[11px]';
+          statusEl.innerText = state.prizeLabel
+            ? `หน้ารอผล • ถัดไป: ${state.prizeLabel}`
+            : 'หน้ารอผล (Standby)';
+        }
+      }
+
+      if (navEl && navTextEl) {
+        if (state.mode === 'winner' && Array.isArray(state.winners) && state.winners.length > 1) {
+          navEl.classList.remove('hidden');
+          navEl.classList.add('inline-flex');
+          navTextEl.innerText = `${(state.activeIndex || 0) + 1} / ${state.winners.length}`;
+        } else {
+          navEl.classList.add('hidden');
+          navEl.classList.remove('inline-flex');
+        }
+      }
+    }
+
+    function broadcastStageState(partialUpdate, { skipCloud = false, debounceCloud = false } = {}) {
+      const now = Date.now();
+      const nextVersion = Math.max(now, (Number(currentStageState.version) || 0) + 1);
+      const merged = {
+        ...currentStageState,
+        ...partialUpdate,
+        version: nextVersion,
+        updatedAt: now
+      };
+
+      merged.winners = Array.isArray(merged.winners) ? merged.winners.slice(0, 50).map(sanitizeStageWinner) : [];
+      merged.rollingNames = Array.isArray(merged.rollingNames) ? merged.rollingNames.slice(0, 40).map(n => String(n || '').trim()).filter(Boolean) : [];
+      const maxIdx = Math.max(0, merged.winners.length - 1);
+      merged.activeIndex = Math.max(0, Math.min(parseInt(merged.activeIndex, 10) || 0, maxIdx));
+
+      currentStageState = merged;
+      updateStageRemoteUI(currentStageState);
+
+      // 1. Instant 0ms Local Sync via BroadcastChannel + localStorage
+      try {
+        if (stageBroadcastChannel) {
+          stageBroadcastChannel.postMessage(currentStageState);
+        }
+        localStorage.setItem(STAGE_STORAGE_KEY, JSON.stringify(currentStageState));
+      } catch (localErr) {}
+
+      // 2. Cross-device Cloud Sync via GAS CacheService
+      if (skipCloud || !currentAdminUid) return;
+
+      const sendCloud = () => {
+        callGasApi({
+          action: 'setStageState',
+          state: currentStageState
+        }).catch(err => console.warn('Cloud stage sync warning:', err));
+      };
+
+      if (stageCloudSyncTimer) {
+        clearTimeout(stageCloudSyncTimer);
+        stageCloudSyncTimer = null;
+      }
+
+      if (debounceCloud) {
+        stageCloudSyncTimer = setTimeout(sendCloud, 400);
+      } else {
+        sendCloud();
+      }
+    }
+
+    function syncStandbyContextToStage() {
+      if (!isStageAutoSyncEnabled()) return;
+      if (currentStageState.mode !== 'standby') return;
+      const prizeLabel = getSelectedStagePrizeLabel();
+      const stats = getStageStatsSnapshot();
+      broadcastStageState({
+        mode: 'standby',
+        prizeLabel,
+        stats
+      }, { debounceCloud: true });
+    }
+
+    function pushStageStandby(prizeLabelOverride) {
+      const prizeLabel = (prizeLabelOverride !== undefined) ? String(prizeLabelOverride) : getSelectedStagePrizeLabel();
+      broadcastStageState({
+        mode: 'standby',
+        prizeLabel,
+        rollingNames: [],
+        winners: [],
+        activeIndex: 0,
+        stats: getStageStatsSnapshot()
+      });
+    }
+
+    function pushStageRolling(prizeLabel, eligiblePool) {
+      const sampleNames = (Array.isArray(eligiblePool) ? eligiblePool : [])
+        .slice()
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 35)
+        .map(e => `${e.empName || '-'} (${e.empId || ''})`);
+
+      broadcastStageState({
+        mode: 'rolling',
+        prizeLabel: String(prizeLabel || '').trim() || 'Lucky Draw',
+        rollingNames: sampleNames,
+        winners: [],
+        activeIndex: 0,
+        stats: getStageStatsSnapshot()
+      });
+    }
+
+    function pushStageWinners(items, startIndex = 0, { keepCelebration = false, showToast = false } = {}) {
+      if (!Array.isArray(items) || items.length === 0) return;
+      const cleanWinners = items.map(sanitizeStageWinner);
+      const nextNonce = keepCelebration
+        ? (Number(currentStageState.celebrateNonce) || 1)
+        : ((Number(currentStageState.celebrateNonce) || 0) + 1);
+
+      broadcastStageState({
+        mode: 'winner',
+        prizeLabel: cleanWinners[0].rewardName || '',
+        rollingNames: [],
+        winners: cleanWinners,
+        activeIndex: Math.max(0, Math.min(startIndex, cleanWinners.length - 1)),
+        celebrateNonce: nextNonce,
+        stats: getStageStatsSnapshot()
+      });
+
+      if (showToast) {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'success',
+          title: 'ส่งขึ้นหน้าจอใหญ่ (stage.html) แล้ว!',
+          showConfirmButton: false,
+          timer: 2000
+        });
+      }
+    }
+
+    function pushStageCelebrateAgain() {
+      if (currentStageState.mode !== 'winner' || !Array.isArray(currentStageState.winners) || currentStageState.winners.length === 0) {
+        Swal.fire({
+          toast: true,
+          position: 'top-end',
+          icon: 'info',
+          title: 'ยังไม่มีผู้โชคดีแสดงอยู่บนจอ stage.html',
+          showConfirmButton: false,
+          timer: 2000
+        });
+        return;
+      }
+      broadcastStageState({
+        celebrateNonce: (Number(currentStageState.celebrateNonce) || 0) + 1
+      });
+    }
+
+    function stepStageWinner(delta) {
+      if (currentStageState.mode !== 'winner' || !Array.isArray(currentStageState.winners) || currentStageState.winners.length === 0) return;
+      const total = currentStageState.winners.length;
+      const nextIdx = (Number(currentStageState.activeIndex || 0) + delta + total) % total;
+      broadcastStageState({
+        activeIndex: nextIdx,
+        celebrateNonce: (Number(currentStageState.celebrateNonce) || 0) + 1
+      });
     }
 
     function adminLiffLogin() {

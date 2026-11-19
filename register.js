@@ -1424,6 +1424,14 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(resendRewardLineNotification(params)))
       .setMimeType(ContentService.MimeType.JSON);
   }
+  if (params.action === 'getStageState') {
+    return ContentService.createTextOutput(JSON.stringify(getStageDisplayState()))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  if (params.action === 'setStageState') {
+    return ContentService.createTextOutput(JSON.stringify(setStageDisplayState(params)))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 
   // เปิดหน้าเว็บแกลเลอรีภาพกิจกรรม (gallery.html) เมื่อส่ง ?page=gallery หรือ ?page=photos
   if (params.page === 'gallery' || params.page === 'photos') {
@@ -1439,6 +1447,15 @@ function doGet(e) {
     return HtmlService.createTemplateFromFile('reward')
       .evaluate()
       .setTitle('🎁 ระบบบันทึกและจัดการรางวัล - CM Party')
+      .addMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
+  // เปิดหน้าจอใหญ่ประกาศผลรางวัล (stage.html) เมื่อส่ง ?page=stage
+  if (params.page === 'stage') {
+    return HtmlService.createTemplateFromFile('stage')
+      .evaluate()
+      .setTitle('🎉 หน้าจอประกาศผลรางวัล - CM Party 2026')
       .addMetaTag('viewport', 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
@@ -1569,6 +1586,14 @@ function doPost(e) {
     }
     if (payload.action === 'resendRewardLine') {
       return ContentService.createTextOutput(JSON.stringify(resendRewardLineNotification(payload)))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    if (payload.action === 'getStageState') {
+      return ContentService.createTextOutput(JSON.stringify(getStageDisplayState()))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    if (payload.action === 'setStageState') {
+      return ContentService.createTextOutput(JSON.stringify(setStageDisplayState(payload)))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -2500,6 +2525,152 @@ function resendRewardLineNotification(payload) {
     return { status: 'error', message: err.message };
   } finally {
     lock.releaseLock();
+  }
+}
+
+const STAGE_DISPLAY_PROP_KEY = 'STAGE_DISPLAY_STATE';
+const STAGE_DISPLAY_CACHE_KEY = 'STAGE_DISPLAY_STATE_CACHE';
+
+function getDefaultStageDisplayState() {
+  return {
+    version: 0,
+    mode: 'standby',
+    prizeLabel: '',
+    rollingNames: [],
+    winners: [],
+    activeIndex: 0,
+    celebrateNonce: 0,
+    stats: null,
+    updatedAt: 0
+  };
+}
+
+/**
+ * ดึงสถานะล่าสุดสำหรับหน้าจอใหญ่ประกาศผลรางวัล (stage.html) จาก CacheService อย่างรวดเร็ว
+ */
+function getStageDisplayState() {
+  try {
+    const cache = CacheService.getScriptCache();
+    const cached = cache.get(STAGE_DISPLAY_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (parsed && typeof parsed === 'object') {
+        return {
+          status: 'success',
+          state: parsed,
+          serverTime: Date.now()
+        };
+      }
+    }
+
+    const props = PropertiesService.getScriptProperties();
+    const raw = props.getProperty(STAGE_DISPLAY_PROP_KEY);
+    if (raw) {
+      const parsedProp = JSON.parse(raw);
+      if (parsedProp && typeof parsedProp === 'object') {
+        try {
+          cache.put(STAGE_DISPLAY_CACHE_KEY, raw, 600);
+        } catch (cacheErr) {}
+        return {
+          status: 'success',
+          state: parsedProp,
+          serverTime: Date.now()
+        };
+      }
+    }
+  } catch (err) {
+    console.warn('getStageDisplayState warning:', err);
+  }
+
+  return {
+    status: 'success',
+    state: getDefaultStageDisplayState(),
+    serverTime: Date.now()
+  };
+}
+
+/**
+ * อัปเดตสถานะหน้าจอใหญ่ประกาศผลรางวัลจากหลังเวที (เฉพาะแอดมินเท่านั้น)
+ */
+function setStageDisplayState(payload) {
+  if (!isAdminAuthorized(payload)) {
+    return { status: 'error', message: 'ไม่มีสิทธิ์ดำเนินการ (อนุญาตเฉพาะแอดมินเท่านั้น)' };
+  }
+
+  try {
+    let rawState = payload && payload.state ? payload.state : {};
+    if (typeof rawState === 'string') {
+      rawState = JSON.parse(rawState);
+    }
+    if (!rawState || typeof rawState !== 'object') {
+      rawState = {};
+    }
+
+    const rawMode = String(rawState.mode || 'standby').trim().toLowerCase();
+    const mode = (rawMode === 'rolling' || rawMode === 'winner') ? rawMode : 'standby';
+
+    const rollingNames = Array.isArray(rawState.rollingNames)
+      ? rawState.rollingNames
+          .slice(0, 40)
+          .map(name => String(name || '').trim().slice(0, 60))
+          .filter(Boolean)
+      : [];
+
+    const winners = Array.isArray(rawState.winners)
+      ? rawState.winners.slice(0, 50).map(w => ({
+          rewardName: String((w && w.rewardName) || '-').trim().slice(0, 120),
+          empId: String((w && w.empId) || '-').trim().slice(0, 40),
+          empName: String((w && w.empName) || '-').trim().slice(0, 100),
+          department: String((w && w.department) || '-').trim().slice(0, 100),
+          branch: String((w && w.branch) || '-').trim().slice(0, 80),
+          displayName: String((w && w.displayName) || '').trim().slice(0, 80),
+          pictureUrl: String((w && w.pictureUrl) || '').trim().slice(0, 500),
+          statusText: String((w && w.statusText) || '').trim().slice(0, 80),
+          statusTone: String((w && w.statusTone) || 'saved').trim().slice(0, 20)
+        }))
+      : [];
+
+    const maxIdx = Math.max(0, winners.length - 1);
+    const parsedIdx = parseInt(rawState.activeIndex, 10);
+    const activeIndex = isNaN(parsedIdx) ? 0 : Math.max(0, Math.min(parsedIdx, maxIdx));
+
+    let stats = null;
+    if (rawState.stats && typeof rawState.stats === 'object') {
+      stats = {
+        eligibleCount: Number(rawState.stats.eligibleCount) || 0,
+        remainingPrizes: Number(rawState.stats.remainingPrizes) || 0,
+        assignedPrizes: Number(rawState.stats.assignedPrizes) || 0
+      };
+    }
+
+    const now = Date.now();
+    const parsedVer = Number(rawState.version);
+    const cleanState = {
+      version: (parsedVer > 0) ? parsedVer : now,
+      mode: mode,
+      prizeLabel: String(rawState.prizeLabel || '').trim().slice(0, 120),
+      rollingNames: rollingNames,
+      winners: winners,
+      activeIndex: activeIndex,
+      celebrateNonce: Math.max(0, parseInt(rawState.celebrateNonce, 10) || 0),
+      stats: stats,
+      updatedAt: now
+    };
+
+    const jsonStr = JSON.stringify(cleanState);
+    PropertiesService.getScriptProperties().setProperty(STAGE_DISPLAY_PROP_KEY, jsonStr);
+    try {
+      CacheService.getScriptCache().put(STAGE_DISPLAY_CACHE_KEY, jsonStr, 600);
+    } catch (cacheErr) {}
+
+    return {
+      status: 'success',
+      state: cleanState,
+      serverTime: now
+    };
+  } catch (err) {
+    console.error('Error in setStageDisplayState:', err);
+    return { status: 'error', message: err.message };
   }
 }
 

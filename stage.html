@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>🎉 หน้าจอประกาศผลรางวัล - CM Party 2026</title>
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome 6 -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+
+  <!-- Google Fonts: Prompt -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Shared CM Party Configuration -->
+  <script src="config.js"></script>
+
+  <style>
+    html, body {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Prompt', sans-serif;
+      color: #ffffff;
+      overflow: hidden;
+      background:
+        radial-gradient(circle at 50% 22%, rgba(251, 191, 36, 0.20) 0%, transparent 45%),
+        radial-gradient(circle at 16% 24%, rgba(244, 63, 94, 0.30) 0%, transparent 44%),
+        radial-gradient(circle at 84% 76%, rgba(16, 185, 129, 0.24) 0%, transparent 46%),
+        linear-gradient(155deg, #140611 0%, #2a0a1c 48%, #0d1f19 100%);
+    }
+
+    @keyframes stageSnowfall {
+      0% {
+        transform: translateY(-10vh) translateX(0) rotate(0deg);
+        opacity: 0;
+      }
+      12% { opacity: 0.75; }
+      88% { opacity: 0.55; }
+      100% {
+        transform: translateY(108vh) translateX(28px) rotate(360deg);
+        opacity: 0;
+      }
+    }
+
+    .stage-snowflake {
+      position: fixed;
+      top: -24px;
+      color: rgba(255, 255, 255, 0.55);
+      text-shadow: 0 0 10px rgba(253, 224, 71, 0.35);
+      pointer-events: none;
+      user-select: none;
+      animation-name: stageSnowfall;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+    }
+
+    @keyframes stageGoldShimmer {
+      0% { background-position: 0% center; }
+      100% { background-position: 200% center; }
+    }
+
+    .stage-gold-text {
+      background: linear-gradient(90deg, #fef08a 0%, #fbbf24 30%, #fffbeb 50%, #f59e0b 75%, #fef08a 100%);
+      background-size: 200% auto;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: stageGoldShimmer 3.8s linear infinite;
+    }
+
+    @keyframes stageSpinRay {
+      0% { transform: translate(-50%, -50%) rotate(0deg); }
+      100% { transform: translate(-50%, -50%) rotate(360deg); }
+    }
+
+    .stage-sunburst {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: min(92vw, 760px);
+      height: min(92vw, 760px);
+      border-radius: 9999px;
+      background: repeating-conic-gradient(
+        from 0deg,
+        rgba(253, 224, 71, 0.16) 0deg 11deg,
+        transparent 11deg 22deg
+      );
+      mask-image: radial-gradient(circle, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.42) 48%, transparent 72%);
+      -webkit-mask-image: radial-gradient(circle, rgba(0, 0, 0, 0.95) 0%, rgba(0, 0, 0, 0.42) 48%, transparent 72%);
+      animation: stageSpinRay 24s linear infinite;
+      pointer-events: none;
+    }
+
+    @keyframes stageCardPop {
+      0% { opacity: 0; transform: scale(0.74) translateY(26px); }
+      65% { opacity: 1; transform: scale(1.03) translateY(-5px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+
+    .stage-card-pop {
+      animation: stageCardPop 0.62s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    }
+
+    @keyframes stageCrownFloat {
+      0%, 100% { transform: translateY(0) rotate(-6deg); }
+      50% { transform: translateY(-7px) rotate(6deg); }
+    }
+
+    .stage-crown-float {
+      animation: stageCrownFloat 2.3s ease-in-out infinite;
+    }
+
+    @keyframes stagePulseRing {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.45), 0 0 42px rgba(244, 63, 94, 0.35); }
+      50% { box-shadow: 0 0 0 14px rgba(251, 191, 36, 0), 0 0 60px rgba(251, 191, 36, 0.55); }
+    }
+
+    .stage-rolling-pulse {
+      animation: stagePulseRing 1.4s ease-in-out infinite;
+    }
+  </style>
+</head>
+<body class="relative w-full h-full select-none flex flex-col justify-between">
+
+  <!-- Background Fireworks Canvas -->
+  <canvas id="stageFireworksCanvas" class="hidden fixed inset-0 w-full h-full pointer-events-none z-[5]" aria-hidden="true"></canvas>
+
+  <!-- Ambient Snowflakes Layer -->
+  <div id="stageSnowLayer" class="fixed inset-0 pointer-events-none z-[8] overflow-hidden" aria-hidden="true"></div>
+
+  <!-- Foreground Confetti Canvas -->
+  <canvas id="stageConfettiCanvas" class="hidden fixed inset-0 w-full h-full pointer-events-none z-[40]" aria-hidden="true"></canvas>
+
+  <!-- Top Audio Unlock Banner (Non-blocking one-click audio + fullscreen unlock) -->
+  <div id="stageAudioUnlockBanner" class="fixed top-4 left-1/2 -translate-x-1/2 z-[45] max-w-[92vw]">
+    <button
+      type="button"
+      onclick="unlockStageAudioAndFullscreen()"
+      class="px-5 py-2.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-300 to-amber-400 hover:from-amber-300 hover:to-yellow-200 text-rose-950 font-extrabold text-xs sm:text-sm border-2 border-white shadow-[0_10px_30px_rgba(251,191,36,0.55)] animate-bounce cursor-pointer flex items-center gap-2"
+    >
+      <span>🔊</span>
+      <span>คลิกที่นี่ 1 ครั้ง เพื่อเปิดเสียงประกาศผล &amp; เต็มจอ</span>
+    </button>
+  </div>
+
+  <!-- Auto-Hiding Top-Right Projector Controls -->
+  <div
+    id="stageTopControls"
+    class="fixed top-4 right-4 z-[46] flex items-center gap-2 transition-opacity duration-300"
+  >
+    <button
+      type="button"
+      id="stageSoundBtn"
+      onclick="toggleStageSound()"
+      class="px-3.5 py-2 rounded-full bg-black/55 hover:bg-black/75 backdrop-blur-md border border-amber-300/45 text-amber-200 font-bold text-xs shadow-lg transition flex items-center gap-1.5 cursor-pointer"
+      title="เปิด / ปิดเสียง (M)"
+    >
+      <i id="stageSoundIcon" class="fa-solid fa-volume-high text-amber-300"></i>
+      <span id="stageSoundText" class="hidden sm:inline">เสียง: เปิด</span>
+    </button>
+
+    <button
+      type="button"
+      id="stageSyncModeBtn"
+      onclick="toggleStageSyncMode()"
+      class="px-3.5 py-2 rounded-full bg-black/55 hover:bg-black/75 backdrop-blur-md border border-white/25 text-rose-100 font-bold text-xs shadow-lg transition flex items-center gap-1.5 cursor-pointer"
+      title="สลับโหมดซิงก์ (Auto: ทั้งในเครื่อง+ข้ามเครื่อง / Local: 2 จอเครื่องเดียว 0ms)"
+    >
+      <i class="fa-solid fa-tower-broadcast text-emerald-300"></i>
+      <span id="stageSyncModeText">Auto Sync</span>
+    </button>
+
+    <button
+      type="button"
+      onclick="toggleStageFullscreen()"
+      class="w-9 h-9 rounded-full bg-black/55 hover:bg-black/75 backdrop-blur-md border border-white/25 text-white flex items-center justify-center shadow-lg transition cursor-pointer"
+      title="เปิด / ปิด เต็มจอ (F)"
+    >
+      <i id="stageFullscreenIcon" class="fa-solid fa-expand text-xs"></i>
+    </button>
+  </div>
+
+  <!-- Main Stage Viewport -->
+  <main class="relative z-[15] flex-1 flex items-center justify-center p-5 sm:p-8 overflow-hidden">
+
+    <!-- ================= 1. STANDBY VIEW (หน้ารอจับรางวัล) ================= -->
+    <section
+      id="stageStandbyView"
+      class="w-full max-w-4xl flex flex-col items-center text-center space-y-6 stage-card-pop"
+    >
+      <!-- Party Logo Frame -->
+      <div class="relative p-2 rounded-[2rem] bg-gradient-to-br from-rose-400/50 via-amber-300/50 to-emerald-400/50 shadow-[0_0_50px_rgba(244,63,94,0.3)] border border-white/25">
+        <div class="bg-white/95 rounded-[1.6rem] p-3 sm:p-4 shadow-inner flex items-center justify-center">
+          <img
+            id="stageStandbyLogo"
+            src="logo/logoparty.png"
+            alt="CM Party Logo"
+            class="h-24 sm:h-32 w-auto object-contain rounded-xl"
+            onerror="handleStageLogoError(this)"
+          />
+        </div>
+      </div>
+
+      <!-- Event Pill & Hero Title -->
+      <div class="space-y-2.5">
+        <span class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-amber-300/45 text-amber-200 text-xs sm:text-sm font-extrabold tracking-widest uppercase shadow-lg">
+          <span>🎄</span>
+          <span>CM FROZENFOOD • CHRISTMAS &amp; NEW YEAR PARTY 2026</span>
+          <span>🎁</span>
+        </span>
+
+        <h1 class="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight stage-gold-text drop-shadow-[0_6px_28px_rgba(251,191,36,0.35)]">
+          LUCKY DRAW STAGE
+        </h1>
+
+        <p class="text-base sm:text-xl text-rose-100/90 font-medium">
+          เตรียมพบกับผู้โชคดีคนต่อไปบนเวที ✨
+        </p>
+      </div>
+
+      <!-- Upcoming Prize Illuminated Card (Hidden when prizeLabel is empty) -->
+      <div
+        id="stageNextPrizeBox"
+        class="hidden w-full max-w-2xl rounded-3xl bg-black/45 backdrop-blur-xl border-2 border-amber-300/60 px-6 py-5 shadow-[0_18px_55px_rgba(0,0,0,0.55)] space-y-1.5"
+      >
+        <p class="text-xs sm:text-sm font-bold text-amber-300 uppercase tracking-wider flex items-center justify-center gap-1.5">
+          <span>🎁</span>
+          <span>รางวัลถัดไปที่กำลังจะจับ</span>
+        </p>
+        <p id="stageNextPrizeName" class="text-2xl sm:text-4xl font-extrabold text-white drop-shadow leading-snug">
+          -
+        </p>
+      </div>
+
+      <!-- Live Stage Stats Row -->
+      <div id="stageStatsBar" class="hidden flex flex-wrap items-center justify-center gap-3 sm:gap-4 pt-1">
+        <div class="px-4 py-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-sky-300/35 text-center min-w-[115px]">
+          <span class="block text-[11px] text-sky-200 font-semibold">ผู้มีสิทธิ์ลุ้น</span>
+          <span id="stageStatEligible" class="text-xl sm:text-2xl font-extrabold text-white">0</span>
+        </div>
+        <div class="px-4 py-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-amber-300/35 text-center min-w-[115px]">
+          <span class="block text-[11px] text-amber-200 font-semibold">รางวัลคงเหลือ</span>
+          <span id="stageStatRemaining" class="text-xl sm:text-2xl font-extrabold text-amber-300">0</span>
+        </div>
+        <div class="px-4 py-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-emerald-300/35 text-center min-w-[115px]">
+          <span class="block text-[11px] text-emerald-200 font-semibold">แจกไปแล้ว</span>
+          <span id="stageStatAssigned" class="text-xl sm:text-2xl font-extrabold text-emerald-300">0</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 2. ROLLING VIEW (กำลังหมุนสุ่มรายชื่อ) ================= -->
+    <section
+      id="stageRollingView"
+      class="hidden w-full max-w-3xl flex flex-col items-center text-center space-y-6"
+    >
+      <div class="space-y-2">
+        <span class="inline-flex items-center gap-2 px-5 py-1.5 rounded-full bg-rose-500/30 border border-rose-300/60 text-rose-100 text-sm sm:text-base font-extrabold shadow-lg animate-pulse">
+          <span>🎰</span>
+          <span>กำลังสุ่มหาผู้โชคดี...</span>
+        </span>
+        <h2 id="stageRollingPrizeName" class="text-2xl sm:text-4xl lg:text-5xl font-extrabold stage-gold-text drop-shadow-md leading-tight px-2">
+          Lucky Draw
+        </h2>
+      </div>
+
+      <div class="w-full rounded-[2rem] bg-black/55 backdrop-blur-xl border-2 border-amber-300/75 p-7 sm:p-12 stage-rolling-pulse">
+        <p class="text-xs sm:text-sm font-bold text-amber-300/90 uppercase tracking-widest mb-3">
+          ✨ ลุ้นระทึกผู้โชคดี ✨
+        </p>
+        <div
+          id="stageRollingNameText"
+          class="text-3xl sm:text-5xl lg:text-6xl font-black text-white drop-shadow-[0_4px_20px_rgba(251,191,36,0.45)] min-h-[4rem] flex items-center justify-center break-words leading-tight"
+        >
+          🎄 CM Party 2026...
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 3. WINNER VIEW (Big Winner Reveal เต็มจอ) ================= -->
+    <section
+      id="stageWinnerView"
+      class="hidden relative w-full max-w-4xl flex flex-col items-center justify-center"
+    >
+      <div class="stage-sunburst" aria-hidden="true"></div>
+
+      <div
+        id="stageWinnerCard"
+        class="relative w-full max-w-3xl rounded-[2.25rem] bg-black/50 backdrop-blur-xl border-2 border-amber-300/70 shadow-[0_24px_85px_rgba(0,0,0,0.72)] px-6 py-7 sm:px-10 sm:py-9 text-center space-y-5 stage-card-pop"
+      >
+        <!-- Multi-winner Counter & Top Ribbon -->
+        <div class="flex flex-wrap items-center justify-center gap-2">
+          <span class="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-amber-400/20 border border-amber-300/55 text-amber-200 text-xs sm:text-sm font-extrabold tracking-wide">
+            <span>🏆</span>
+            <span>ขอแสดงความยินดี! รางวัลที่ได้รับ</span>
+          </span>
+          <span id="stageWinnerCounter" class="hidden px-3.5 py-1 rounded-full bg-rose-500/85 border border-white/50 text-white text-xs font-extrabold shadow">
+            ผู้โชคดี 1 / 1
+          </span>
+        </div>
+
+        <!-- Prize Title -->
+        <h2 id="stageWinnerPrize" class="text-2xl sm:text-4xl lg:text-5xl font-extrabold stage-gold-text drop-shadow-md leading-tight px-2">
+          -
+        </h2>
+
+        <!-- Giant Circular Avatar -->
+        <div class="relative inline-flex items-center justify-center pt-4">
+          <span class="stage-crown-float absolute -top-3 text-4xl sm:text-5xl drop-shadow-[0_4px_14px_rgba(251,191,36,0.8)] pointer-events-none">👑</span>
+          <img
+            id="stageWinnerAvatar"
+            src=""
+            alt="Winner Avatar"
+            referrerpolicy="no-referrer"
+            class="w-36 h-36 sm:w-48 sm:h-48 rounded-full object-cover border-4 border-amber-300 shadow-[0_0_50px_rgba(251,191,36,0.68)] bg-rose-100"
+          />
+        </div>
+
+        <!-- Winner Info -->
+        <div class="space-y-2.5">
+          <div class="flex flex-wrap items-center justify-center gap-2">
+            <span id="stageWinnerEmpId" class="px-5 py-1 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 border-2 border-white/75 text-white font-extrabold text-base sm:text-2xl shadow-lg">
+              -
+            </span>
+            <span id="stageWinnerLineName" class="hidden px-3.5 py-1 rounded-full bg-white/15 border border-white/25 text-rose-100 font-semibold text-xs sm:text-sm">
+              -
+            </span>
+          </div>
+
+          <h3 id="stageWinnerEmpName" class="text-3xl sm:text-5xl lg:text-6xl font-black text-white drop-shadow-[0_4px_20px_rgba(0,0,0,0.65)] leading-tight">
+            -
+          </h3>
+
+          <div class="flex flex-wrap items-center justify-center gap-2.5 pt-1">
+            <span id="stageWinnerDept" class="px-4 py-1.5 rounded-full bg-white/10 border border-white/25 text-rose-100 font-semibold text-xs sm:text-base">
+              แผนก: -
+            </span>
+            <span id="stageWinnerBranch" class="px-4 py-1.5 rounded-full bg-emerald-500/25 border border-emerald-300/50 text-emerald-200 font-bold text-xs sm:text-base">
+              สาขา: -
+            </span>
+          </div>
+
+          <div class="pt-1">
+            <span id="stageWinnerStatus" class="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-emerald-500/20 border border-emerald-300/50 text-emerald-200 text-xs font-bold">
+              ✅ ผู้โชคดีประจำรางวัลนี้
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Local Optional Multi-Winner Arrows (shown when winners.length > 1) -->
+      <div id="stageWinnerNav" class="hidden relative z-20 mt-4 items-center gap-3 bg-black/55 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 shadow-xl">
+        <button
+          type="button"
+          onclick="stepLocalWinner(-1)"
+          class="px-3.5 py-1.5 rounded-full bg-white/15 hover:bg-white/30 text-white font-bold text-xs flex items-center gap-1.5 transition cursor-pointer"
+        >
+          <i class="fa-solid fa-chevron-left"></i>
+          <span>ก่อนหน้า</span>
+        </button>
+        <span id="stageWinnerNavText" class="text-xs sm:text-sm font-extrabold text-amber-200 px-2">1 / 1</span>
+        <button
+          type="button"
+          onclick="stepLocalWinner(1)"
+          class="px-3.5 py-1.5 rounded-full bg-gradient-to-r from-amber-400 to-yellow-400 hover:from-amber-500 hover:to-yellow-500 text-rose-950 font-extrabold text-xs flex items-center gap-1.5 shadow transition cursor-pointer"
+        >
+          <span>ถัดไป</span>
+          <i class="fa-solid fa-chevron-right"></i>
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Bottom-Left Minimal Sync Status Pill -->
+  <div class="fixed bottom-3.5 left-4 z-[45] flex items-center gap-2">
+    <div
+      id="stageConnPill"
+      class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-[11px] font-semibold text-rose-100/85 shadow"
+    >
+      <span id="stageConnDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+      <span id="stageConnText">กำลังเชื่อมต่อ...</span>
+    </div>
+  </div>
+
+  <script>
+    const CM_CFG = window.CM_PARTY_CONFIG || {};
+    const GAS_WEB_APP_URL = CM_CFG.GAS_WEB_APP_URL || 'https://script.google.com/macros/s/AKfycbx6yDgQvf3RvCVu8nHRN3yQM6IM5Be2JZpESNT6nJ3XddDsOlrMj_S7nIPCRUqmZBjFYw/exec';
+
+    const STAGE_CHANNEL_NAME = 'cm_party_stage_v1';
+    const STAGE_STORAGE_KEY = 'cm_party_stage_state_v1';
+    const STAGE_FX_COLORS = ['#fde047', '#fb7185', '#34d399', '#38bdf8', '#f472b6', '#ffffff', '#fb923c'];
+
+    let stageSoundEnabled = true;
+    let stageAudioCtx = null;
+    let stageAudioUnlocked = false;
+    let stageSyncMode = 'auto'; // 'auto' (BroadcastChannel + Cloud Poll) | 'local' (BroadcastChannel / localStorage 0ms only)
+
+    let currentStageState = {
+      version: 0,
+      mode: 'standby',
+      prizeLabel: '',
+      rollingNames: [],
+      winners: [],
+      activeIndex: 0,
+      celebrateNonce: 0,
+      stats: null,
+      updatedAt: 0
+    };
+    let lastCelebratedKey = '';
+    let rollingDisplayTimer = null;
+    let rollingStepIdx = 0;
+
+    // Continuous FX state
+    let stageFxAnimId = null;
+    let stageFireworkTimer = null;
+    let stageFwRockets = [];
+    let stageFwParticles = [];
+    let stageConfettiPieces = [];
+    let stageExtraConfetti = [];
+
+    // Poll & WakeLock & Auto-hide
+    let stagePollTimer = null;
+    let isStagePolling = false;
+    let stageWakeLock = null;
+    let controlsIdleTimer = null;
+    const stageChannel = ('BroadcastChannel' in window) ? new BroadcastChannel(STAGE_CHANNEL_NAME) : null;
+
+    function handleStageLogoError(imgEl) {
+      if (!imgEl.dataset.triedCdn) {
+        imgEl.dataset.triedCdn = 'true';
+        imgEl.src = 'https://cmparty.vercel.app/logo/logoparty.png';
+      } else {
+        imgEl.outerHTML = '<span class="text-5xl px-4">🎄</span>';
+      }
+    }
+
+    function createStageSnowflakes() {
+      const layer = document.getElementById('stageSnowLayer');
+      if (!layer) return;
+      layer.innerHTML = '';
+      const count = window.innerWidth < 640 ? 18 : 34;
+      for (let i = 0; i < count; i++) {
+        const flake = document.createElement('i');
+        flake.className = i % 3 === 0 ? 'fa-solid fa-star stage-snowflake' : 'fa-regular fa-snowflake stage-snowflake';
+        flake.style.left = Math.random() * 100 + 'vw';
+        flake.style.animationDuration = (Math.random() * 6 + 7) + 's';
+        flake.style.animationDelay = (Math.random() * 6) + 's';
+        flake.style.fontSize = (Math.random() * 10 + 8) + 'px';
+        layer.appendChild(flake);
+      }
+    }
+
+    function createWinnerFallbackAvatarUri(seedText) {
+      const palettes = ['#fecdd3', '#a7f3d0', '#fde68a', '#bae6fd'];
+      const str = String(seedText || 'CM');
+      let hash = 0;
+      for (let i = 0; i < str.length; i++) {
+        hash = ((hash << 5) - hash) + str.charCodeAt(i);
+        hash |= 0;
+      }
+      const bg = palettes[Math.abs(hash) % palettes.length];
+      const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96"><rect width="96" height="96" fill="${bg}"/><circle cx="48" cy="52" r="28" fill="#fff7ed"/><circle cx="38" cy="48" r="3.6" fill="#334155"/><circle cx="58" cy="48" r="3.6" fill="#334155"/><circle cx="31" cy="55" r="4.5" fill="#fda4af" opacity="0.75"/><circle cx="65" cy="55" r="4.5" fill="#fda4af" opacity="0.75"/><path d="M39 59 Q48 67 57 59" fill="none" stroke="#334155" stroke-width="3.2" stroke-linecap="round"/></svg>`;
+      return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+    }
+
+    function getStageAudioContext() {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      if (!AudioCtx) return null;
+      if (!stageAudioCtx) stageAudioCtx = new AudioCtx();
+      return stageAudioCtx;
+    }
+
+    function unlockStageAudioAndFullscreen() {
+      try {
+        const ctx = getStageAudioContext();
+        if (ctx) {
+          const playConfirmChime = () => {
+            stageAudioUnlocked = true;
+            const now = ctx.currentTime + 0.01;
+            [783.99, 1046.5, 1318.5].forEach((freq, idx) => {
+              const osc = ctx.createOscillator();
+              const gain = ctx.createGain();
+              osc.type = 'sine';
+              osc.frequency.setValueAtTime(freq, now + idx * 0.06);
+              gain.gain.setValueAtTime(0.001, now + idx * 0.06);
+              gain.gain.linearRampToValueAtTime(0.11, now + idx * 0.06 + 0.02);
+              gain.gain.exponentialRampToValueAtTime(0.0001, now + idx * 0.06 + 0.35);
+              osc.connect(gain);
+              gain.connect(ctx.destination);
+              osc.start(now + idx * 0.06);
+              osc.stop(now + idx * 0.06 + 0.38);
+            });
+          };
+          if (ctx.state === 'suspended') {
+            ctx.resume().then(playConfirmChime).catch(() => {});
+          } else {
+            playConfirmChime();
+          }
+        }
+      } catch (e) {}
+
+      const banner = document.getElementById('stageAudioUnlockBanner');
+      if (banner) banner.classList.add('hidden');
+
+      if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch(() => {});
+      }
+    }
+
+    function hideAudioBannerIfRunning() {
+      const ctx = getStageAudioContext();
+      if (ctx && ctx.state === 'running') {
+        stageAudioUnlocked = true;
+        const banner = document.getElementById('stageAudioUnlockBanner');
+        if (banner) banner.classList.add('hidden');
+      }
+    }
+
+    function playStageTickSound(freq = 520) {
+      if (!stageSoundEnabled) return;
+      try {
+        const ctx = getStageAudioContext();
+        if (!ctx) return;
+        const fire = () => {
+          const now = ctx.currentTime;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, now);
+          gain.gain.setValueAtTime(0.055, now);
+          gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.055);
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start(now);
+          osc.stop(now + 0.06);
+        };
+        if (ctx.state === 'suspended') {
+          ctx.resume().then(fire).catch(() => {});
+        } else {
+          fire();
+        }
+      } catch (e) {}
+    }
+
+    function playStageAnnouncementSound() {
+      if (!stageSoundEnabled) return;
+      try {
+        const ctx = getStageAudioContext();
+        if (!ctx) return;
+
+        const scheduleSound = () => {
+          stageAudioUnlocked = true;
+          const banner = document.getElementById('stageAudioUnlockBanner');
+          if (banner) banner.classList.add('hidden');
+
+          const t0 = ctx.currentTime + 0.01;
+
+          // 1. รัวกลองเปิดฉาก (0.00s - 0.25s)
+          for (let i = 0; i < 6; i++) {
+            const dt = t0 + i * 0.042;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(160 + i * 28, dt);
+            osc.frequency.exponentialRampToValueAtTime(95, dt + 0.038);
+            gain.gain.setValueAtTime(0.001, dt);
+            gain.gain.linearRampToValueAtTime(0.065 + i * 0.01, dt + 0.008);
+            gain.gain.exponentialRampToValueAtTime(0.0001, dt + 0.045);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(dt);
+            osc.stop(dt + 0.05);
+          }
+
+          // 2. เสียงแตร Fanfare และโน้ตฉลอง (0.26s - 1.35s)
+          const fanfareSeq = [
+            { f: 523.25, at: 0.26, dur: 0.14, vol: 0.11, type: 'triangle' },
+            { f: 659.25, at: 0.36, dur: 0.14, vol: 0.11, type: 'triangle' },
+            { f: 783.99, at: 0.46, dur: 0.14, vol: 0.12, type: 'triangle' },
+            { f: 1046.5, at: 0.57, dur: 0.65, vol: 0.14, type: 'triangle' },
+            { f: 1318.5, at: 0.64, dur: 0.60, vol: 0.10, type: 'sine' },
+            { f: 1567.98, at: 0.72, dur: 0.65, vol: 0.09, type: 'sine' }
+          ];
+          fanfareSeq.forEach(n => {
+            const startAt = t0 + n.at;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = n.type;
+            osc.frequency.setValueAtTime(n.f, startAt);
+            gain.gain.setValueAtTime(0.001, startAt);
+            gain.gain.linearRampToValueAtTime(n.vol, startAt + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startAt + n.dur);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(startAt);
+            osc.stop(startAt + n.dur + 0.04);
+          });
+
+          // 3. เสียงจุดพลุแตกประกายรอบแรก (0.44s และ 0.78s)
+          const bufferSize = Math.floor(ctx.sampleRate * 0.28);
+          const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+          const output = noiseBuffer.getChannelData(0);
+          for (let j = 0; j < bufferSize; j++) {
+            output[j] = (Math.random() * 2 - 1) * Math.exp(-j / (ctx.sampleRate * 0.08));
+          }
+
+          [0.44, 0.78].forEach((delaySec, idx) => {
+            const pAt = t0 + delaySec;
+
+            const boomOsc = ctx.createOscillator();
+            const boomGain = ctx.createGain();
+            boomOsc.type = 'sine';
+            boomOsc.frequency.setValueAtTime(140 - idx * 15, pAt);
+            boomOsc.frequency.exponentialRampToValueAtTime(38, pAt + 0.22);
+            boomGain.gain.setValueAtTime(0.001, pAt);
+            boomGain.gain.linearRampToValueAtTime(0.14, pAt + 0.015);
+            boomGain.gain.exponentialRampToValueAtTime(0.0001, pAt + 0.24);
+            boomOsc.connect(boomGain);
+            boomGain.connect(ctx.destination);
+            boomOsc.start(pAt);
+            boomOsc.stop(pAt + 0.26);
+
+            const noise = ctx.createBufferSource();
+            noise.buffer = noiseBuffer;
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(1900 + idx * 500, pAt);
+            filter.Q.setValueAtTime(0.9, pAt);
+            const nGain = ctx.createGain();
+            nGain.gain.setValueAtTime(0.09, pAt);
+            nGain.gain.exponentialRampToValueAtTime(0.0001, pAt + 0.26);
+            noise.connect(filter);
+            filter.connect(nGain);
+            nGain.connect(ctx.destination);
+            noise.start(pAt);
+            noise.stop(pAt + 0.27);
+          });
+        };
+
+        if (ctx.state === 'suspended') {
+          ctx.resume().then(scheduleSound).catch(() => {});
+        } else {
+          scheduleSound();
+        }
+      } catch (e) {}
+    }
+
+    function toggleStageSound() {
+      stageSoundEnabled = !stageSoundEnabled;
+      const icon = document.getElementById('stageSoundIcon');
+      const text = document.getElementById('stageSoundText');
+      if (icon) {
+        icon.className = stageSoundEnabled
+          ? 'fa-solid fa-volume-high text-amber-300'
+          : 'fa-solid fa-volume-xmark text-slate-400';
+      }
+      if (text) text.innerText = stageSoundEnabled ? 'เสียง: เปิด' : 'เสียง: ปิด';
+      if (stageSoundEnabled) playStageTickSound(880);
+    }
+
+    function toggleStageSyncMode() {
+      stageSyncMode = (stageSyncMode === 'auto') ? 'local' : 'auto';
+      const label = document.getElementById('stageSyncModeText');
+      if (label) {
+        label.innerText = stageSyncMode === 'auto' ? 'Auto Sync' : 'Local 0ms';
+      }
+      if (stageSyncMode === 'auto') {
+        startStagePolling();
+        pollStageStateOnce();
+      } else {
+        stopStagePolling();
+        setStageConnIndicator('local', 'โหมด 2 จอเครื่องเดียว (0ms)');
+      }
+    }
+
+    function toggleStageFullscreen() {
+      const icon = document.getElementById('stageFullscreenIcon');
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().then(() => {
+          if (icon) icon.className = 'fa-solid fa-compress text-xs';
+        }).catch(() => {});
+      } else {
+        document.exitFullscreen().then(() => {
+          if (icon) icon.className = 'fa-solid fa-expand text-xs';
+        }).catch(() => {});
+      }
+    }
+
+    document.addEventListener('fullscreenchange', () => {
+      const icon = document.getElementById('stageFullscreenIcon');
+      if (icon) {
+        icon.className = document.fullscreenElement
+          ? 'fa-solid fa-compress text-xs'
+          : 'fa-solid fa-expand text-xs';
+      }
+    });
+
+    function resetControlsIdle() {
+      const controls = document.getElementById('stageTopControls');
+      if (!controls) return;
+      controls.style.opacity = '1';
+      if (controlsIdleTimer) clearTimeout(controlsIdleTimer);
+      controlsIdleTimer = setTimeout(() => {
+        controls.style.opacity = '0.15';
+      }, 3500);
+    }
+
+    document.addEventListener('mousemove', resetControlsIdle);
+    document.addEventListener('touchstart', resetControlsIdle, { passive: true });
+
+    // Wake Lock
+    async function requestStageWakeLock() {
+      try {
+        if ('wakeLock' in navigator && navigator.wakeLock) {
+          if (stageWakeLock && !stageWakeLock.released) return;
+          stageWakeLock = await navigator.wakeLock.request('screen');
+          stageWakeLock.addEventListener('release', () => {
+            stageWakeLock = null;
+          });
+        }
+      } catch (e) {}
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        requestStageWakeLock();
+      }
+    });
+
+    function setStageConnIndicator(kind, label) {
+      const dot = document.getElementById('stageConnDot');
+      const text = document.getElementById('stageConnText');
+      if (dot) {
+        if (kind === 'local' || kind === 'online') {
+          dot.className = 'w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]';
+        } else if (kind === 'warn') {
+          dot.className = 'w-2 h-2 rounded-full bg-amber-400 animate-pulse';
+        } else {
+          dot.className = 'w-2 h-2 rounded-full bg-rose-400 animate-pulse';
+        }
+      }
+      if (text && label) text.innerText = label;
+    }
+
+    // Continuous Fireworks & Confetti Engine
+    function resizeStageCanvases() {
+      const fw = document.getElementById('stageFireworksCanvas');
+      const cf = document.getElementById('stageConfettiCanvas');
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      if (fw) {
+        fw.width = w;
+        fw.height = h;
+      }
+      if (cf) {
+        cf.width = w;
+        cf.height = h;
+      }
+    }
+
+    window.addEventListener('resize', resizeStageCanvases);
+
+    function createStageConfettiPiece(w, h, startY) {
+      return {
+        x: Math.random() * w,
+        y: startY !== undefined ? startY : -Math.random() * h * 0.9,
+        vx: (Math.random() - 0.5) * 1.4,
+        vy: 2.0 + Math.random() * 2.6,
+        swayPhase: Math.random() * Math.PI * 2,
+        swaySpeed: 0.03 + Math.random() * 0.04,
+        w: 7 + Math.random() * 6,
+        h: 4 + Math.random() * 4,
+        rot: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.16,
+        color: STAGE_FX_COLORS[Math.floor(Math.random() * STAGE_FX_COLORS.length)]
+      };
+    }
+
+    function spawnStageRocket() {
+      if (currentStageState.mode !== 'winner') return;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      let startX;
+      if (w >= 640) {
+        const leftSide = Math.random() < 0.5;
+        startX = leftSide
+          ? w * (0.08 + Math.random() * 0.27)
+          : w * (0.65 + Math.random() * 0.27);
+      } else {
+        startX = w * (0.12 + Math.random() * 0.76);
+      }
+
+      const startY = h * 0.94;
+      const targetY = h * (0.10 + Math.random() * 0.28);
+      const frames = 20 + Math.random() * 8;
+      const vy = -((startY - targetY) / frames) - 0.08 * frames * 0.5;
+      const vx = (Math.random() - 0.5) * 2.4;
+
+      stageFwRockets.push({
+        x: startX,
+        y: startY,
+        prevX: startX,
+        prevY: startY,
+        vx,
+        vy,
+        targetY,
+        color: STAGE_FX_COLORS[Math.floor(Math.random() * STAGE_FX_COLORS.length)]
+      });
+    }
+
+    function burstStageCelebration(count = 4) {
+      if (currentStageState.mode !== 'winner') return;
+      for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+          if (currentStageState.mode === 'winner') spawnStageRocket();
+        }, i * 190);
+      }
+
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      for (let i = 0; i < 36; i++) {
+        const fromLeft = i % 2 === 0;
+        stageExtraConfetti.push({
+          x: fromLeft ? w * (0.04 + Math.random() * 0.18) : w * (0.78 + Math.random() * 0.18),
+          y: h * (0.18 + Math.random() * 0.22),
+          vx: (fromLeft ? 1 : -1) * (2.5 + Math.random() * 4.5),
+          vy: -(2.0 + Math.random() * 4.0),
+          w: 7 + Math.random() * 6,
+          h: 4 + Math.random() * 4,
+          rot: Math.random() * Math.PI * 2,
+          vRot: (Math.random() - 0.5) * 0.28,
+          color: STAGE_FX_COLORS[Math.floor(Math.random() * STAGE_FX_COLORS.length)]
+        });
+      }
+      if (stageExtraConfetti.length > 140) {
+        stageExtraConfetti = stageExtraConfetti.slice(-140);
+      }
+    }
+
+    function startStageContinuousFx() {
+      if (stageFxAnimId) return;
+      const fwCanvas = document.getElementById('stageFireworksCanvas');
+      const cfCanvas = document.getElementById('stageConfettiCanvas');
+      if (!fwCanvas || !cfCanvas) return;
+
+      const fwCtx = fwCanvas.getContext('2d');
+      const cfCtx = cfCanvas.getContext('2d');
+      if (!fwCtx || !cfCtx) return;
+
+      fwCanvas.classList.remove('hidden');
+      cfCanvas.classList.remove('hidden');
+      resizeStageCanvases();
+
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      stageConfettiPieces = Array.from({ length: 85 }, () => createStageConfettiPiece(w, h));
+
+      if (stageFireworkTimer) clearInterval(stageFireworkTimer);
+      stageFireworkTimer = setInterval(() => {
+        if (currentStageState.mode !== 'winner') return;
+        if (stageFwParticles.length > 420) return;
+        const shots = Math.random() < 0.35 ? 2 : 1;
+        for (let i = 0; i < shots; i++) {
+          setTimeout(() => {
+            if (currentStageState.mode === 'winner') spawnStageRocket();
+          }, i * 240);
+        }
+      }, 950);
+
+      const tickFx = () => {
+        if (currentStageState.mode !== 'winner') {
+          stopStageContinuousFx();
+          return;
+        }
+
+        const cw = fwCanvas.width || window.innerWidth;
+        const ch = fwCanvas.height || window.innerHeight;
+        fwCtx.clearRect(0, 0, cw, ch);
+
+        for (let i = stageFwRockets.length - 1; i >= 0; i--) {
+          const r = stageFwRockets[i];
+          r.prevX = r.x;
+          r.prevY = r.y;
+          r.x += r.vx;
+          r.y += r.vy;
+          r.vy += 0.11;
+
+          fwCtx.save();
+          fwCtx.beginPath();
+          fwCtx.moveTo(r.prevX, r.prevY);
+          fwCtx.lineTo(r.x, r.y);
+          fwCtx.strokeStyle = r.color;
+          fwCtx.lineWidth = 2.6;
+          fwCtx.shadowBlur = 12;
+          fwCtx.shadowColor = r.color;
+          fwCtx.stroke();
+
+          fwCtx.beginPath();
+          fwCtx.arc(r.x, r.y, 3.2, 0, Math.PI * 2);
+          fwCtx.fillStyle = '#ffffff';
+          fwCtx.fill();
+          fwCtx.restore();
+
+          if (r.y <= r.targetY || r.vy >= 0) {
+            const pCount = 42;
+            for (let p = 0; p < pCount; p++) {
+              const angle = (Math.PI * 2 * p) / pCount + (Math.random() - 0.5) * 0.16;
+              const speed = 2.0 + Math.random() * 4.6;
+              stageFwParticles.push({
+                x: r.x,
+                y: r.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                alpha: 1,
+                decay: 0.013 + Math.random() * 0.013,
+                size: 1.8 + Math.random() * 2.2,
+                color: Math.random() > 0.25 ? r.color : STAGE_FX_COLORS[Math.floor(Math.random() * STAGE_FX_COLORS.length)]
+              });
+            }
+            stageFwRockets.splice(i, 1);
+          }
+        }
+
+        for (let i = stageFwParticles.length - 1; i >= 0; i--) {
+          const pt = stageFwParticles[i];
+          pt.x += pt.vx;
+          pt.y += pt.vy;
+          pt.vx *= 0.984;
+          pt.vy = pt.vy * 0.984 + 0.06;
+          pt.alpha -= pt.decay;
+
+          if (pt.alpha <= 0) {
+            stageFwParticles.splice(i, 1);
+            continue;
+          }
+
+          fwCtx.save();
+          fwCtx.globalAlpha = Math.max(0, pt.alpha);
+          fwCtx.beginPath();
+          fwCtx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+          fwCtx.fillStyle = pt.color;
+          fwCtx.shadowBlur = 10;
+          fwCtx.shadowColor = pt.color;
+          fwCtx.fill();
+          fwCtx.restore();
+        }
+
+        const cfW = cfCanvas.width || window.innerWidth;
+        const cfH = cfCanvas.height || window.innerHeight;
+        cfCtx.clearRect(0, 0, cfW, cfH);
+
+        for (let i = 0; i < stageConfettiPieces.length; i++) {
+          const c = stageConfettiPieces[i];
+          c.swayPhase += c.swaySpeed;
+          c.x += c.vx + Math.sin(c.swayPhase) * 0.75;
+          c.y += c.vy;
+          c.rot += c.vRot;
+
+          if (c.y > cfH + 24) {
+            c.y = -18;
+            c.x = Math.random() * cfW;
+          }
+
+          cfCtx.save();
+          cfCtx.translate(c.x, c.y);
+          cfCtx.rotate(c.rot);
+          cfCtx.scale(1, Math.cos(c.swayPhase));
+          cfCtx.fillStyle = c.color;
+          cfCtx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h);
+          cfCtx.restore();
+        }
+
+        for (let i = stageExtraConfetti.length - 1; i >= 0; i--) {
+          const ec = stageExtraConfetti[i];
+          ec.x += ec.vx;
+          ec.y += ec.vy;
+          ec.vx *= 0.99;
+          ec.vy += 0.11;
+          ec.rot += ec.vRot;
+
+          if (ec.y > cfH + 28) {
+            stageExtraConfetti.splice(i, 1);
+            continue;
+          }
+
+          cfCtx.save();
+          cfCtx.translate(ec.x, ec.y);
+          cfCtx.rotate(ec.rot);
+          cfCtx.fillStyle = ec.color;
+          cfCtx.fillRect(-ec.w / 2, -ec.h / 2, ec.w, ec.h);
+          cfCtx.restore();
+        }
+
+        stageFxAnimId = requestAnimationFrame(tickFx);
+      };
+
+      stageFxAnimId = requestAnimationFrame(tickFx);
+    }
+
+    function stopStageContinuousFx() {
+      if (stageFxAnimId) {
+        cancelAnimationFrame(stageFxAnimId);
+        stageFxAnimId = null;
+      }
+      if (stageFireworkTimer) {
+        clearInterval(stageFireworkTimer);
+        stageFireworkTimer = null;
+      }
+      stageFwRockets = [];
+      stageFwParticles = [];
+      stageConfettiPieces = [];
+      stageExtraConfetti = [];
+
+      const fwCanvas = document.getElementById('stageFireworksCanvas');
+      if (fwCanvas) {
+        const fwCtx = fwCanvas.getContext('2d');
+        if (fwCtx) fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+        fwCanvas.classList.add('hidden');
+      }
+      const cfCanvas = document.getElementById('stageConfettiCanvas');
+      if (cfCanvas) {
+        const cfCtx = cfCanvas.getContext('2d');
+        if (cfCtx) cfCtx.clearRect(0, 0, cfCanvas.width, cfCanvas.height);
+        cfCanvas.classList.add('hidden');
+      }
+    }
+
+    function stopStageRollingLoop() {
+      if (rollingDisplayTimer) {
+        clearInterval(rollingDisplayTimer);
+        rollingDisplayTimer = null;
+      }
+    }
+
+    function startStageRollingLoop(names) {
+      stopStageRollingLoop();
+      const textEl = document.getElementById('stageRollingNameText');
+      if (!textEl) return;
+      const pool = (Array.isArray(names) && names.length > 0) ? names : ['🎄 CM Party 2026...'];
+      rollingStepIdx = 0;
+
+      const updateStep = () => {
+        const item = pool[Math.floor(Math.random() * pool.length)];
+        textEl.textContent = item;
+        rollingStepIdx++;
+        if (stageSoundEnabled && stageAudioUnlocked) {
+          playStageTickSound(440 + (rollingStepIdx % 16) * 28);
+        }
+      };
+
+      updateStep();
+      rollingDisplayTimer = setInterval(updateStep, 75);
+    }
+
+    function renderStageFromState(state) {
+      const standbyView = document.getElementById('stageStandbyView');
+      const rollingView = document.getElementById('stageRollingView');
+      const winnerView = document.getElementById('stageWinnerView');
+
+      const mode = state.mode || 'standby';
+
+      if (mode === 'rolling') {
+        stopStageContinuousFx();
+        if (standbyView) standbyView.classList.add('hidden');
+        if (winnerView) winnerView.classList.add('hidden');
+        if (rollingView) rollingView.classList.remove('hidden');
+
+        const rollingPrizeEl = document.getElementById('stageRollingPrizeName');
+        if (rollingPrizeEl) {
+          rollingPrizeEl.innerText = state.prizeLabel || 'กำลังสุ่มรางวัลพิเศษ...';
+        }
+        startStageRollingLoop(state.rollingNames);
+        return;
+      }
+
+      stopStageRollingLoop();
+
+      if (mode === 'winner' && Array.isArray(state.winners) && state.winners.length > 0) {
+        if (standbyView) standbyView.classList.add('hidden');
+        if (rollingView) rollingView.classList.add('hidden');
+        if (winnerView) winnerView.classList.remove('hidden');
+
+        const total = state.winners.length;
+        const idx = Math.max(0, Math.min(parseInt(state.activeIndex, 10) || 0, total - 1));
+        const winner = state.winners[idx];
+
+        const prizeEl = document.getElementById('stageWinnerPrize');
+        const counterEl = document.getElementById('stageWinnerCounter');
+        const avatarEl = document.getElementById('stageWinnerAvatar');
+        const empIdEl = document.getElementById('stageWinnerEmpId');
+        const lineNameEl = document.getElementById('stageWinnerLineName');
+        const empNameEl = document.getElementById('stageWinnerEmpName');
+        const deptEl = document.getElementById('stageWinnerDept');
+        const branchEl = document.getElementById('stageWinnerBranch');
+        const statusEl = document.getElementById('stageWinnerStatus');
+        const navEl = document.getElementById('stageWinnerNav');
+        const navTextEl = document.getElementById('stageWinnerNavText');
+        const cardEl = document.getElementById('stageWinnerCard');
+
+        if (prizeEl) prizeEl.innerText = winner.rewardName || state.prizeLabel || '-';
+        if (empIdEl) empIdEl.innerText = `รหัส ${winner.empId || '-'}`;
+        if (empNameEl) empNameEl.innerText = winner.empName || '-';
+        if (deptEl) deptEl.innerText = `แผนก: ${winner.department || '-'}`;
+        if (branchEl) branchEl.innerText = `สาขา: ${winner.branch || '-'}`;
+
+        if (lineNameEl) {
+          if (winner.displayName && winner.displayName !== winner.empName) {
+            lineNameEl.innerText = `LINE: ${winner.displayName}`;
+            lineNameEl.classList.remove('hidden');
+          } else {
+            lineNameEl.classList.add('hidden');
+          }
+        }
+
+        if (avatarEl) {
+          const fallbackUri = createWinnerFallbackAvatarUri(String(winner.empId || '') + String(winner.empName || ''));
+          avatarEl.onerror = () => {
+            if (avatarEl.src !== fallbackUri) avatarEl.src = fallbackUri;
+          };
+          avatarEl.src = (winner.pictureUrl && /^https?:\/\//i.test(winner.pictureUrl))
+            ? winner.pictureUrl
+            : fallbackUri;
+        }
+
+        if (statusEl) {
+          statusEl.innerText = winner.statusText || '🎁 ผู้โชคดีประจำรางวัลนี้';
+          if (winner.statusTone === 'pending') {
+            statusEl.className = 'inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-amber-400/20 border border-amber-300/60 text-amber-200 text-xs font-bold';
+          } else if (winner.statusTone === 'shift') {
+            statusEl.className = 'inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-sky-400/20 border border-sky-300/60 text-sky-200 text-xs font-bold';
+          } else {
+            statusEl.className = 'inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-emerald-500/20 border border-emerald-300/50 text-emerald-200 text-xs font-bold';
+          }
+        }
+
+        if (counterEl) {
+          if (total > 1) {
+            counterEl.innerText = `ผู้โชคดี ${idx + 1} / ${total}`;
+            counterEl.classList.remove('hidden');
+          } else {
+            counterEl.classList.add('hidden');
+          }
+        }
+
+        if (navEl && navTextEl) {
+          if (total > 1) {
+            navEl.classList.remove('hidden');
+            navEl.classList.add('inline-flex');
+            navTextEl.innerText = `${idx + 1} / ${total}`;
+          } else {
+            navEl.classList.add('hidden');
+            navEl.classList.remove('inline-flex');
+          }
+        }
+
+        startStageContinuousFx();
+
+        const celebrateKey = `${winner.empId}|${winner.rewardName}|${idx}|${state.celebrateNonce || 0}`;
+        if (celebrateKey !== lastCelebratedKey) {
+          lastCelebratedKey = celebrateKey;
+          if (cardEl) {
+            cardEl.classList.remove('stage-card-pop');
+            void cardEl.offsetWidth;
+            cardEl.classList.add('stage-card-pop');
+          }
+          playStageAnnouncementSound();
+          burstStageCelebration(4);
+        }
+        return;
+      }
+
+      // Standby mode
+      stopStageContinuousFx();
+      lastCelebratedKey = '';
+      if (rollingView) rollingView.classList.add('hidden');
+      if (winnerView) winnerView.classList.add('hidden');
+      if (standbyView) standbyView.classList.remove('hidden');
+
+      const nextPrizeBox = document.getElementById('stageNextPrizeBox');
+      const nextPrizeName = document.getElementById('stageNextPrizeName');
+      if (nextPrizeBox && nextPrizeName) {
+        if (state.prizeLabel && String(state.prizeLabel).trim() !== '') {
+          nextPrizeName.innerText = String(state.prizeLabel).trim();
+          nextPrizeBox.classList.remove('hidden');
+        } else {
+          nextPrizeBox.classList.add('hidden');
+        }
+      }
+
+      const statsBar = document.getElementById('stageStatsBar');
+      if (statsBar && state.stats && typeof state.stats === 'object') {
+        document.getElementById('stageStatEligible').innerText = Number(state.stats.eligibleCount) || 0;
+        document.getElementById('stageStatRemaining').innerText = Number(state.stats.remainingPrizes) || 0;
+        document.getElementById('stageStatAssigned').innerText = Number(state.stats.assignedPrizes) || 0;
+        statsBar.classList.remove('hidden');
+      } else if (statsBar) {
+        statsBar.classList.add('hidden');
+      }
+    }
+
+    function applyIncomingStageState(incoming, source) {
+      if (!incoming || typeof incoming !== 'object') return;
+      const incomingVersion = Number(incoming.version) || 0;
+      if (incomingVersion > 0 && incomingVersion < currentStageState.version) return;
+
+      const sameVersion = incomingVersion === currentStageState.version;
+      if (sameVersion && Number(incoming.celebrateNonce || 0) <= Number(currentStageState.celebrateNonce || 0) && Number(incoming.activeIndex || 0) === Number(currentStageState.activeIndex || 0) && incoming.mode === currentStageState.mode) {
+        return;
+      }
+
+      currentStageState = {
+        ...currentStageState,
+        ...incoming,
+        version: Math.max(incomingVersion, currentStageState.version)
+      };
+
+      if (source === 'local') {
+        setStageConnIndicator('local', stageSyncMode === 'local' ? 'โหมด 2 จอเครื่องเดียว (0ms)' : 'เชื่อมต่อสด (0ms)');
+      } else if (source === 'cloud') {
+        setStageConnIndicator('online', 'ออนไลน์ • ซิงก์แล้ว');
+      }
+
+      renderStageFromState(currentStageState);
+    }
+
+    function stepLocalWinner(delta) {
+      if (currentStageState.mode !== 'winner' || !Array.isArray(currentStageState.winners) || currentStageState.winners.length <= 1) {
+        if (currentStageState.mode === 'winner') {
+          currentStageState.celebrateNonce = (Number(currentStageState.celebrateNonce) || 0) + 1;
+          renderStageFromState(currentStageState);
+        }
+        return;
+      }
+      const total = currentStageState.winners.length;
+      const nextIdx = (Number(currentStageState.activeIndex || 0) + delta + total) % total;
+      currentStageState = {
+        ...currentStageState,
+        activeIndex: nextIdx,
+        celebrateNonce: (Number(currentStageState.celebrateNonce) || 0) + 1
+      };
+      renderStageFromState(currentStageState);
+    }
+
+    // Channel + storage listeners (0ms same-PC dual monitor)
+    if (stageChannel) {
+      stageChannel.onmessage = (event) => {
+        if (event && event.data) {
+          applyIncomingStageState(event.data, 'local');
+        }
+      };
+    }
+
+    window.addEventListener('storage', (event) => {
+      if (event.key === STAGE_STORAGE_KEY && event.newValue) {
+        try {
+          applyIncomingStageState(JSON.parse(event.newValue), 'local');
+        } catch (e) {}
+      }
+    });
+
+    async function pollStageStateOnce() {
+      if (isStagePolling || stageSyncMode === 'local') return;
+      isStagePolling = true;
+      try {
+        const res = await fetch(`${GAS_WEB_APP_URL}?action=getStageState&_t=${Date.now()}`, { cache: 'no-store' });
+        const json = await res.json();
+        if (json && json.status === 'success' && json.state) {
+          setStageConnIndicator('online', 'ออนไลน์ • ซิงก์อัตโนมัติ');
+          applyIncomingStageState(json.state, 'cloud');
+        }
+      } catch (err) {
+        setStageConnIndicator('warn', 'รอการเชื่อมต่อเซิร์ฟเวอร์...');
+      } finally {
+        isStagePolling = false;
+      }
+    }
+
+    function startStagePolling() {
+      stopStagePolling();
+      if (stageSyncMode === 'local') return;
+      stagePollTimer = setInterval(() => {
+        if (!document.hidden && stageSyncMode === 'auto') {
+          pollStageStateOnce();
+        }
+      }, 1800);
+    }
+
+    function stopStagePolling() {
+      if (stagePollTimer) {
+        clearInterval(stagePollTimer);
+        stagePollTimer = null;
+      }
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'f' || e.key === 'F') {
+        toggleStageFullscreen();
+      } else if (e.key === 'm' || e.key === 'M') {
+        toggleStageSound();
+      } else if (e.key === ' ') {
+        if (currentStageState.mode === 'winner') {
+          e.preventDefault();
+          currentStageState.celebrateNonce = (Number(currentStageState.celebrateNonce) || 0) + 1;
+          renderStageFromState(currentStageState);
+        }
+      } else if (e.key === 'ArrowRight') {
+        if (currentStageState.mode === 'winner') stepLocalWinner(1);
+      } else if (e.key === 'ArrowLeft') {
+        if (currentStageState.mode === 'winner') stepLocalWinner(-1);
+      }
+    });
+
+    // Boot Stage Display
+    window.addEventListener('DOMContentLoaded', () => {
+      createStageSnowflakes();
+      requestStageWakeLock();
+      resetControlsIdle();
+      hideAudioBannerIfRunning();
+
+      // Load local cache if recent (< 6 hours)
+      try {
+        const savedStr = localStorage.getItem(STAGE_STORAGE_KEY);
+        if (savedStr) {
+          const parsed = JSON.parse(savedStr);
+          if (parsed && parsed.updatedAt && (Date.now() - Number(parsed.updatedAt) < 6 * 60 * 60 * 1000)) {
+            applyIncomingStageState(parsed, 'local');
+          }
+        }
+      } catch (e) {}
+
+      renderStageFromState(currentStageState);
+      pollStageStateOnce();
+      startStagePolling();
+    });
+  </script>
+</body>
+</html>
