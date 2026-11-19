@@ -655,6 +655,8 @@
     aria-modal="true"
     aria-label="หน้าจอประกาศผลผู้โชคดี"
   >
+    <canvas id="bwrFireworksCanvas" class="hidden absolute inset-0 w-full h-full pointer-events-none z-[5]" aria-hidden="true"></canvas>
+
     <!-- Top Controls Bar -->
     <div class="relative z-20 flex flex-wrap items-center justify-between gap-2 max-w-6xl w-full mx-auto">
       <div class="flex flex-wrap items-center gap-2">
@@ -2475,6 +2477,107 @@
       } catch (e) {}
     }
 
+    function playBigRevealAnnouncementSound() {
+      if (!rewardSoundEnabled) return;
+      try {
+        const ctx = getRewardAudioContext();
+        if (!ctx) return;
+
+        const scheduleSound = () => {
+          const t0 = ctx.currentTime + 0.01;
+
+          // 1. รัวกลองเปิดฉากเพิ่มความตื่นเต้น (Drumroll buildup 0.00s - 0.25s)
+          for (let i = 0; i < 6; i++) {
+            const dt = t0 + i * 0.042;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(160 + i * 28, dt);
+            osc.frequency.exponentialRampToValueAtTime(95, dt + 0.038);
+            gain.gain.setValueAtTime(0.001, dt);
+            gain.gain.linearRampToValueAtTime(0.065 + i * 0.01, dt + 0.008);
+            gain.gain.exponentialRampToValueAtTime(0.0001, dt + 0.045);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(dt);
+            osc.stop(dt + 0.05);
+          }
+
+          // 2. เสียงแตร Fanfare และโน้ตฉลอง (0.26s - 1.35s)
+          const fanfareSeq = [
+            { f: 523.25, at: 0.26, dur: 0.14, vol: 0.11, type: 'triangle' }, // C5
+            { f: 659.25, at: 0.36, dur: 0.14, vol: 0.11, type: 'triangle' }, // E5
+            { f: 783.99, at: 0.46, dur: 0.14, vol: 0.12, type: 'triangle' }, // G5
+            { f: 1046.5, at: 0.57, dur: 0.65, vol: 0.14, type: 'triangle' }, // C6
+            { f: 1318.5, at: 0.64, dur: 0.60, vol: 0.10, type: 'sine' },     // E6
+            { f: 1567.98, at: 0.72, dur: 0.65, vol: 0.09, type: 'sine' }     // G6 sparkle
+          ];
+          fanfareSeq.forEach(n => {
+            const startAt = t0 + n.at;
+            const osc = ctx.createOscillator();
+            const gain = ctx.createGain();
+            osc.type = n.type;
+            osc.frequency.setValueAtTime(n.f, startAt);
+            gain.gain.setValueAtTime(0.001, startAt);
+            gain.gain.linearRampToValueAtTime(n.vol, startAt + 0.02);
+            gain.gain.exponentialRampToValueAtTime(0.0001, startAt + n.dur);
+            osc.connect(gain);
+            gain.connect(ctx.destination);
+            osc.start(startAt);
+            osc.stop(startAt + n.dur + 0.04);
+          });
+
+          // 3. เสียงจุดพลุแตกประกายรอบแรก (Firework pop + crackle ที่ 0.44s และ 0.78s)
+          const bufferSize = Math.floor(ctx.sampleRate * 0.28);
+          const noiseBuffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+          const output = noiseBuffer.getChannelData(0);
+          for (let j = 0; j < bufferSize; j++) {
+            output[j] = (Math.random() * 2 - 1) * Math.exp(-j / (ctx.sampleRate * 0.08));
+          }
+
+          [0.44, 0.78].forEach((delaySec, idx) => {
+            const pAt = t0 + delaySec;
+
+            // Boom ทุ้มนุ่มๆ
+            const boomOsc = ctx.createOscillator();
+            const boomGain = ctx.createGain();
+            boomOsc.type = 'sine';
+            boomOsc.frequency.setValueAtTime(140 - idx * 15, pAt);
+            boomOsc.frequency.exponentialRampToValueAtTime(38, pAt + 0.22);
+            boomGain.gain.setValueAtTime(0.001, pAt);
+            boomGain.gain.linearRampToValueAtTime(0.14, pAt + 0.015);
+            boomGain.gain.exponentialRampToValueAtTime(0.0001, pAt + 0.24);
+            boomOsc.connect(boomGain);
+            boomGain.connect(ctx.destination);
+            boomOsc.start(pAt);
+            boomOsc.stop(pAt + 0.26);
+
+            // Crackle ซ่าๆ
+            const noise = ctx.createBufferSource();
+            noise.buffer = noiseBuffer;
+            const filter = ctx.createBiquadFilter();
+            filter.type = 'bandpass';
+            filter.frequency.setValueAtTime(1900 + idx * 500, pAt);
+            filter.Q.setValueAtTime(0.9, pAt);
+            const nGain = ctx.createGain();
+            nGain.gain.setValueAtTime(0.09, pAt);
+            nGain.gain.exponentialRampToValueAtTime(0.0001, pAt + 0.26);
+            noise.connect(filter);
+            filter.connect(nGain);
+            nGain.connect(ctx.destination);
+            noise.start(pAt);
+            noise.stop(pAt + 0.27);
+          });
+        };
+
+        if (ctx.state === 'suspended') {
+          ctx.resume().then(scheduleSound).catch(() => {});
+        } else {
+          scheduleSound();
+        }
+      } catch (e) {}
+    }
+
     async function playLuckySpinRoulette(eligiblePool) {
       const box = document.getElementById('autoSpinRollerBox');
       const nameEl = document.getElementById('autoSpinNameText');
@@ -2492,11 +2595,23 @@
       box.classList.add('hidden');
     }
 
+    let standaloneConfettiAnimId = null;
+
     function launchRewardConfetti() {
+      if (isBigRevealOpen) {
+        burstBigRevealFireworks(4);
+        return;
+      }
+
       const canvas = document.getElementById('rewardConfettiCanvas');
       if (!canvas) return;
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
+
+      if (standaloneConfettiAnimId) {
+        cancelAnimationFrame(standaloneConfettiAnimId);
+        standaloneConfettiAnimId = null;
+      }
 
       canvas.width = window.innerWidth;
       canvas.height = window.innerHeight;
@@ -2516,6 +2631,10 @@
       }));
 
       const renderFrame = () => {
+        if (isBigRevealOpen) {
+          standaloneConfettiAnimId = null;
+          return;
+        }
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         let alive = 0;
         for (const p of pieces) {
@@ -2532,22 +2651,329 @@
           ctx.restore();
         }
         if (alive > 0) {
-          requestAnimationFrame(renderFrame);
+          standaloneConfettiAnimId = requestAnimationFrame(renderFrame);
         } else {
+          standaloneConfettiAnimId = null;
           ctx.clearRect(0, 0, canvas.width, canvas.height);
           canvas.classList.add('hidden');
         }
       };
-      requestAnimationFrame(renderFrame);
+      standaloneConfettiAnimId = requestAnimationFrame(renderFrame);
     }
 
     // ==========================================
-    // Big Winner Reveal (หน้าจอประกาศผลผู้โชคดีบนจอใหญ่)
+    // Big Winner Reveal (หน้าจอประกาศผลผู้โชคดีบนจอใหญ่ + พลุ/กระดาษโปรยออโต้ต่อเนื่อง)
     // ==========================================
     let bigRevealAutoEnabled = true;
     let bigRevealQueue = [];
     let bigRevealIndex = 0;
     let isBigRevealOpen = false;
+
+    let bwrFxAnimFrameId = null;
+    let bwrFireworkSpawnTimer = null;
+    let bwrFwRockets = [];
+    let bwrFwParticles = [];
+    let bwrConfettiPieces = [];
+    let bwrExtraConfetti = [];
+
+    const BWR_FX_COLORS = ['#fde047', '#fb7185', '#34d399', '#38bdf8', '#f472b6', '#ffffff', '#fb923c'];
+
+    function resizeBigRevealCanvases() {
+      if (!isBigRevealOpen) return;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const fwCanvas = document.getElementById('bwrFireworksCanvas');
+      const cfCanvas = document.getElementById('rewardConfettiCanvas');
+      if (fwCanvas) {
+        fwCanvas.width = w;
+        fwCanvas.height = h;
+      }
+      if (cfCanvas) {
+        cfCanvas.width = w;
+        cfCanvas.height = h;
+      }
+    }
+
+    window.addEventListener('resize', resizeBigRevealCanvases);
+
+    function createContinuousConfettiPiece(w, h, startY) {
+      return {
+        x: Math.random() * w,
+        y: startY !== undefined ? startY : -Math.random() * h * 0.9,
+        vx: (Math.random() - 0.5) * 1.4,
+        vy: 2.0 + Math.random() * 2.6,
+        swayPhase: Math.random() * Math.PI * 2,
+        swaySpeed: 0.03 + Math.random() * 0.04,
+        w: 7 + Math.random() * 6,
+        h: 4 + Math.random() * 4,
+        rot: Math.random() * Math.PI * 2,
+        vRot: (Math.random() - 0.5) * 0.16,
+        color: BWR_FX_COLORS[Math.floor(Math.random() * BWR_FX_COLORS.length)]
+      };
+    }
+
+    function spawnBigRevealRocket(preferSides = true) {
+      if (!isBigRevealOpen) return;
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      let startX;
+      if (preferSides && w >= 640) {
+        const leftSide = Math.random() < 0.5;
+        startX = leftSide
+          ? w * (0.08 + Math.random() * 0.27)
+          : w * (0.65 + Math.random() * 0.27);
+      } else {
+        startX = w * (0.12 + Math.random() * 0.76);
+      }
+
+      const startY = h * 0.94;
+      const targetY = h * (0.10 + Math.random() * 0.28);
+      const frames = 20 + Math.random() * 8;
+      const vy = -((startY - targetY) / frames) - 0.08 * frames * 0.5;
+      const vx = (Math.random() - 0.5) * 2.4;
+
+      bwrFwRockets.push({
+        x: startX,
+        y: startY,
+        prevX: startX,
+        prevY: startY,
+        vx,
+        vy,
+        targetY,
+        color: BWR_FX_COLORS[Math.floor(Math.random() * BWR_FX_COLORS.length)]
+      });
+    }
+
+    function burstBigRevealFireworks(count = 4) {
+      if (!isBigRevealOpen) return;
+
+      for (let i = 0; i < count; i++) {
+        setTimeout(() => {
+          if (isBigRevealOpen) spawnBigRevealRocket(true);
+        }, i * 190);
+      }
+
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      for (let i = 0; i < 36; i++) {
+        const fromLeft = i % 2 === 0;
+        bwrExtraConfetti.push({
+          x: fromLeft ? w * (0.04 + Math.random() * 0.18) : w * (0.78 + Math.random() * 0.18),
+          y: h * (0.18 + Math.random() * 0.22),
+          vx: (fromLeft ? 1 : -1) * (2.5 + Math.random() * 4.5),
+          vy: -(2.0 + Math.random() * 4.0),
+          w: 7 + Math.random() * 6,
+          h: 4 + Math.random() * 4,
+          rot: Math.random() * Math.PI * 2,
+          vRot: (Math.random() - 0.5) * 0.28,
+          color: BWR_FX_COLORS[Math.floor(Math.random() * BWR_FX_COLORS.length)]
+        });
+      }
+      if (bwrExtraConfetti.length > 140) {
+        bwrExtraConfetti = bwrExtraConfetti.slice(-140);
+      }
+    }
+
+    function startBigRevealContinuousFx(withInitialBurst = false) {
+      stopBigRevealContinuousFx();
+      if (!isBigRevealOpen) return;
+
+      if (standaloneConfettiAnimId) {
+        cancelAnimationFrame(standaloneConfettiAnimId);
+        standaloneConfettiAnimId = null;
+      }
+
+      const fwCanvas = document.getElementById('bwrFireworksCanvas');
+      const cfCanvas = document.getElementById('rewardConfettiCanvas');
+      if (!fwCanvas || !cfCanvas) return;
+
+      const fwCtx = fwCanvas.getContext('2d');
+      const cfCtx = cfCanvas.getContext('2d');
+      if (!fwCtx || !cfCtx) return;
+
+      fwCanvas.classList.remove('hidden');
+      cfCanvas.classList.remove('hidden');
+      resizeBigRevealCanvases();
+
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      bwrConfettiPieces = Array.from({ length: 85 }, () => createContinuousConfettiPiece(w, h));
+
+      if (withInitialBurst) {
+        burstBigRevealFireworks(4);
+      }
+
+      bwrFireworkSpawnTimer = setInterval(() => {
+        if (!isBigRevealOpen) return;
+        if (bwrFwParticles.length > 420) return;
+        const shots = Math.random() < 0.35 ? 2 : 1;
+        for (let i = 0; i < shots; i++) {
+          setTimeout(() => {
+            if (isBigRevealOpen) spawnBigRevealRocket(true);
+          }, i * 240);
+        }
+      }, 950);
+
+      const tickFx = () => {
+        if (!isBigRevealOpen) {
+          stopBigRevealContinuousFx();
+          return;
+        }
+
+        const cw = fwCanvas.width || window.innerWidth;
+        const ch = fwCanvas.height || window.innerHeight;
+
+        // 1. วาดพลุฉากหลังบน #bwrFireworksCanvas
+        fwCtx.clearRect(0, 0, cw, ch);
+
+        for (let i = bwrFwRockets.length - 1; i >= 0; i--) {
+          const r = bwrFwRockets[i];
+          r.prevX = r.x;
+          r.prevY = r.y;
+          r.x += r.vx;
+          r.y += r.vy;
+          r.vy += 0.11;
+
+          fwCtx.save();
+          fwCtx.beginPath();
+          fwCtx.moveTo(r.prevX, r.prevY);
+          fwCtx.lineTo(r.x, r.y);
+          fwCtx.strokeStyle = r.color;
+          fwCtx.lineWidth = 2.6;
+          fwCtx.shadowBlur = 12;
+          fwCtx.shadowColor = r.color;
+          fwCtx.stroke();
+
+          fwCtx.beginPath();
+          fwCtx.arc(r.x, r.y, 3.2, 0, Math.PI * 2);
+          fwCtx.fillStyle = '#ffffff';
+          fwCtx.fill();
+          fwCtx.restore();
+
+          if (r.y <= r.targetY || r.vy >= 0) {
+            const pCount = 42;
+            for (let p = 0; p < pCount; p++) {
+              const angle = (Math.PI * 2 * p) / pCount + (Math.random() - 0.5) * 0.16;
+              const speed = 2.0 + Math.random() * 4.6;
+              bwrFwParticles.push({
+                x: r.x,
+                y: r.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                alpha: 1,
+                decay: 0.013 + Math.random() * 0.013,
+                size: 1.8 + Math.random() * 2.2,
+                color: Math.random() > 0.25 ? r.color : BWR_FX_COLORS[Math.floor(Math.random() * BWR_FX_COLORS.length)]
+              });
+            }
+            bwrFwRockets.splice(i, 1);
+          }
+        }
+
+        for (let i = bwrFwParticles.length - 1; i >= 0; i--) {
+          const pt = bwrFwParticles[i];
+          pt.x += pt.vx;
+          pt.y += pt.vy;
+          pt.vx *= 0.984;
+          pt.vy = pt.vy * 0.984 + 0.06;
+          pt.alpha -= pt.decay;
+
+          if (pt.alpha <= 0) {
+            bwrFwParticles.splice(i, 1);
+            continue;
+          }
+
+          fwCtx.save();
+          fwCtx.globalAlpha = Math.max(0, pt.alpha);
+          fwCtx.beginPath();
+          fwCtx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+          fwCtx.fillStyle = pt.color;
+          fwCtx.shadowBlur = 10;
+          fwCtx.shadowColor = pt.color;
+          fwCtx.fill();
+          fwCtx.restore();
+        }
+
+        // 2. วาดกระดาษโปรยต่อเนื่องด้านหน้าบน #rewardConfettiCanvas
+        const cfW = cfCanvas.width || window.innerWidth;
+        const cfH = cfCanvas.height || window.innerHeight;
+        cfCtx.clearRect(0, 0, cfW, cfH);
+
+        for (let i = 0; i < bwrConfettiPieces.length; i++) {
+          const c = bwrConfettiPieces[i];
+          c.swayPhase += c.swaySpeed;
+          c.x += c.vx + Math.sin(c.swayPhase) * 0.75;
+          c.y += c.vy;
+          c.rot += c.vRot;
+
+          if (c.y > cfH + 24) {
+            c.y = -18;
+            c.x = Math.random() * cfW;
+          }
+
+          cfCtx.save();
+          cfCtx.translate(c.x, c.y);
+          cfCtx.rotate(c.rot);
+          cfCtx.scale(1, Math.cos(c.swayPhase));
+          cfCtx.fillStyle = c.color;
+          cfCtx.fillRect(-c.w / 2, -c.h / 2, c.w, c.h);
+          cfCtx.restore();
+        }
+
+        for (let i = bwrExtraConfetti.length - 1; i >= 0; i--) {
+          const ec = bwrExtraConfetti[i];
+          ec.x += ec.vx;
+          ec.y += ec.vy;
+          ec.vx *= 0.99;
+          ec.vy += 0.11;
+          ec.rot += ec.vRot;
+
+          if (ec.y > cfH + 28) {
+            bwrExtraConfetti.splice(i, 1);
+            continue;
+          }
+
+          cfCtx.save();
+          cfCtx.translate(ec.x, ec.y);
+          cfCtx.rotate(ec.rot);
+          cfCtx.fillStyle = ec.color;
+          cfCtx.fillRect(-ec.w / 2, -ec.h / 2, ec.w, ec.h);
+          cfCtx.restore();
+        }
+
+        bwrFxAnimFrameId = requestAnimationFrame(tickFx);
+      };
+
+      bwrFxAnimFrameId = requestAnimationFrame(tickFx);
+    }
+
+    function stopBigRevealContinuousFx() {
+      if (bwrFxAnimFrameId) {
+        cancelAnimationFrame(bwrFxAnimFrameId);
+        bwrFxAnimFrameId = null;
+      }
+      if (bwrFireworkSpawnTimer) {
+        clearInterval(bwrFireworkSpawnTimer);
+        bwrFireworkSpawnTimer = null;
+      }
+      bwrFwRockets = [];
+      bwrFwParticles = [];
+      bwrConfettiPieces = [];
+      bwrExtraConfetti = [];
+
+      const fwCanvas = document.getElementById('bwrFireworksCanvas');
+      if (fwCanvas) {
+        const fwCtx = fwCanvas.getContext('2d');
+        if (fwCtx) fwCtx.clearRect(0, 0, fwCanvas.width, fwCanvas.height);
+        fwCanvas.classList.add('hidden');
+      }
+      const cfCanvas = document.getElementById('rewardConfettiCanvas');
+      if (cfCanvas) {
+        const cfCtx = cfCanvas.getContext('2d');
+        if (cfCtx) cfCtx.clearRect(0, 0, cfCanvas.width, cfCanvas.height);
+        cfCanvas.classList.add('hidden');
+      }
+    }
 
     function toggleBigRevealAuto() {
       bigRevealAutoEnabled = !bigRevealAutoEnabled;
@@ -2634,6 +3060,7 @@
       if (overlay) overlay.classList.remove('hidden');
       document.body.style.overflow = 'hidden';
 
+      startBigRevealContinuousFx(false);
       renderBigRevealSlide(true);
     }
 
@@ -2717,8 +3144,16 @@
     }
 
     function triggerBigRevealCelebration() {
-      playRewardWinnerSound();
-      launchRewardConfetti();
+      playBigRevealAnnouncementSound();
+      if (isBigRevealOpen) {
+        if (!bwrFxAnimFrameId) {
+          startBigRevealContinuousFx(true);
+        } else {
+          burstBigRevealFireworks(4);
+        }
+      } else {
+        launchRewardConfetti();
+      }
     }
 
     function nextBigRevealWinner() {
@@ -2743,6 +3178,7 @@
 
     function closeBigWinnerReveal() {
       isBigRevealOpen = false;
+      stopBigRevealContinuousFx();
       const overlay = document.getElementById('bigWinnerRevealOverlay');
       if (overlay) overlay.classList.add('hidden');
       document.body.style.overflow = '';
