@@ -822,6 +822,7 @@
           else if (securedPayload.action === 'saveBatchRewards') runner.saveBatchRewards(securedPayload);
           else if (securedPayload.action === 'deleteReward') runner.deleteRewardRecord(securedPayload);
           else if (securedPayload.action === 'syncShiftWorkers') runner.handleSyncShiftWorkersAction(securedPayload);
+          else if (securedPayload.action === 'resendRewardLine') runner.resendRewardLineNotification(securedPayload);
           else runner.checkRegisteredEmployeeById(securedPayload.empId);
         });
       }
@@ -1234,6 +1235,67 @@
       }
     }
 
+    // ส่ง LINE Flex Card แจ้งเตือนรางวัลซ้ำให้ผู้โชคดีรายบุคคล
+    async function handleResendRewardLine(rowIndex, rewardName, empName) {
+      const result = await Swal.fire({
+        icon: 'question',
+        title: 'ส่งแจ้งเตือน LINE ซ้ำ?',
+        html: `<div class="text-sm text-slate-600 space-y-1">
+          <p>รางวัล: <b class="text-rose-700">${escapeHtml(rewardName)}</b></p>
+          <p>ผู้โชคดี: <b class="text-emerald-700">${escapeHtml(empName || '-')}</b></p>
+        </div>`,
+        showCancelButton: true,
+        confirmButtonText: '<i class="fa-brands fa-line mr-1"></i> ส่ง LINE ซ้ำทันที',
+        cancelButtonText: 'ยกเลิก',
+        confirmButtonColor: '#06C755',
+        cancelButtonColor: '#9CA3AF'
+      });
+
+      if (!result.isConfirmed) return;
+
+      try {
+        Swal.fire({
+          title: 'กำลังส่งการ์ดแจ้งเตือน LINE...',
+          text: 'กรุณารอสักครู่',
+          allowOutsideClick: false,
+          didOpen: () => Swal.showLoading()
+        });
+
+        const res = await callGasApi({
+          action: 'resendRewardLine',
+          rowIndex: rowIndex
+        });
+
+        Swal.close();
+
+        if (res && res.status === 'success') {
+          Swal.fire({
+            toast: true,
+            position: 'top-end',
+            icon: 'success',
+            title: res.message || 'ส่งแจ้งเตือน LINE ซ้ำเรียบร้อยแล้ว!',
+            showConfirmButton: false,
+            timer: 2400
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'ส่งแจ้งเตือนไม่สำเร็จ',
+            text: (res && res.message) || 'กรุณาลองใหม่อีกครั้ง',
+            confirmButtonColor: '#e11d48'
+          });
+        }
+      } catch (err) {
+        Swal.close();
+        Swal.fire({
+          icon: 'error',
+          title: 'ผิดพลาด',
+          text: err.message,
+          confirmButtonColor: '#e11d48'
+        });
+      }
+    }
+
     // เพิ่มชื่อรางวัลใหม่ (Create Prize Row)
     async function openNewPrizeModal() {
       const { value: prizeName } = await Swal.fire({
@@ -1384,6 +1446,17 @@
                   </button>
                 ` : `
                   <span class="text-[11px] text-emerald-700 bg-emerald-100 border border-emerald-200 font-bold px-2.5 py-0.5 rounded-full">รับแล้ว</span>
+                  ${hasUid ? `
+                    <button
+                      type="button"
+                      onclick="handleResendRewardLine(${item.rowIndex}, '${escapeHtml(escapeJs(item.rewardName))}', '${escapeHtml(escapeJs(item.empName))}')"
+                      class="px-2 py-1 rounded-full bg-[#06C755]/15 hover:bg-[#06C755] text-[#059642] hover:text-white border border-[#06C755]/35 text-[11px] font-bold transition inline-flex items-center gap-1 cursor-pointer"
+                      title="ส่งการ์ดแจ้งเตือน LINE ซ้ำให้ผู้รับรางวัลนี้"
+                    >
+                      <i class="fa-brands fa-line text-xs"></i>
+                      <span class="hidden sm:inline">ส่งซ้ำ</span>
+                    </button>
+                  ` : ''}
                   <button
                     type="button"
                     onclick="handleClearWinner(${item.rowIndex}, '${escapeJs(item.rewardName)}', '${escapeJs(item.empName)}')"

@@ -457,44 +457,99 @@
       </div>
     </div>
 
-    <!-- Already Registered View (ซ่อนไว้และแสดงเมื่อ UID นี้เคยลงทะเบียนไปแล้ว) -->
-    <div id="alreadyRegisteredContainer" class="hidden p-7 text-center space-y-5">
-      <div class="w-20 h-20 rounded-full bg-emerald-100 border-4 border-emerald-400 text-emerald-600 flex items-center justify-center mx-auto shadow-md">
-        <i class="fa-solid fa-circle-check text-4xl"></i>
+    <!-- Already Registered View (Christmas VIP E-Ticket - แสดงเมื่อ UID นี้เคยลงทะเบียนไปแล้ว) -->
+    <div id="alreadyRegisteredContainer" class="hidden p-5 sm:p-6 text-center space-y-4">
+      <div class="relative rounded-3xl overflow-hidden bg-gradient-to-b from-rose-50/90 via-white to-emerald-50/75 border-2 border-rose-200/90 shadow-lg">
+        <!-- Ticket Top Festive Ribbon -->
+        <div class="bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 px-4 py-2.5 text-white flex items-center justify-between text-[11px] font-extrabold tracking-wide shadow-xs">
+          <span>🎄 CM PARTY 2026</span>
+          <span class="px-2.5 py-0.5 rounded-full bg-white/25 border border-white/50 text-[10px]">VIP E-TICKET ✨</span>
+        </div>
+
+        <!-- Profile & Check-In Badge -->
+        <div class="px-5 pt-5 pb-4 space-y-2.5">
+          <div class="relative w-20 h-20 mx-auto">
+            <img
+              id="regInfoProfileImg"
+              src="https://cdn-icons-png.flaticon.com/512/847/847969.png"
+              alt="LINE Profile"
+              referrerpolicy="no-referrer"
+              class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md bg-rose-100"
+            />
+            <span class="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-emerald-500 text-white border-2 border-white flex items-center justify-center shadow-sm">
+              <i class="fa-solid fa-check text-xs"></i>
+            </span>
+          </div>
+
+          <div class="space-y-0.5">
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 text-[11px] font-extrabold">
+              <i class="fa-solid fa-circle-check"></i> ลงทะเบียนเข้าร่วมงานสำเร็จแล้ว
+            </span>
+            <h3 id="regInfoLineName" class="text-lg font-extrabold text-slate-800 truncate px-2">
+              ผู้ร่วมงาน CM Party 2026
+            </h3>
+            <p class="text-[11px] text-slate-500">
+              บันทึกสิทธิ์จับรางวัล Lucky Draw เรียบร้อย 🎁
+            </p>
+          </div>
+        </div>
+
+        <!-- Ticket Perforation Divider -->
+        <div class="relative flex items-center px-3">
+          <span class="w-4 h-4 -ml-5 rounded-full bg-white border-r-2 border-rose-200 shrink-0"></span>
+          <div class="w-full border-t-2 border-dashed border-rose-200/90"></div>
+          <span class="w-4 h-4 -mr-5 rounded-full bg-white border-l-2 border-rose-200 shrink-0"></span>
+        </div>
+
+        <!-- Ticket Details -->
+        <div class="px-5 py-4 space-y-3">
+          <div id="registeredInfoCard" class="hidden bg-white/90 border border-emerald-200/90 rounded-2xl p-3.5 text-left text-xs space-y-2 text-slate-700 shadow-2xs">
+            <p class="flex justify-between items-center gap-2">
+              <span class="text-slate-500">รหัสพนักงาน:</span>
+              <span id="regInfoEmpId" class="font-extrabold text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">-</span>
+            </p>
+            <p class="flex justify-between items-center gap-2">
+              <span class="text-slate-500">ชื่อ - นามสกุล:</span>
+              <span id="regInfoEmpName" class="font-bold text-slate-800 text-right">-</span>
+            </p>
+            <p class="flex justify-between items-center gap-2">
+              <span class="text-slate-500">แผนก:</span>
+              <span id="regInfoDept" class="font-medium text-right">-</span>
+            </p>
+            <p class="flex justify-between items-center gap-2">
+              <span class="text-slate-500">สาขา:</span>
+              <span id="regInfoBranch" class="font-bold text-emerald-600 text-right">-</span>
+            </p>
+          </div>
+
+          <div class="rounded-2xl bg-amber-50/90 border border-amber-200/90 px-3 py-2.5 text-[11px] text-amber-900 leading-relaxed text-left">
+            <p class="font-bold flex items-center gap-1 text-amber-800 mb-0.5">
+              <span>💡</span>
+              <span>ทิปส์ความสนุกในแชท LINE:</span>
+            </p>
+            <p>พิมพ์ <b>"อวยพร"</b> เพื่อส่งคำอวยพรขึ้นหัวตุ๊กตาบนจอใหญ่ หรือพิมพ์ <b>"เสี่ยงเซียมซี"</b> ลุ้นคำทำนายปีใหม่ได้เลย!</p>
+          </div>
+        </div>
       </div>
 
-      <div class="space-y-1.5">
-        <h3 class="text-xl font-extrabold text-emerald-800">
-          คุณได้ลงทะเบียนเรียบร้อยแล้ว 🎉
-        </h3>
-        <p class="text-sm text-slate-500">
-          สามารถกดปิดหน้าต่างนี้ (ปิด LIFF) ได้เลย 🎄
-        </p>
+      <div class="space-y-2.5">
+        <a
+          href="gallery.html"
+          class="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold text-sm border-2 border-white shadow-lg shadow-rose-500/20 hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+        >
+          <i class="fa-solid fa-camera-retro text-base"></i>
+          <span>📸 ดูภาพบรรยากาศในงานเลี้ยง (Photo Gallery)</span>
+        </a>
+
+        <button
+          type="button"
+          onclick="closeLiffWindow()"
+          class="w-full py-3 px-5 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-bold text-sm border-2 border-emerald-200 transition-all flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <i class="fa-solid fa-circle-xmark"></i>
+          <span>ปิดหน้าต่าง (Close LIFF)</span>
+        </button>
       </div>
-
-      <div id="registeredInfoCard" class="hidden bg-gradient-to-br from-emerald-50/90 to-rose-50/50 border-2 border-dashed border-emerald-200 rounded-2xl p-4 text-left text-xs space-y-1.5 text-slate-700">
-        <p class="flex justify-between"><span class="text-slate-500">รหัสพนักงาน:</span> <span id="regInfoEmpId" class="font-bold text-rose-600">-</span></p>
-        <p class="flex justify-between"><span class="text-slate-500">ชื่อ - นามสกุล:</span> <span id="regInfoEmpName" class="font-bold text-slate-800">-</span></p>
-        <p class="flex justify-between"><span class="text-slate-500">แผนก:</span> <span id="regInfoDept" class="font-medium">-</span></p>
-        <p class="flex justify-between"><span class="text-slate-500">สาขา:</span> <span id="regInfoBranch" class="font-semibold text-emerald-600">-</span></p>
-      </div>
-
-      <button
-        type="button"
-        onclick="closeLiffWindow()"
-        class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-600 hover:to-teal-600 text-white font-bold text-base border-2 border-white shadow-lg shadow-emerald-500/20 hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
-      >
-        <i class="fa-solid fa-circle-xmark"></i>
-        <span>ปิดหน้าต่าง (Close LIFF)</span>
-      </button>
-
-      <a
-        href="gallery.html"
-        class="w-full py-3 px-4 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-bold text-xs border-2 border-rose-200 transition-all flex items-center justify-center gap-2 shadow-xs"
-      >
-        <i class="fa-solid fa-camera-retro text-rose-500 text-sm"></i>
-        <span>📸 ดูภาพบรรยากาศในงานเลี้ยง (Photo Gallery)</span>
-      </a>
     </div>
 
     <!-- Christmas Countdown View (แสดงเมื่อยังไม่ถึงเวลาเปิดระบบลงทะเบียน - Cute Cozy Christmas Theme) -->
@@ -1214,7 +1269,7 @@
       return new Date(s).getTime();
     }
 
-    // ซ่อนฟอร์มลงทะเบียนและแสดงหน้าแจ้งเตือนว่าลงทะเบียนเรียบร้อยแล้ว
+    // ซ่อนฟอร์มลงทะเบียนและแสดงหน้าแจ้งเตือนว่าลงทะเบียนเรียบร้อยแล้ว (Christmas VIP E-Ticket)
     function showAlreadyRegisteredView(regData) {
       const loadingEl = document.getElementById('liffLoadingContainer');
       if (loadingEl) loadingEl.classList.add('hidden');
@@ -1226,6 +1281,17 @@
       if (countdownEl) countdownEl.classList.add('hidden');
       document.getElementById('alreadyRegisteredContainer').classList.remove('hidden');
 
+      const profileImgEl = document.getElementById('regInfoProfileImg');
+      if (profileImgEl) {
+        const picUrl = (userProfile && userProfile.pictureUrl) ? userProfile.pictureUrl : 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+        profileImgEl.src = picUrl;
+      }
+
+      const lineNameEl = document.getElementById('regInfoLineName');
+      if (lineNameEl) {
+        lineNameEl.innerText = (userProfile && userProfile.displayName) || (regData && regData.empName) || 'ผู้ร่วมงาน CM Party 2026';
+      }
+
       if (regData && regData.empId) {
         document.getElementById('registeredInfoCard').classList.remove('hidden');
         document.getElementById('regInfoEmpId').innerText = regData.empId || '-';
@@ -1234,30 +1300,15 @@
         document.getElementById('regInfoBranch').innerText = regData.branch || '-';
       }
 
-      // หากไม่ใช่แอดมิน ให้ Pop-up แจ้งว่า "ท่านได้ลงทะเบียนแล้ว" ค้างไว้ 3 วินาที แล้วปิดหน้าต่างอัตโนมัติ
       const isAdmin = isCurrentUserAdmin();
       if (!isAdmin) {
-        setTimeout(() => {
-          closeLiffWindow();
-        }, 3000);
-
         Swal.fire({
+          toast: true,
+          position: 'top',
           icon: 'success',
-          title: 'ท่านได้ลงทะเบียนแล้ว',
-          html: regData && regData.empId
-            ? `<div class="text-xs text-gray-600 space-y-1 mt-1">
-                 <p>รหัสพนักงาน: <b class="text-red-700">${regData.empId}</b></p>
-                 <p>ชื่อ-สกุล: <b class="text-gray-800">${regData.empName || '-'}</b></p>
-                 <p class="text-gray-400 text-[11px] pt-2">ระบบจะปิดหน้าต่างอัตโนมัติใน 3 วินาที...</p>
-               </div>`
-            : '<p class="text-xs text-gray-500">ระบบจะปิดหน้าต่างอัตโนมัติใน 3 วินาที...</p>',
-          timer: 3000,
-          timerProgressBar: true,
+          title: 'ยินดีต้อนรับ! คุณลงทะเบียนเรียบร้อยแล้ว 🎄',
           showConfirmButton: false,
-          allowOutsideClick: false,
-          allowEscapeKey: false
-        }).then(() => {
-          closeLiffWindow();
+          timer: 2400
         });
       }
     }

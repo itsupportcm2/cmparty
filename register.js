@@ -1413,6 +1413,17 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(handleSyncShiftWorkersAction(params)))
       .setMimeType(ContentService.MimeType.JSON);
   }
+  if (params.action === 'getLiveWishes') {
+    return ContentService.createTextOutput(JSON.stringify({
+      status: 'success',
+      wishes: getLivePartyWishes(),
+      serverTime: Date.now()
+    })).setMimeType(ContentService.MimeType.JSON);
+  }
+  if (params.action === 'resendRewardLine') {
+    return ContentService.createTextOutput(JSON.stringify(resendRewardLineNotification(params)))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 
   // เปิดหน้าเว็บแกลเลอรีภาพกิจกรรม (gallery.html) เมื่อส่ง ?page=gallery หรือ ?page=photos
   if (params.page === 'gallery' || params.page === 'photos') {
@@ -1547,6 +1558,17 @@ function doPost(e) {
     }
     if (payload.action === 'syncShiftWorkers') {
       return ContentService.createTextOutput(JSON.stringify(handleSyncShiftWorkersAction(payload)))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    if (payload.action === 'getLiveWishes') {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: 'success',
+        wishes: getLivePartyWishes(),
+        serverTime: Date.now()
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
+    if (payload.action === 'resendRewardLine') {
+      return ContentService.createTextOutput(JSON.stringify(resendRewardLineNotification(payload)))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -2393,6 +2415,95 @@ function deleteRewardRecord(payload) {
 }
 
 /**
+ * ส่ง LINE แจ้งเตือนซ้ำให้กับผู้โชคดีที่ระบุแถวใน Sheet รางวัล (เฉพาะแอดมิน)
+ */
+function resendRewardLineNotification(payload) {
+  if (!isAdminAuthorized(payload)) {
+    return { status: 'error', message: 'ไม่มีสิทธิ์ดำเนินการ (อนุญาตเฉพาะแอดมินเท่านั้น)' };
+  }
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(10000);
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const rewardSheet = getRewardSheet(ss);
+    if (!rewardSheet) {
+      return { status: 'error', message: 'ไม่พบแผ่นงานรางวัล' };
+    }
+
+    const rowIndex = parseInt(payload.rowIndex, 10);
+    const lastRow = rewardSheet.getLastRow();
+    if (!rowIndex || rowIndex < 2 || rowIndex > lastRow) {
+      return { status: 'error', message: 'ระบุแถวรายการรางวัลไม่ถูกต้อง' };
+    }
+
+    const rowValues = rewardSheet.getRange(rowIndex, 1, 1, 6).getValues()[0];
+    const rewardName = String(rowValues[0] || '').trim();
+    const empId = String(rowValues[1] || '').trim().replace(/\.0$/, '');
+    let empName = String(rowValues[2] || '').trim();
+    let department = String(rowValues[3] || '').trim();
+    let branch = String(rowValues[4] || '').trim();
+    let uid = String(rowValues[5] || '').trim();
+
+    if (!empId) {
+      return { status: 'error', message: 'รายการนี้ยังไม่มีผู้รับรางวัล' };
+    }
+
+    let pictureUrl = '';
+    try {
+      const { employeesMap } = getRegisteredEmployeesFromRegisterSheet(ss);
+      const regEmp = employeesMap && employeesMap[empId];
+      if (regEmp) {
+        if (!empName) empName = regEmp.empName || '';
+        if (!department) department = regEmp.department || '';
+        if (!branch) branch = regEmp.branch || '';
+        if ((!uid || uid === 'TEST_USER') && regEmp.uid && regEmp.uid !== 'TEST_USER') {
+          uid = regEmp.uid;
+          rewardSheet.getRange(rowIndex, 6).setValue(uid);
+        }
+        pictureUrl = regEmp.pictureUrl || '';
+      }
+    } catch (lookupErr) {
+      console.warn('resendRewardLineNotification lookup warning:', lookupErr);
+    }
+
+    if (!uid || uid === 'TEST_USER') {
+      return { status: 'error', message: 'ไม่พบ LINE UID ของผู้รับรางวัลรายนี้ (ไม่สามารถส่งแจ้งเตือน LINE ได้)' };
+    }
+
+    const pushRes = pushRewardFlexMessage(uid, {
+      rewardName: rewardName,
+      empId: empId,
+      empName: empName,
+      department: department,
+      branch: branch,
+      pictureUrl: pictureUrl
+    });
+
+    if (pushRes && pushRes.success) {
+      return {
+        status: 'success',
+        lineSent: true,
+        message: 'ส่งแจ้งเตือน LINE ซ้ำเรียบร้อยแล้ว',
+        data: { rowIndex: rowIndex, rewardName: rewardName, empId: empId, empName: empName, uid: uid }
+      };
+    }
+
+    return {
+      status: 'error',
+      lineSent: false,
+      message: 'ส่งแจ้งเตือนไม่สำเร็จ: ' + ((pushRes && pushRes.message) || 'Unknown error'),
+      data: { rowIndex: rowIndex, rewardName: rewardName, empId: empId, empName: empName, uid: uid }
+    };
+  } catch (err) {
+    console.error('Error in resendRewardLineNotification:', err);
+    return { status: 'error', message: err.message };
+  } finally {
+    lock.releaseLock();
+  }
+}
+
+/**
  * ส่ง LINE Push Message (Flex Message) แจ้งเตือนผู้โชคดีที่ได้รับรางวัล
  */
 function pushRewardFlexMessage(uid, info) {
@@ -2557,6 +2668,7 @@ function handleLineWebhookPost(e) {
  */
 function handleTextMessage(event) {
   const replyToken = event.replyToken;
+  const rawUserId = (event.source && event.source.userId) ? String(event.source.userId).trim() : '';
   const userId = (event.source && (event.source.userId || event.source.groupId || event.source.roomId)) || 'anon';
   const rawText = String((event.message && event.message.text) || '').trim();
   const normalizedCommand = rawText.replace(/\s+/g, '');
@@ -2565,6 +2677,21 @@ function handleTextMessage(event) {
   const cache = CacheService.getScriptCache();
   const props = PropertiesService.getScriptProperties();
   const stateKey = 'WAIT_REWARD_EMP_' + userId;
+  const wishStateKey = 'WAIT_WISH_TEXT_' + userId;
+  const userQuoteToken = (event.message && event.message.quoteToken) ? String(event.message.quoteToken).trim() : '';
+
+  const clearRewardWaitState = () => {
+    cache.remove(stateKey);
+    props.deleteProperty(stateKey);
+  };
+  const clearWishWaitState = () => {
+    cache.remove(wishStateKey);
+    props.deleteProperty(wishStateKey);
+  };
+  const clearAllWaitStates = () => {
+    clearRewardWaitState();
+    clearWishWaitState();
+  };
 
   // 1. หากผู้ใช้กดปุ่มหรือพิมพ์ขอดูรูป/ภาพกิจกรรมในงาน
   const galleryKeywords = [
@@ -2586,11 +2713,10 @@ function handleTextMessage(event) {
     lowerCommand.indexOf('รูปกิจกรรม') !== -1;
 
   if (isGalleryRequest) {
-    cache.remove(stateKey);
-    props.deleteProperty(stateKey);
+    clearAllWaitStates();
 
-    if (event.source && event.source.userId) {
-      startLoadingAnimation(event.source.userId, 5);
+    if (rawUserId) {
+      startLoadingAnimation(rawUserId, 5);
     }
 
     const galleryFlex = createGalleryFlexMessage();
@@ -2598,18 +2724,99 @@ function handleTextMessage(event) {
     return;
   }
 
-  // 2. หากผู้ใช้พิมพ์คำว่า "ตรวจสอบรางวัล" (หรือ "ตรวจสอบ รางวัล")
-  const userQuoteToken = (event.message && event.message.quoteToken) ? String(event.message.quoteToken).trim() : '';
+  // 2. มินิเกม "เสี่ยงเซียมซีปีใหม่ 2026"
+  const fortuneKeywords = [
+    'เสี่ยงเซียมซี',
+    'เสี่ยงเซียมซีปีใหม่',
+    'เซียมซี',
+    'คำทำนาย',
+    'ดวงปีใหม่',
+    'fortune'
+  ];
+  const isFortuneRequest =
+    fortuneKeywords.indexOf(lowerCommand) !== -1 ||
+    lowerCommand.indexOf('เซียมซี') !== -1;
 
+  if (isFortuneRequest) {
+    clearAllWaitStates();
+
+    if (rawUserId) {
+      startLoadingAnimation(rawUserId, 5);
+    }
+
+    replyLineMessage(replyToken, [buildNewYearFortuneMessage(userQuoteToken)]);
+    return;
+  }
+
+  // 3. คำสั่งส่งคำอวยพรขึ้นหัวตุ๊กตาบนจอเวที (Live Party Wishes)
+  const wishPromptKeywords = [
+    'อวยพร',
+    'ส่งคำอวยพร',
+    'อวยพรขึ้นจอ',
+    'ส่งคำอวยพรขึ้นจอ'
+  ];
+  if (wishPromptKeywords.indexOf(normalizedCommand) !== -1) {
+    clearRewardWaitState();
+    cache.put(wishStateKey, 'WAITING', 300); // รอรับข้อความอวยพร 5 นาที
+    props.setProperty(wishStateKey, String(Date.now()));
+
+    if (rawUserId) {
+      startLoadingAnimation(rawUserId, 5);
+    }
+
+    const wishPromptText =
+      '💬 พิมพ์คำอวยพรปีใหม่สั้นๆ (ไม่เกิน 45 ตัวอักษร)\n' +
+      'ข้อความจะเด้งขึ้นบนหัวตุ๊กตาของคุณบนจอใหญ่ทันทีค่ะ! ✨\n' +
+      '(หรือแตะข้อความด่วนด้านล่างได้เลย)';
+
+    replyLineMessage(replyToken, [
+      buildQuotedRewardTextMessage(wishPromptText, userQuoteToken, buildWishPromptQuickReply(), 'elf')
+    ]);
+    return;
+  }
+
+  // รองรับพิมพ์ "อวยพร <ข้อความ>" หรือ "ส่งคำอวยพร <ข้อความ>" ในบรรทัดเดียว
+  const inlineWishMatch = rawText.match(/^(?:ส่งคำอวยพรขึ้นจอ|ส่งคำอวยพร|อวยพรขึ้นจอ|อวยพร)\s+([\s\S]+)/i);
+  if (inlineWishMatch && inlineWishMatch[1] && inlineWishMatch[1].trim()) {
+    clearAllWaitStates();
+
+    if (rawUserId) {
+      startLoadingAnimation(rawUserId, 5);
+    }
+
+    const saved = saveLivePartyWish(rawUserId, inlineWishMatch[1]);
+    if (!saved.success) {
+      replyLineMessage(replyToken, [
+        buildQuotedRewardTextMessage('❌ ' + saved.message, userQuoteToken, buildWishPromptQuickReply(), 'elf')
+      ]);
+      return;
+    }
+
+    let confirmText =
+      `✨ ส่งคำอวยพรขึ้นจอเวทีแล้วค่ะ!\n` +
+      `💬 "${saved.wish.text}"\n` +
+      `รอดูฟองคำพูดน่ารักๆ บนหัวตุ๊กตา ${saved.wish.displayName} บนจอใหญ่ได้เลย! 🎄`;
+    if (!saved.wish.empId) {
+      confirmText += '\n(💡 หากยังไม่ได้ลงทะเบียน เข้ากดลงทะเบียนร่วมงานเพื่อให้ตุ๊กตาของคุณปรากฏบนเวทีนะคะ)';
+    }
+
+    replyLineMessage(replyToken, [
+      buildQuotedRewardTextMessage(confirmText, userQuoteToken, buildWishSentQuickReply(), 'elf')
+    ]);
+    return;
+  }
+
+  // 4. หากผู้ใช้พิมพ์คำว่า "ตรวจสอบรางวัล" (หรือ "ตรวจสอบ รางวัล")
   if (normalizedCommand === 'ตรวจสอบรางวัล') {
+    clearWishWaitState();
     cache.put(stateKey, 'WAITING', 600); // จำสถานะรอรับรหัสพนักงานเป็นเวลา 10 นาที
     props.setProperty(stateKey, String(Date.now()));
 
-    if (event.source && event.source.userId) {
-      startLoadingAnimation(event.source.userId, 5);
+    if (rawUserId) {
+      startLoadingAnimation(rawUserId, 5);
     }
 
-    const myEmpId = findRegisteredEmpIdByUidCached(event.source && event.source.userId);
+    const myEmpId = findRegisteredEmpIdByUidCached(rawUserId);
     const promptText = myEmpId
       ? '🎁 กรุณาพิมพ์รหัสพนักงานของท่าน\n(หรือแตะปุ่ม Quick Reply ด้านล่างเพื่อตรวจสอบทันทีค่ะ)'
       : '🎁 กรุณาพิมพ์รหัสพนักงานของท่านเพื่อตรวจสอบรางวัลค่ะ';
@@ -2620,7 +2827,15 @@ function handleTextMessage(event) {
     return;
   }
 
-  // 3. ตรวจสอบว่าผู้ใช้อยู่ในสถานะรอกรอกรหัสพนักงานหลังจากพิมพ์ "ตรวจสอบรางวัล" หรือไม่
+  // ตรวจสอบสถานะรอรับคำอวยพร และรอรับรหัสพนักงาน
+  let isWaitingForWish = cache.get(wishStateKey) === 'WAITING';
+  if (!isWaitingForWish) {
+    const savedWishTime = props.getProperty(wishStateKey);
+    if (savedWishTime && (Date.now() - Number(savedWishTime) < 10 * 60 * 1000)) {
+      isWaitingForWish = true;
+    }
+  }
+
   let isWaitingForEmpId = cache.get(stateKey) === 'WAITING';
   if (!isWaitingForEmpId) {
     const savedTime = props.getProperty(stateKey);
@@ -2629,10 +2844,103 @@ function handleTextMessage(event) {
     }
   }
 
-  // กรณีผู้ใช้กด Quick Reply ยกเลิกการตรวจสอบรางวัล
+  // ปุ่มเมนู / ทักทาย (ให้ทำงานได้ทันทีแม้ค้างอยู่ในโหมดรอคำตอบ)
+  const helpKeywords = ['เมนู', 'ช่วยเหลือ', 'วิธีใช้', 'แนะนำ', 'สวัสดี', 'ทัก', 'ลงทะเบียน', 'ลงทะเบียนร่วมงาน', 'help', 'menu', 'hi', 'hello', 'start', '?', 'คำสั่ง'];
+  const isHelpPrompt = helpKeywords.some(kw => lowerCommand === kw || lowerCommand.indexOf(kw) === 0);
+
+  if (isHelpPrompt) {
+    clearAllWaitStates();
+    const helpQuickReply = {
+      items: [
+        {
+          type: 'action',
+          action: {
+            type: 'uri',
+            label: '📝 ลงทะเบียนร่วมงาน',
+            uri: LIFF_REGISTER_URL
+          }
+        },
+        {
+          type: 'action',
+          action: {
+            type: 'message',
+            label: '💬 อวยพรขึ้นจอ',
+            text: 'อวยพรขึ้นจอ'
+          }
+        },
+        {
+          type: 'action',
+          action: {
+            type: 'message',
+            label: '🥠 เสี่ยงเซียมซี',
+            text: 'เสี่ยงเซียมซี'
+          }
+        },
+        {
+          type: 'action',
+          action: {
+            type: 'message',
+            label: '📸 ภาพกิจกรรมในงาน',
+            text: 'ภาพกิจกรรมในงาน'
+          }
+        },
+        {
+          type: 'action',
+          action: {
+            type: 'message',
+            label: '🎁 ตรวจสอบรางวัล',
+            text: 'ตรวจสอบรางวัล'
+          }
+        }
+      ]
+    };
+    const helpText = '🎄 ยินดีต้อนรับสู่ CM Party 2026 ค่ะ!\nเลือกเมนูด้านล่างเพื่อร่วมสนุกได้เลย: ส่งคำอวยพรขึ้นจอเวที, เสี่ยงเซียมซีปีใหม่, ดูภาพในงาน หรือส่งรูปมาที่แชทนี้เพื่อขึ้นจอแกลเลอรีทันที 📸✨';
+    replyLineMessage(replyToken, [
+      buildQuotedRewardTextMessage(helpText, userQuoteToken, helpQuickReply, 'elf')
+    ]);
+    return;
+  }
+
+  // 5. หากอยู่ในสถานะรอพิมพ์คำอวยพร (หลังจากกด/พิมพ์ "อวยพร")
+  if (isWaitingForWish) {
+    clearWishWaitState();
+
+    if (normalizedCommand === 'ยกเลิกอวยพร' || normalizedCommand === 'ยกเลิก') {
+      replyLineMessage(replyToken, [
+        buildQuotedRewardTextMessage('❌ ยกเลิกการส่งคำอวยพรเรียบร้อยแล้วค่ะ', userQuoteToken, null, 'elf')
+      ]);
+      return;
+    }
+
+    if (rawUserId) {
+      startLoadingAnimation(rawUserId, 5);
+    }
+
+    const saved = saveLivePartyWish(rawUserId, rawText);
+    if (!saved.success) {
+      replyLineMessage(replyToken, [
+        buildQuotedRewardTextMessage('❌ ' + saved.message, userQuoteToken, buildWishPromptQuickReply(), 'elf')
+      ]);
+      return;
+    }
+
+    let confirmText =
+      `✨ ส่งคำอวยพรขึ้นจอเวทีแล้วค่ะ!\n` +
+      `💬 "${saved.wish.text}"\n` +
+      `รอดูฟองคำพูดน่ารักๆ บนหัวตุ๊กตา ${saved.wish.displayName} บนจอใหญ่ได้เลย! 🎄`;
+    if (!saved.wish.empId) {
+      confirmText += '\n(💡 หากยังไม่ได้ลงทะเบียน เข้ากดลงทะเบียนร่วมงานเพื่อให้ตุ๊กตาของคุณปรากฏบนเวทีนะคะ)';
+    }
+
+    replyLineMessage(replyToken, [
+      buildQuotedRewardTextMessage(confirmText, userQuoteToken, buildWishSentQuickReply(), 'elf')
+    ]);
+    return;
+  }
+
+  // 6. กรณีผู้ใช้กด Quick Reply ยกเลิกการตรวจสอบรางวัล
   if (isWaitingForEmpId && (normalizedCommand === 'ยกเลิกตรวจสอบรางวัล' || normalizedCommand === 'ยกเลิก')) {
-    cache.remove(stateKey);
-    props.deleteProperty(stateKey);
+    clearRewardWaitState();
     replyLineMessage(replyToken, [
       buildQuotedRewardTextMessage('❌ ยกเลิกการตรวจสอบรางวัลเรียบร้อยแล้วค่ะ', userQuoteToken, null)
     ]);
@@ -2642,61 +2950,24 @@ function handleTextMessage(event) {
   // รองรับกรณีพิมพ์ "ตรวจสอบรางวัล 672002" ในบรรทัดเดียวกันด้วย
   let empIdToSearch = '';
   if (/^ตรวจสอบ\s*รางวัล\s+/i.test(rawText) || (rawText.indexOf('ตรวจสอบรางวัล') === 0 && normalizedCommand !== 'ตรวจสอบรางวัล')) {
+    clearWishWaitState();
     empIdToSearch = rawText.replace(/^ตรวจสอบ\s*รางวัล\s*/i, '').trim();
   } else if (isWaitingForEmpId) {
     empIdToSearch = rawText;
   }
 
   if (!empIdToSearch) {
-    // 4. กรณีพิมพ์คำทักทาย/ขอความช่วยเหลือ/ลงทะเบียน -> ส่งเมนู Quick Reply แนะนำ 3 ปุ่มหลัก
-    const helpKeywords = ['เมนู', 'ช่วยเหลือ', 'วิธีใช้', 'แนะนำ', 'สวัสดี', 'ทัก', 'ลงทะเบียน', 'ลงทะเบียนร่วมงาน', 'help', 'menu', 'hi', 'hello', 'start', '?', 'คำสั่ง'];
-    const isHelpPrompt = helpKeywords.some(kw => lowerCommand === kw || lowerCommand.indexOf(kw) === 0);
-    if (isHelpPrompt) {
-      const helpQuickReply = {
-        items: [
-          {
-            type: 'action',
-            action: {
-              type: 'uri',
-              label: '📝 ลงทะเบียนร่วมงาน',
-              uri: LIFF_REGISTER_URL
-            }
-          },
-          {
-            type: 'action',
-            action: {
-              type: 'message',
-              label: '📸 ภาพกิจกรรมในงาน',
-              text: 'ภาพกิจกรรมในงาน'
-            }
-          },
-          {
-            type: 'action',
-            action: {
-              type: 'message',
-              label: '🎁 ตรวจสอบรางวัล',
-              text: 'ตรวจสอบรางวัล'
-            }
-          }
-        ]
-      };
-      const helpText = '🎄 ยินดีต้อนรับสู่ CM Party 2026 ค่ะ!\nเลือกเมนูที่ต้องการด้านล่างได้เลย (หรือส่งรูปภาพมาที่แชทนี้เพื่อขึ้นจอแกลเลอรีในงานได้ทันที 📸)';
-      replyLineMessage(replyToken, [
-        buildQuotedRewardTextMessage(helpText, userQuoteToken, helpQuickReply, 'elf')
-      ]);
-    }
     return;
   }
 
   // ล้างสถานะรอรหัสพนักงานเมื่อรับค่ามาตรวจสอบแล้ว
-  cache.remove(stateKey);
-  props.deleteProperty(stateKey);
+  clearRewardWaitState();
 
-  if (event.source && event.source.userId) {
-    startLoadingAnimation(event.source.userId, 5);
+  if (rawUserId) {
+    startLoadingAnimation(rawUserId, 5);
   }
 
-  const myEmpId = findRegisteredEmpIdByUidCached(event.source && event.source.userId);
+  const myEmpId = findRegisteredEmpIdByUidCached(rawUserId);
   const resultQuickReply = buildRewardResultQuickReply(empIdToSearch, myEmpId);
 
   // ค้นหาข้อมูลจาก Sheet "gift" โดยตรวจสอบรหัสพนักงานในคอลัมน์ B2:B
@@ -2864,6 +3135,320 @@ function buildRewardResultQuickReply(checkedEmpId, myEmpId) {
   }
 
   return { items: items };
+}
+
+const LIVE_WISHES_PROP_KEY = 'LIVE_PARTY_WISHES';
+const LIVE_WISHES_CACHE_KEY = 'LIVE_PARTY_WISHES_CACHE';
+const LIVE_WISH_TTL_MS = 30 * 60 * 1000;
+const LIVE_WISH_MAX_ITEMS = 40;
+
+/**
+ * บันทึกคำอวยพรขึ้นจอเวที (Live Party Wishes) พร้อมผูกกับรหัสพนักงานและชื่อผู้ร่วมงาน
+ */
+function saveLivePartyWish(userId, rawWishText) {
+  const cleanWish = String(rawWishText || '')
+    .replace(/[\r\n]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, 45);
+
+  if (!cleanWish) {
+    return { success: false, message: 'กรุณาพิมพ์ข้อความอวยพรก่อนส่งนะคะ' };
+  }
+
+  const cache = CacheService.getScriptCache();
+  let empId = '';
+  let displayName = '';
+
+  if (userId && userId !== 'anon') {
+    const profileCacheKey = 'WISH_USER_META_' + userId;
+    try {
+      const cachedMeta = cache.get(profileCacheKey);
+      if (cachedMeta) {
+        const parsedMeta = JSON.parse(cachedMeta);
+        empId = parsedMeta.empId || '';
+        displayName = parsedMeta.displayName || '';
+      }
+    } catch (e) {}
+
+    if (!displayName) {
+      try {
+        const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+        const { employeesMap } = getRegisteredEmployeesFromRegisterSheet(ss);
+        const entries = Object.values(employeesMap || {});
+        for (let i = 0; i < entries.length; i++) {
+          if (entries[i] && entries[i].uid === userId) {
+            empId = entries[i].empId || '';
+            displayName = entries[i].displayName || entries[i].empName || '';
+            break;
+          }
+        }
+      } catch (lookupErr) {
+        console.warn('saveLivePartyWish Sheet lookup warning:', lookupErr);
+      }
+
+      if (!displayName) {
+        const profile = getUserProfile(userId);
+        displayName = (profile && profile.displayName) ? String(profile.displayName).trim() : '';
+      }
+
+      if (!displayName) displayName = 'ผู้ร่วมงาน';
+
+      try {
+        cache.put(profileCacheKey, JSON.stringify({ empId: empId, displayName: displayName }), 300);
+      } catch (cacheErr) {}
+    }
+  } else {
+    displayName = 'ผู้ร่วมงาน';
+  }
+
+  const now = Date.now();
+  const newWish = {
+    id: now + '_' + Math.floor(Math.random() * 10000),
+    empId: empId,
+    uid: userId || '',
+    displayName: displayName,
+    text: cleanWish,
+    createdAt: now
+  };
+
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(5000);
+    const props = PropertiesService.getScriptProperties();
+    let list = [];
+    try {
+      const rawJson = props.getProperty(LIVE_WISHES_PROP_KEY);
+      if (rawJson) {
+        const parsed = JSON.parse(rawJson);
+        if (Array.isArray(parsed)) list = parsed;
+      }
+    } catch (parseErr) {}
+
+    list = list.filter(w => {
+      if (!w || !w.text) return false;
+      if (now - Number(w.createdAt || 0) > LIVE_WISH_TTL_MS) return false;
+      if (userId && w.uid === userId) return false;
+      if (empId && w.empId === empId) return false;
+      return true;
+    });
+
+    list.unshift(newWish);
+    if (list.length > LIVE_WISH_MAX_ITEMS) {
+      list = list.slice(0, LIVE_WISH_MAX_ITEMS);
+    }
+
+    props.setProperty(LIVE_WISHES_PROP_KEY, JSON.stringify(list));
+    cache.remove(LIVE_WISHES_CACHE_KEY);
+  } finally {
+    lock.releaseLock();
+  }
+
+  return {
+    success: true,
+    wish: {
+      id: newWish.id,
+      empId: newWish.empId,
+      displayName: newWish.displayName,
+      text: newWish.text,
+      createdAt: newWish.createdAt
+    }
+  };
+}
+
+/**
+ * ดึงรายการคำอวยพรล่าสุดสำหรับแสดงบนหัวตุ๊กตาในสไลด์โชว์ (ตัด uid ออกเพื่อความปลอดภัย)
+ */
+function getLivePartyWishes() {
+  const cache = CacheService.getScriptCache();
+  try {
+    const cached = cache.get(LIVE_WISHES_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch (e) {}
+
+  const now = Date.now();
+  let publicWishes = [];
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const rawJson = props.getProperty(LIVE_WISHES_PROP_KEY);
+    if (rawJson) {
+      const parsed = JSON.parse(rawJson);
+      if (Array.isArray(parsed)) {
+        publicWishes = parsed
+          .filter(w => w && w.text && (now - Number(w.createdAt || 0) <= LIVE_WISH_TTL_MS))
+          .map(w => ({
+            id: String(w.id || ''),
+            empId: String(w.empId || ''),
+            displayName: String(w.displayName || ''),
+            text: String(w.text || ''),
+            createdAt: Number(w.createdAt || 0)
+          }));
+      }
+    }
+  } catch (err) {
+    console.warn('getLivePartyWishes warning:', err);
+  }
+
+  try {
+    cache.put(LIVE_WISHES_CACHE_KEY, JSON.stringify(publicWishes), 5);
+  } catch (cacheErr) {}
+
+  return publicWishes;
+}
+
+function buildWishPromptQuickReply() {
+  return {
+    items: [
+      {
+        type: 'action',
+        action: {
+          type: 'message',
+          label: 'Merry Christmas 🎄',
+          text: 'อวยพร Merry Christmas 🎄✨'
+        }
+      },
+      {
+        type: 'action',
+        action: {
+          type: 'message',
+          label: 'ขอได้รางวัลใหญ่ 🎁',
+          text: 'อวยพร ขอให้ได้รางวัลใหญ่! 🎁'
+        }
+      },
+      {
+        type: 'action',
+        action: {
+          type: 'message',
+          label: 'HNY 2026 ปังๆ 🎉',
+          text: 'อวยพร HNY 2026 รวยๆ ปังๆ 🎉'
+        }
+      },
+      {
+        type: 'action',
+        action: {
+          type: 'message',
+          label: '❌ ยกเลิก',
+          text: 'ยกเลิกอวยพร'
+        }
+      }
+    ]
+  };
+}
+
+function buildWishSentQuickReply() {
+  return {
+    items: [
+      {
+        type: 'action',
+        action: {
+          type: 'message',
+          label: '💬 ส่งคำอวยพรอีก',
+          text: 'อวยพรขึ้นจอ'
+        }
+      },
+      {
+        type: 'action',
+        action: {
+          type: 'message',
+          label: '🥠 เสี่ยงเซียมซี',
+          text: 'เสี่ยงเซียมซี'
+        }
+      },
+      {
+        type: 'action',
+        action: {
+          type: 'message',
+          label: '📸 ภาพกิจกรรมในงาน',
+          text: 'ภาพกิจกรรมในงาน'
+        }
+      },
+      {
+        type: 'action',
+        action: {
+          type: 'message',
+          label: '🎁 ตรวจสอบรางวัล',
+          text: 'ตรวจสอบรางวัล'
+        }
+      }
+    ]
+  };
+}
+
+/**
+ * มินิเกม "เสี่ยงเซียมซีปีใหม่ 2026" สำหรับส่งผลคำทำนายสนุกๆ ในแชท LINE
+ */
+function buildNewYearFortuneMessage(userQuoteToken) {
+  const fortunes = [
+    { no: 1, level: '🌟 มหาเฮง!', text: 'คืนนี้รัศมีผู้โชคดีจับมาก! มีเกณฑ์ได้เฮเสียงดังตอนจับรางวัลใหญ่ แถมปีใหม่ 2026 งานรุ่ง เงินพุ่งไม่หยุด', lucky: 'หมวกซานต้าสีแดง 🎅' },
+    { no: 2, level: '✨ ดีมาก!', text: 'คนรอบข้างรักใคร่เอ็นดู เพื่อนร่วมงานซัพพอร์ตสุดๆ ปีหน้าโปรเจกต์ไหนก็ผ่านฉลุยไร้ดราม่า', lucky: 'เครื่องดื่มเย็นๆ สักแก้ว 🥂' },
+    { no: 3, level: '💎 โชคลาภเด่น!', text: 'ดวงการเงินและโบนัสเปิดทางสว่างไสว สิ่งที่ตั้งใจไว้กำลังจะออกดอกออกผลให้ชื่นใจในไม่ช้า', lucky: 'สติกเกอร์ดาวทอง ⭐' },
+    { no: 4, level: '🎁 มีลุ้นรางวัล!', text: 'ค่ำคืนนี้หัวใจจะพองโต! มีเกณฑ์ได้รับของขวัญสุดเซอร์ไพรส์ หรือมีคนเลี้ยงของอร่อยแบบไม่ทันตั้งตัว', lucky: 'ริบบิ้นสีทอง 🎀' },
+    { no: 5, level: '🌈 สดใสเกินต้าน!', text: 'พลังงานบวกมาเต็มร้อย! ยิ้มบ่อยๆ เข้าไว้ คืนนี้จะถ่ายรูปมุมไหนก็เป๊ะปังติดหน้าจอใหญ่แน่นอน', lucky: 'กล้องถ่ายรูป 📸' },
+    { no: 6, level: '🍀 เฮงคูณสอง!', text: 'ใครที่เคยเหนื่อยมาตลอดปี ถึงเวลาพักใจให้เต็มที่แล้วรับโชคก้อนโตต้อนรับปี 2026 ได้เลย!', lucky: 'ใบโคลเวอร์สีเขียว 🍀' },
+    { no: 7, level: '👑 ตัวตึงประจำงาน!', text: 'เสน่ห์แรงสุดในปาร์ตี้! เดินไปมุมไหนก็มีแต่คนชวนคุย ชวนถ่ายรูป มิตรภาพดีๆ จะพาโอกาสใหม่ๆ มาให้', lucky: 'แว่นตาแฟนซี 😎' },
+    { no: 8, level: '🚀 พุ่งทะยาน!', text: 'ปี 2026 จะเป็นปีแห่งการเติบโตแบบก้าวกระโดด ไอเดียที่คิดไว้จะปังจนใครๆ ก็ต้องปรบมือให้', lucky: 'ขนมหวานชิ้นโปรด 🧁' },
+    { no: 9, level: '💝 อิ่มสุขใจฟู!', text: 'ความสุขอยู่ใกล้แค่เอื้อม สุขภาพแข็งแรง หลับสบาย ไร้เรื่องกวนใจ มีแต่เสียงหัวเราะตลอดเทศกาล', lucky: 'คุกกี้ขิง 🍪' },
+    { no: 10, level: '🎯 แม่นดั่งจับวาง!', text: 'คิดอะไรไว้ให้รีบลงมือทำเลย เพราะจังหวะดีๆ เข้าข้างคุณอยู่ โชคเล็กโชคใหญ่กำลังต่อคิวมาหา!', lucky: 'กล่องของขวัญสีเขียว 🎁' },
+    { no: 11, level: '🌟 ดาวเด่นนำโชค!', text: 'ออร่าความสำเร็จสว่างวาบ! คืนนี้ลองส่งคำอวยพรขึ้นจอเวทีดูนะ แล้วความสุขจะย้อนกลับมาหาคุณสิบเท่า', lucky: 'ลูกบอลประดับต้นสน 🎄' },
+    { no: 12, level: '🎊 รวยความสุข!', text: 'เงินทองไม่ขาดมือ งานยากแค่ไหนก็จัดการได้อยู่หมัด แถมมีดวงเดินทางท่องเที่ยวรับปีใหม่อย่างราบรื่น', lucky: 'กระดิ่งทอง 🔔' },
+    { no: 13, level: '🔥 ฟอร์มกำลังฮอต!', text: 'พกความมั่นใจมาเต็มกระเป๋า คืนนี้เอ็นจอยให้สุดเหวี่ยง แล้วพรุ่งนี้ความโชคดีจะเดินตามคุณไปทุกที่!', lucky: 'ถุงเท้าคริสต์มาส 🧦' },
+    { no: 14, level: '💖 กัลยาณมิตร!', text: 'จะเจอข่าวดีจากคนที่ทำงานร่วมกัน ความสามัคคีในทีมจะสร้างผลงานชิ้นโบว์แดงประจำปี 2026', lucky: 'ช็อกโกแลตร้อน ☕' },
+    { no: 15, level: '✨ ปาฏิหาริย์ปีใหม่!', text: 'เรื่องที่ลุ้นมานานกำลังจะสมหวังแบบน่ารักน่าเอ็นดู อย่าลืมส่งยิ้มให้กล้องในงานด้วยล่ะ!', lucky: 'ไฟประดับระยิบระยับ ✨' },
+    { no: 16, level: '🎉 ซุปเปอร์สตาร์!', text: 'โชคชะตาจัดคิวความสนุกให้คุณแบบ VIP ทั้งคืนนี้และตลอดปีหน้า เตรียมรับทรัพย์รับความสุขได้เลย!', lucky: 'ลูกกวาดแคนดี้เคน 🍬' },
+    { no: 17, level: '🌷 สบายใจหายห่วง!', text: 'อุปสรรคที่เคยติดขัดจะคลี่คลายเหมือนหิมะละลาย เหลือไว้แต่ความสดชื่นและความสำเร็จที่รออยู่', lucky: 'ตุ๊กตาหิมะยิ้มหวาน ⛄' },
+    { no: 18, level: '🏆 แชมป์แห่งรอยยิ้ม!', text: 'คำทำนายบอกว่าคุณคือหนึ่งในความน่ารักของงานนี้! ขอให้มีความสุขล้นปรี่และเฮงตลอดปี 2026 ค่ะ', lucky: 'มงกุฎดาว 👑' }
+  ];
+
+  const picked = fortunes[Math.floor(Math.random() * fortunes.length)];
+  const msgText =
+    `🥠 เซียมซีปีใหม่ CM Party 2026\n` +
+    `━━━━━━━━━━━━━━━━\n` +
+    `📜 ใบที่ ${picked.no} • ${picked.level}\n\n` +
+    `${picked.text}\n\n` +
+    `🍀 ไอเทมนำโชคคืนนี้: ${picked.lucky}\n` +
+    `━━━━━━━━━━━━━━━━`;
+
+  const fortuneQuickReply = {
+    items: [
+      {
+        type: 'action',
+        action: {
+          type: 'message',
+          label: '🥠 เสี่ยงอีกครั้ง',
+          text: 'เสี่ยงเซียมซี'
+        }
+      },
+      {
+        type: 'action',
+        action: {
+          type: 'message',
+          label: '💬 อวยพรขึ้นจอ',
+          text: 'อวยพรขึ้นจอ'
+        }
+      },
+      {
+        type: 'action',
+        action: {
+          type: 'message',
+          label: '🎁 ตรวจสอบรางวัล',
+          text: 'ตรวจสอบรางวัล'
+        }
+      },
+      {
+        type: 'action',
+        action: {
+          type: 'message',
+          label: '📸 ภาพกิจกรรมในงาน',
+          text: 'ภาพกิจกรรมในงาน'
+        }
+      }
+    ]
+  };
+
+  return buildQuotedRewardTextMessage(msgText, userQuoteToken, fortuneQuickReply, 'elf');
 }
 
 /**
@@ -3126,6 +3711,7 @@ function handleImageMessage(event) {
   const messageId = event.message.id;
   const replyToken = event.replyToken;
   const userId = event.source.userId || '';
+  const quoteToken = (event.message && event.message.quoteToken) ? String(event.message.quoteToken).trim() : '';
 
   try {
     if (userId) {
@@ -3148,19 +3734,51 @@ function handleImageMessage(event) {
       CacheService.getScriptCache().remove('GALLERY_IMAGES_CACHE');
     } catch (cacheClearErr) {}
 
+    const photoQuickReply = {
+      items: [
+        {
+          type: 'action',
+          action: {
+            type: 'message',
+            label: '📸 ภาพกิจกรรมในงาน',
+            text: 'ภาพกิจกรรมในงาน'
+          }
+        },
+        {
+          type: 'action',
+          action: {
+            type: 'message',
+            label: '💬 อวยพรขึ้นจอ',
+            text: 'อวยพรขึ้นจอ'
+          }
+        },
+        {
+          type: 'action',
+          action: {
+            type: 'message',
+            label: '🥠 เสี่ยงเซียมซี',
+            text: 'เสี่ยงเซียมซี'
+          }
+        },
+        {
+          type: 'action',
+          action: {
+            type: 'message',
+            label: '🎁 ตรวจสอบรางวัล',
+            text: 'ตรวจสอบรางวัล'
+          }
+        }
+      ]
+    };
+
+    const replyText = '📸 อัปโหลดภาพความประทับใจขึ้นจอแกลเลอรีเรียบร้อยแล้วค่ะ!\nรอชมภาพสวยๆ บนจอใหญ่ในงานได้เลย ✨';
     replyLineMessage(replyToken, [
-      withBotSender({
-        type: 'text',
-        text: 'อัพโหลดรูปสำเร็จ'
-      }, 'photo')
+      buildQuotedRewardTextMessage(replyText, quoteToken, photoQuickReply, 'photo')
     ]);
   } catch (err) {
     console.error('Error handling image:', err);
     replyLineMessage(replyToken, [
-      withBotSender({
-        type: 'text',
-        text: '❌ เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ: ' + err.message
-      }, 'photo')
+      buildQuotedRewardTextMessage('❌ เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ: ' + err.message, quoteToken, null, 'photo')
     ]);
   }
 }

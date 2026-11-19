@@ -288,6 +288,36 @@
       z-index: 30;
     }
 
+    .ss-doll-wish-ring {
+      box-shadow: 0 0 0 3px #f472b6, 0 0 18px rgba(244, 114, 182, 0.9);
+    }
+
+    .ss-wish-bubble {
+      position: absolute;
+      bottom: calc(100% + 8px);
+      left: 50%;
+      transform: translateX(-50%);
+      min-width: 96px;
+      max-width: 170px;
+      white-space: normal;
+      word-break: break-word;
+      line-height: 1.25;
+      text-align: center;
+      animation: ssBubbleFloat 2.1s ease-in-out infinite;
+      z-index: 35;
+    }
+
+    .ss-wish-bubble::after {
+      content: '';
+      position: absolute;
+      top: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border-width: 5px;
+      border-style: solid;
+      border-color: #fda4af transparent transparent transparent;
+    }
+
     /* 🎅 Flying Santa Sleigh across upper slideshow stage */
     @keyframes ssSantaSleighFly {
       0% { transform: translate3d(-260px, 14px, 0) rotate(-3deg) scale(0.92); opacity: 0; }
@@ -917,6 +947,10 @@
           <span>🎅</span>
           <span id="ssCrowdCountText">กำลังโหลดรายชื่อผู้ร่วมงาน...</span>
         </div>
+        <div class="hidden md:inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-rose-500/20 border border-rose-300/35 text-[10px] text-rose-100/95 font-medium shadow-xs">
+          <span>💬</span>
+          <span>พิมพ์ "อวยพร" ในแชท LINE เพื่อส่งคำอวยพรขึ้นหัวตุ๊กตา!</span>
+        </div>
         <div id="ssCrowdWaveBadge" class="hidden inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/10 border border-white/20 text-[10px] text-rose-100 font-medium">
           <i class="fa-solid fa-arrows-rotate text-[9px] text-emerald-300"></i>
           <span id="ssCrowdWaveText">กลุ่ม 1/1</span>
@@ -1335,6 +1369,49 @@
     let stageWaveTimer = null;
     let stageAttendeeSyncTimer = null;
     let isAttendeeSyncing = false;
+
+    // สถานะคำอวยพรขึ้นหัวตุ๊กตาแบบเรียลไทม์ (Live Party Wishes)
+    const STAGE_WISH_DISPLAY_MS = 3 * 60 * 1000;
+    let stageWishesByEmpId = new Map();
+    let stageWishesByName = new Map();
+    let knownWishIds = new Set();
+    let hasInitializedWishes = false;
+    let isWishSyncing = false;
+
+    // สถานะ Screen Wake Lock กันหน้าจอโปรเจคเตอร์ดับระหว่างเปิดสไลด์โชว์
+    let ssWakeLock = null;
+
+    async function requestSlideshowWakeLock() {
+      try {
+        if ('wakeLock' in navigator && navigator.wakeLock) {
+          if (ssWakeLock && !ssWakeLock.released) return;
+          ssWakeLock = await navigator.wakeLock.request('screen');
+          ssWakeLock.addEventListener('release', () => {
+            ssWakeLock = null;
+          });
+        }
+      } catch (err) {
+        console.warn('Wake Lock request skipped:', err);
+      }
+    }
+
+    async function releaseSlideshowWakeLock() {
+      try {
+        if (ssWakeLock) {
+          const lockToRelease = ssWakeLock;
+          ssWakeLock = null;
+          await lockToRelease.release();
+        }
+      } catch (err) {
+        console.warn('Wake Lock release skipped:', err);
+      }
+    }
+
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && isSlideshowActive) {
+        requestSlideshowWakeLock();
+      }
+    });
 
     let slideshowTimer = null;
     let progressTimer = null;
@@ -1969,6 +2046,7 @@
       startAutoSyncTimer();
       startStageCrowdSystem();
       startSantaFlyTimer();
+      requestSlideshowWakeLock();
 
       // Setup Mouse Activity Tracker for Auto-hiding Controls
       document.addEventListener('mousemove', resetSlideshowControlsActivity);
@@ -1985,6 +2063,7 @@
       stopSlideshowAutoTimer();
       stopStageCrowdSystem();
       stopSantaFlyTimer();
+      releaseSlideshowWakeLock();
       hideNewPhotoSpotlight();
       priorityNewPhotoIds = [];
 
@@ -2519,10 +2598,12 @@
       if (!showStageCrowd || !isSlideshowActive) return;
 
       syncStageAttendees();
-      // ซิงก์รายชื่อผู้ลงทะเบียนใหม่อัตโนมัติทุก 15 วินาที
+      syncStageWishes();
+      // ซิงก์รายชื่อผู้ลงทะเบียนใหม่และคำอวยพรเรียลไทม์ทุก 15 วินาที
       stageAttendeeSyncTimer = setInterval(() => {
         if (isSlideshowActive && showStageCrowd) {
           syncStageAttendees();
+          syncStageWishes();
         }
       }, 15000);
 
@@ -2695,6 +2776,95 @@
       }
     }
 
+    async function syncStageWishes() {
+      if (isWishSyncing || !isSlideshowActive) return;
+      isWishSyncing = true;
+
+      try {
+        const res = await fetch(`${GAS_WEB_APP_URL}?action=getLiveWishes&_t=${Date.now()}`, { cache: 'no-store' });
+        const data = await res.json();
+        if (!data || data.status !== 'success' || !Array.isArray(data.wishes)) return;
+
+        const now = Date.now();
+        const serverNow = Number(data.serverTime || now);
+        const serverOffset = now - serverNow;
+
+        const nextByEmpId = new Map();
+        const nextByName = new Map();
+        let hasNewWish = false;
+        const nextIds = new Set();
+
+        data.wishes.forEach(w => {
+          if (!w || !w.text) return;
+          const clientCreatedAt = Number(w.createdAt || 0) + serverOffset;
+          if (now - clientCreatedAt > STAGE_WISH_DISPLAY_MS) return;
+
+          const expiresAt = clientCreatedAt + STAGE_WISH_DISPLAY_MS;
+          const wishId = String(w.id || '');
+          const wishObj = {
+            id: wishId,
+            empId: String(w.empId || '').trim(),
+            displayName: String(w.displayName || '').trim(),
+            text: String(w.text || '').trim(),
+            expiresAt: expiresAt
+          };
+
+          if (wishId) {
+            nextIds.add(wishId);
+            if (hasInitializedWishes && !knownWishIds.has(wishId)) {
+              hasNewWish = true;
+            }
+            knownWishIds.add(wishId);
+          }
+
+          if (wishObj.empId && !nextByEmpId.has(wishObj.empId)) {
+            nextByEmpId.set(wishObj.empId, wishObj);
+          }
+          const lowerName = wishObj.displayName.toLowerCase();
+          if (lowerName && !nextByName.has(lowerName)) {
+            nextByName.set(lowerName, wishObj);
+          }
+        });
+
+        hasInitializedWishes = true;
+        const hadExistingWishes = stageWishesByEmpId.size > 0 || stageWishesByName.size > 0;
+        stageWishesByEmpId = nextByEmpId;
+        stageWishesByName = nextByName;
+
+        if (!isSlideshowActive || !showStageCrowd) return;
+
+        if (hasNewWish) {
+          playChristmasBellChime();
+          stageWaveIndex = 0;
+          renderStageCrowdWave(true);
+        } else if (stageAttendees.length > 0 && (nextIds.size > 0 || hadExistingWishes)) {
+          renderStageCrowdWave(false);
+        }
+      } catch (err) {
+        console.warn('Stage wish sync warning:', err);
+      } finally {
+        isWishSyncing = false;
+      }
+    }
+
+    function getActiveWishForAttendee(attendee) {
+      if (!attendee) return null;
+      const now = Date.now();
+      let wish = null;
+      if (attendee.empId && stageWishesByEmpId.has(attendee.empId)) {
+        wish = stageWishesByEmpId.get(attendee.empId);
+      } else if (attendee.displayName) {
+        const key = String(attendee.displayName).trim().toLowerCase();
+        if (key && stageWishesByName.has(key)) {
+          wish = stageWishesByName.get(key);
+        }
+      }
+      if (wish && wish.expiresAt > now) {
+        return wish;
+      }
+      return null;
+    }
+
     function getAttendeeThemeIndex(empId) {
       let hash = 0;
       for (let i = 0; i < empId.length; i++) {
@@ -2772,7 +2942,7 @@
       </svg>`;
     }
 
-    function buildCuteChristmasDoll(attendee, index, isWelcome, animatePop) {
+    function buildCuteChristmasDoll(attendee, index, isWelcome, animatePop, activeWish = null) {
       const themeIdx = getAttendeeThemeIndex(attendee.empId);
       const doll = document.createElement('div');
       const enterAnimCls = isWelcome ? 'ss-doll-walk-in' : (animatePop ? 'ss-doll-enter' : '');
@@ -2780,7 +2950,12 @@
       doll.style.setProperty('--doll-duration', `${(2.1 + (index % 5) * 0.25).toFixed(2)}s`);
       doll.style.setProperty('--doll-delay', `${((index % 6) * 0.18).toFixed(2)}s`);
 
-      if (isWelcome) {
+      if (activeWish && activeWish.text) {
+        const bubble = document.createElement('div');
+        bubble.className = 'ss-wish-bubble px-2.5 py-1 rounded-2xl bg-white/95 text-rose-900 text-[10px] font-bold shadow-[0_6px_18px_rgba(244,63,94,0.38)] border-2 border-rose-300';
+        bubble.textContent = '💬 ' + activeWish.text;
+        doll.appendChild(bubble);
+      } else if (isWelcome) {
         const bubble = document.createElement('div');
         bubble.className = 'ss-welcome-bubble px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-300 via-yellow-200 to-amber-300 text-rose-950 text-[9px] font-extrabold shadow-md border border-white';
         bubble.textContent = '🎉 เพิ่งลงทะเบียน!';
@@ -2801,7 +2976,8 @@
 
       // หัวตัวละคร (รูปโปรไฟล์ LINE)
       const headWrap = document.createElement('div');
-      headWrap.className = `w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden border-2 border-white bg-rose-100 shadow-md relative z-10 ${isWelcome ? 'ss-doll-welcome-ring' : ''}`;
+      const ringCls = isWelcome ? 'ss-doll-welcome-ring' : (activeWish && activeWish.text ? 'ss-doll-wish-ring' : '');
+      headWrap.className = `w-10 h-10 sm:w-11 sm:h-11 rounded-full overflow-hidden border-2 border-white bg-rose-100 shadow-md relative z-10 ${ringCls}`;
 
       const avatarImg = document.createElement('img');
       avatarImg.alt = attendee.displayName;
@@ -2848,11 +3024,20 @@
         if (exp <= now) welcomeAttendeeExpiryMap.delete(id);
       }
 
-      // จัดลำดับให้คนที่เพิ่งลงทะเบียนใหม่ขึ้นมาอยู่หน้าเวทีก่อน
-      const prioritized = [
-        ...stageAttendees.filter(a => welcomeAttendeeExpiryMap.has(a.empId)),
-        ...stageAttendees.filter(a => !welcomeAttendeeExpiryMap.has(a.empId))
-      ];
+      // จัดลำดับ: 1) คนที่เพิ่งลงทะเบียนใหม่ 2) คนที่ส่งคำอวยพรล่าสุด 3) ผู้ร่วมงานคนอื่นๆ
+      const welcomeList = [];
+      const wishList = [];
+      const normalList = [];
+      stageAttendees.forEach(a => {
+        if (welcomeAttendeeExpiryMap.has(a.empId)) {
+          welcomeList.push(a);
+        } else if (getActiveWishForAttendee(a)) {
+          wishList.push(a);
+        } else {
+          normalList.push(a);
+        }
+      });
+      const prioritized = [...welcomeList, ...wishList, ...normalList];
 
       const waveSize = getStageWaveSize();
       const totalWaves = Math.max(1, Math.ceil(prioritized.length / waveSize));
@@ -2873,7 +3058,8 @@
       rowEl.innerHTML = '';
       slice.forEach((attendee, idx) => {
         const isWelcome = welcomeAttendeeExpiryMap.has(attendee.empId);
-        rowEl.appendChild(buildCuteChristmasDoll(attendee, idx, isWelcome, animatePop || isWelcome));
+        const activeWish = getActiveWishForAttendee(attendee);
+        rowEl.appendChild(buildCuteChristmasDoll(attendee, idx, isWelcome, animatePop || isWelcome || Boolean(activeWish), activeWish));
       });
     }
 
