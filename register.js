@@ -1490,6 +1490,10 @@ function doGet(e) {
     return ContentService.createTextOutput(JSON.stringify(adminClearLineRichMenu(params)))
       .setMimeType(ContentService.MimeType.JSON);
   }
+  if (params.action === 'inspectRichMenu') {
+    return ContentService.createTextOutput(JSON.stringify(inspectLineRichMenus()))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
 
   // กรณีแอดมินตั้งวันเวลาเปิด-ปิดระบบ หรือสลับเปิด-ปิดระบบ
   if (params.action === 'setSchedule' || params.action === 'setClosingDateTime' || params.action === 'toggleSystemStatus') {
@@ -1693,6 +1697,10 @@ function doPost(e) {
     }
     if (payload.action === 'clearRichMenu') {
       return ContentService.createTextOutput(JSON.stringify(adminClearLineRichMenu(payload)))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    if (payload.action === 'inspectRichMenu') {
+      return ContentService.createTextOutput(JSON.stringify(inspectLineRichMenus()))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -3137,6 +3145,31 @@ function handleTextMessage(event) {
       const replyMsg = rmRes && rmRes.status === 'success'
         ? `🗑️ ${rmRes.message}\n(ลบออกจาก API แล้ว ${rmRes.deletedCount || 0} รายการ)`
         : `❌ ปิด Rich Menu ไม่สำเร็จ: ${(rmRes && rmRes.message) || 'เกิดข้อผิดพลาด'}`;
+      replyLineMessage(replyToken, [buildQuotedRewardTextMessage(replyMsg, userQuoteToken, null, 'elf')]);
+      return;
+    }
+    if (normalizedCommand === 'เช็คริชเมนู' || lowerCommand === '/richmenustatus' || lowerCommand === 'richmenustatus') {
+      clearAllWaitStates();
+      startLoadingAnimation(rawUserId, 5);
+      const info = inspectLineRichMenus();
+      let replyMsg = '';
+      if (!info || info.status !== 'success') {
+        replyMsg = `❌ ตรวจสอบ Rich Menu ไม่สำเร็จ: ${(info && info.message) || 'เกิดข้อผิดพลาด'}`;
+      } else {
+        const lines = [
+          '📋 ผลการตรวจสอบ LINE Rich Menu ปัจจุบัน',
+          `• ${info.sourceSummary}`,
+          `• Default API Menu ID: ${info.defaultRichMenuId || 'ไม่มี (ใช้จาก manager.line.biz)'}`,
+          `• เมนูที่สร้างผ่าน API ทั้งหมด: ${info.apiMenuCount} รายการ`
+        ];
+        if (info.apiMenus && info.apiMenus.length > 0) {
+          info.apiMenus.forEach((m, idx) => {
+            const labels = (m.areas || []).map(a => (a.action && (a.action.label || a.action.text || a.action.uri)) || '-').join(', ');
+            lines.push(`  ${idx + 1}) ${m.name || '-'} (${m.richMenuId}) [${labels}]`);
+          });
+        }
+        replyMsg = lines.join('\n');
+      }
       replyLineMessage(replyToken, [buildQuotedRewardTextMessage(replyMsg, userQuoteToken, null, 'elf')]);
       return;
     }
@@ -4947,6 +4980,7 @@ function createGalleryFlexMessage() {
 // ==========================================
 const RICH_MENU_NAME = 'CM Party 2026 Rich Menu';
 const RICH_MENU_PROP_KEY = 'ACTIVE_CM_PARTY_RICH_MENU_ID';
+const PREVIOUS_RICH_MENU_PROP_KEY = 'PREVIOUS_API_RICH_MENU_ID';
 const RICH_MENU_IMAGE_URLS = [
   'https://cmparty.vercel.app/assets/line-rich-menu-2500x1686.jpg',
   'https://raw.githubusercontent.com/itsupportcm2/cmparty/main/assets/line-rich-menu-2500x1686.jpg'
@@ -4969,6 +5003,25 @@ function callLineMessagingApi(url, method, token, payload, contentType) {
     code: res.getResponseCode(),
     body: res.getContentText()
   };
+}
+
+function getCurrentDefaultRichMenuId(token) {
+  const res = callLineMessagingApi('https://api.line.me/v2/bot/user/all/richmenu', 'get', token);
+  if (res.code === 404) return '';
+  if (res.code >= 200 && res.code < 300) {
+    const parsed = JSON.parse(res.body || '{}');
+    return String(parsed.richMenuId || '').trim();
+  }
+  throw new Error(`ดึง Default Rich Menu ไม่สำเร็จ (${res.code}): ${res.body}`);
+}
+
+function listApiRichMenus(token) {
+  const res = callLineMessagingApi('https://api.line.me/v2/bot/richmenu/list', 'get', token);
+  if (res.code < 200 || res.code >= 300) {
+    throw new Error(`ดึงรายการ Rich Menu จาก API ไม่สำเร็จ (${res.code}): ${res.body}`);
+  }
+  const parsed = JSON.parse(res.body || '{}');
+  return Array.isArray(parsed.richmenus) ? parsed.richmenus : [];
 }
 
 function fetchRichMenuImageBlob() {
@@ -4996,13 +5049,13 @@ function fetchRichMenuImageBlob() {
 }
 
 function deleteRichMenusMatching(token, shouldDeleteFn) {
-  const listRes = callLineMessagingApi('https://api.line.me/v2/bot/richmenu/list', 'get', token);
-  const deletedIds = [];
-  if (listRes.code < 200 || listRes.code >= 300) {
-    return { deletedCount: 0, deletedIds: deletedIds };
+  let menus = [];
+  try {
+    menus = listApiRichMenus(token);
+  } catch (err) {
+    return { deletedCount: 0, deletedIds: [] };
   }
-  const parsed = JSON.parse(listRes.body || '{}');
-  const menus = Array.isArray(parsed.richmenus) ? parsed.richmenus : [];
+  const deletedIds = [];
   for (let i = 0; i < menus.length; i++) {
     const rm = menus[i];
     if (rm && rm.richMenuId && shouldDeleteFn(rm)) {
@@ -5020,6 +5073,60 @@ function deleteRichMenusMatching(token, shouldDeleteFn) {
 }
 
 /**
+ * ตรวจสอบ Rich Menu ปัจจุบันใน LINE Official Account ว่ามาจาก LINE OA Manager หรือ Messaging API
+ */
+function inspectLineRichMenus() {
+  const token = getLineBotAccessToken();
+  if (!token) {
+    return { status: 'error', message: 'ไม่พบ LINE_BOT_ACCESS_TOKEN ใน Script Properties' };
+  }
+
+  try {
+    const props = PropertiesService.getScriptProperties();
+    const defaultRichMenuId = getCurrentDefaultRichMenuId(token);
+    const rawMenus = listApiRichMenus(token);
+    const apiMenus = rawMenus.map(rm => ({
+      richMenuId: rm.richMenuId || '',
+      name: rm.name || '',
+      chatBarText: rm.chatBarText || '',
+      selected: Boolean(rm.selected),
+      size: rm.size || null,
+      isCurrentDefault: Boolean(defaultRichMenuId && rm.richMenuId === defaultRichMenuId),
+      areas: Array.isArray(rm.areas) ? rm.areas : []
+    }));
+
+    const activeCmPartyMenuId = String(props.getProperty(RICH_MENU_PROP_KEY) || '').trim();
+    const previousApiMenuId = String(props.getProperty(PREVIOUS_RICH_MENU_PROP_KEY) || '').trim();
+
+    let sourceSummary = '';
+    if (!defaultRichMenuId && apiMenus.length === 0) {
+      sourceSummary = 'ไม่มี Rich Menu จาก Messaging API เลย (หากเห็นเมนูในแชท มาจากเว็บ LINE Official Account Manager: manager.line.biz 100%)';
+    } else if (!defaultRichMenuId) {
+      sourceSummary = 'ไม่มี Default Rich Menu จาก API (เมนูที่แสดงในแชทตอนนี้มาจาก manager.line.biz แต่มีเมนูค้างอยู่ใน API ' + apiMenus.length + ' รายการ)';
+    } else {
+      const activeMenu = apiMenus.find(m => m.richMenuId === defaultRichMenuId);
+      const activeName = (activeMenu && activeMenu.name) || defaultRichMenuId;
+      sourceSummary = activeName === RICH_MENU_NAME
+        ? `กำลังแสดงเมนู "${RICH_MENU_NAME}" จากระบบ CM Party (API ID: ${defaultRichMenuId})`
+        : `กำลังแสดงเมนูที่สร้างจาก Messaging API เดิม ชื่อ "${activeName}" (ID: ${defaultRichMenuId})`;
+    }
+
+    return {
+      status: 'success',
+      defaultRichMenuId: defaultRichMenuId || null,
+      apiMenuCount: apiMenus.length,
+      apiMenus: apiMenus,
+      activeCmPartyMenuId: activeCmPartyMenuId || null,
+      previousApiMenuId: previousApiMenuId || null,
+      sourceSummary: sourceSummary
+    };
+  } catch (err) {
+    console.error('Error in inspectLineRichMenus:', err);
+    return { status: 'error', message: err.message };
+  }
+}
+
+/**
  * ติดตั้ง LINE Rich Menu ขนาด 2500x1686 (6 ช่อง) และตั้งเป็น Default Rich Menu สำหรับผู้ใช้ทุกคน
  * สามารถรันตรงจาก Apps Script Editor, หน้าแอดมิน (index.html) หรือพิมพ์ "เปิดริชเมนู" ในแชทแอดมินได้
  */
@@ -5031,6 +5138,22 @@ function setupLineRichMenu() {
 
   let createdMenuId = '';
   try {
+    const props = PropertiesService.getScriptProperties();
+
+    // 0. สำรอง Default API Rich Menu เดิม (ถ้ามีและไม่ใช่ของ CM Party 2026) เพื่อคืนค่าได้อัตโนมัติภายหลัง
+    let preservedPrevId = '';
+    try {
+      const existingDefaultId = getCurrentDefaultRichMenuId(token);
+      if (existingDefaultId) {
+        const existingMenus = listApiRichMenus(token);
+        const matched = existingMenus.find(m => m.richMenuId === existingDefaultId);
+        if (matched && matched.name !== RICH_MENU_NAME) {
+          props.setProperty(PREVIOUS_RICH_MENU_PROP_KEY, existingDefaultId);
+          preservedPrevId = existingDefaultId;
+        }
+      }
+    } catch (backupErr) {}
+
     // 1. ดาวน์โหลดรูปภาพ Rich Menu 2500x1686 ก่อนเพื่อป้องกันการสร้างเมนูค้างหากโหลดภาพไม่ผ่าน
     const imageBlob = fetchRichMenuImageBlob();
 
@@ -5106,17 +5229,18 @@ function setupLineRichMenu() {
       throw new Error(`ตั้งค่า Default Rich Menu ไม่สำเร็จ (${defaultRes.code}): ${defaultRes.body}`);
     }
 
-    // 5. ลบ Rich Menu เวอร์ชันเก่าที่มีชื่อเดียวกันออกเพื่อลดขยะในโควตา API
+    // 5. ลบ Rich Menu เวอร์ชันเก่าที่มีชื่อเดียวกันออกเพื่อลดขยะในโควตา API (ไม่แตะชื่ออื่น)
     const cleanup = deleteRichMenusMatching(
       token,
       rm => rm.name === RICH_MENU_NAME && rm.richMenuId !== createdMenuId
     );
 
-    PropertiesService.getScriptProperties().setProperty(RICH_MENU_PROP_KEY, createdMenuId);
+    props.setProperty(RICH_MENU_PROP_KEY, createdMenuId);
 
     return {
       status: 'success',
       richMenuId: createdMenuId,
+      preservedPreviousApiMenuId: preservedPrevId || null,
       cleanedOldCount: cleanup.deletedCount,
       message: 'ติดตั้งและเปิดใช้งาน LINE Rich Menu 6 ช่องเรียบร้อยแล้ว!'
     };
@@ -5132,7 +5256,7 @@ function setupLineRichMenu() {
 }
 
 /**
- * ยกเลิก Default Rich Menu จาก API และลบ Rich Menu ที่สร้างจากโค้ดออก (คืนค่า LINE OA เดิม)
+ * ยกเลิก Default Rich Menu จาก API, ลบ Rich Menu ของ CM Party 2026 และคืนค่า Rich Menu เดิมอัตโนมัติ
  */
 function clearLineRichMenu() {
   const token = getLineBotAccessToken();
@@ -5143,6 +5267,7 @@ function clearLineRichMenu() {
   try {
     const props = PropertiesService.getScriptProperties();
     const storedId = String(props.getProperty(RICH_MENU_PROP_KEY) || '').trim();
+    const prevApiId = String(props.getProperty(PREVIOUS_RICH_MENU_PROP_KEY) || '').trim();
 
     const unlinkRes = callLineMessagingApi(
       'https://api.line.me/v2/bot/user/all/richmenu',
@@ -5172,10 +5297,32 @@ function clearLineRichMenu() {
 
     props.deleteProperty(RICH_MENU_PROP_KEY);
 
+    // หากเคยมี Default API Rich Menu เดิมเก็บไว้ ให้สลับกลับมาใช้งานให้อัตโนมัติ
+    let restoredPreviousMenuId = '';
+    if (prevApiId) {
+      try {
+        const remaining = listApiRichMenus(token);
+        if (remaining.some(m => m.richMenuId === prevApiId)) {
+          const restoreRes = callLineMessagingApi(
+            'https://api.line.me/v2/bot/user/all/richmenu/' + prevApiId,
+            'post',
+            token
+          );
+          if (restoreRes.code >= 200 && restoreRes.code < 300) {
+            restoredPreviousMenuId = prevApiId;
+          }
+        }
+      } catch (restoreErr) {}
+      props.deleteProperty(PREVIOUS_RICH_MENU_PROP_KEY);
+    }
+
     return {
       status: 'success',
       deletedCount: totalDeleted,
-      message: 'ปิดและลบ LINE Rich Menu ออกจาก API แล้ว (สามารถกลับไปใช้เมนูจาก LINE OA Manager ได้ตามปกติ)'
+      restoredPreviousMenuId: restoredPreviousMenuId || null,
+      message: restoredPreviousMenuId
+        ? 'ปิด Rich Menu งานปาร์ตี้และสลับกลับไปใช้ API Rich Menu เดิมให้เรียบร้อยแล้ว!'
+        : 'ปิดและลบ LINE Rich Menu ออกจาก API แล้ว (สามารถกลับไปใช้เมนูจาก LINE OA Manager ได้ตามปกติ)'
     };
   } catch (err) {
     console.error('Error in clearLineRichMenu:', err);
