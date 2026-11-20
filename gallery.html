@@ -253,8 +253,8 @@
     }
 
     @keyframes ssStageLightsTwinkle {
-      0% { opacity: 0.6; filter: brightness(0.95); }
-      100% { opacity: 1; filter: brightness(1.3); }
+      0% { opacity: 0.55; }
+      100% { opacity: 1; }
     }
 
     .ss-avatar-doll {
@@ -2727,6 +2727,7 @@
       syncStageWishes();
       // ซิงก์รายชื่อผู้ลงทะเบียนใหม่และคำอวยพรเรียลไทม์ทุก 15 วินาที
       stageAttendeeSyncTimer = setInterval(() => {
+        if (document.hidden) return;
         if (isSlideshowActive && showStageCrowd) {
           syncStageAttendees();
           syncStageWishes();
@@ -2735,7 +2736,7 @@
 
       // หมุนเวียนกลุ่มตุ๊กตาหน้าเวทีทุก 16 วินาที
       stageWaveTimer = setInterval(() => {
-        if (!isSlideshowActive || !showStageCrowd) return;
+        if (document.hidden || !isSlideshowActive || !showStageCrowd) return;
         const waveSize = getStageWaveSize();
         if (stageAttendees.length > waveSize) {
           const totalWaves = Math.ceil(stageAttendees.length / waveSize);

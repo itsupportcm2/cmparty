@@ -148,11 +148,9 @@
 
     @keyframes cuteBounceGlow {
       0%, 100% {
-        box-shadow: 0 8px 25px rgba(251, 113, 133, 0.32), 0 0 18px rgba(253, 224, 71, 0.45);
         transform: translateY(0px) scale(1);
       }
       50% {
-        box-shadow: 0 12px 30px rgba(251, 113, 133, 0.48), 0 0 26px rgba(52, 211, 153, 0.45);
         transform: translateY(-3px) scale(1.02);
       }
     }
@@ -199,7 +197,9 @@
 
     .cute-logo-frame {
       background: linear-gradient(135deg, #fecdd3 0%, #fde68a 50%, #a7f3d0 100%);
+      box-shadow: 0 10px 26px rgba(251, 113, 133, 0.36), 0 0 20px rgba(253, 224, 71, 0.42);
       animation: cuteBounceGlow 3.2s ease-in-out infinite;
+      will-change: transform;
     }
 
     .cute-wiggle {

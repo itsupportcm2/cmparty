@@ -125,12 +125,13 @@
     }
 
     @keyframes stagePulseRing {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.45), 0 0 42px rgba(244, 63, 94, 0.35); }
-      50% { box-shadow: 0 0 0 14px rgba(251, 191, 36, 0), 0 0 60px rgba(251, 191, 36, 0.55); }
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.018); }
     }
 
     .stage-rolling-pulse {
       animation: stagePulseRing 1.4s ease-in-out infinite;
+      will-change: transform;
     }
 
     .font-cute {
@@ -142,14 +143,14 @@
     }
 
     @keyframes stageBokehFloat {
-      0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.25; }
-      50% { transform: translate3d(14px, -22px, 0) scale(1.18); opacity: 0.55; }
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); opacity: 0.45; }
+      50% { transform: translate3d(14px, -22px, 0) scale(1.16); opacity: 0.85; }
     }
     .stage-bokeh-orb {
       position: fixed;
       border-radius: 9999px;
       pointer-events: none;
-      filter: blur(18px);
+      background: radial-gradient(circle, var(--bokeh-col, rgba(252, 211, 77, 0.36)) 0%, transparent 70%);
       animation: stageBokehFloat var(--bokeh-dur, 9s) ease-in-out var(--bokeh-delay, 0s) infinite;
       will-change: transform, opacity;
     }
@@ -209,14 +210,14 @@
 </head>
 <body class="relative w-full h-full select-none flex flex-col justify-between">
 
-  <!-- Ambient Warm Golden Bokeh Orbs (GPU transform/opacity only) -->
+  <!-- Ambient Warm Golden Bokeh Orbs (GPU transform/opacity only, radial-gradient soft glow) -->
   <div class="fixed inset-0 pointer-events-none z-[3] overflow-hidden" aria-hidden="true">
-    <div class="stage-bokeh-orb w-32 h-32 bg-amber-300/35 top-[14%] left-[10%]" style="--bokeh-dur: 9s; --bokeh-delay: 0s;"></div>
-    <div class="stage-bokeh-orb w-24 h-24 bg-rose-400/30 top-[26%] right-[14%]" style="--bokeh-dur: 11s; --bokeh-delay: 1.5s;"></div>
-    <div class="stage-bokeh-orb w-28 h-28 bg-emerald-300/25 bottom-[24%] left-[18%]" style="--bokeh-dur: 10s; --bokeh-delay: 0.8s;"></div>
-    <div class="stage-bokeh-orb w-36 h-36 bg-yellow-200/25 bottom-[20%] right-[12%]" style="--bokeh-dur: 12s; --bokeh-delay: 2.1s;"></div>
-    <div class="stage-bokeh-orb w-20 h-20 bg-amber-400/30 top-[55%] left-[6%]" style="--bokeh-dur: 8.5s; --bokeh-delay: 1.1s;"></div>
-    <div class="stage-bokeh-orb w-24 h-24 bg-pink-300/25 top-[12%] left-[52%]" style="--bokeh-dur: 10.5s; --bokeh-delay: 2.8s;"></div>
+    <div class="stage-bokeh-orb w-44 h-44 top-[12%] left-[8%]" style="--bokeh-col: rgba(252, 211, 77, 0.38); --bokeh-dur: 9s; --bokeh-delay: 0s;"></div>
+    <div class="stage-bokeh-orb w-36 h-36 top-[24%] right-[12%]" style="--bokeh-col: rgba(251, 113, 133, 0.34); --bokeh-dur: 11s; --bokeh-delay: 1.5s;"></div>
+    <div class="stage-bokeh-orb w-40 h-40 bottom-[22%] left-[16%]" style="--bokeh-col: rgba(110, 231, 183, 0.28); --bokeh-dur: 10s; --bokeh-delay: 0.8s;"></div>
+    <div class="stage-bokeh-orb w-48 h-48 bottom-[18%] right-[10%]" style="--bokeh-col: rgba(254, 240, 138, 0.28); --bokeh-dur: 12s; --bokeh-delay: 2.1s;"></div>
+    <div class="stage-bokeh-orb w-32 h-32 top-[53%] left-[5%]" style="--bokeh-col: rgba(251, 191, 36, 0.34); --bokeh-dur: 8.5s; --bokeh-delay: 1.1s;"></div>
+    <div class="stage-bokeh-orb w-36 h-36 top-[10%] left-[50%]" style="--bokeh-col: rgba(249, 168, 212, 0.28); --bokeh-dur: 10.5s; --bokeh-delay: 2.8s;"></div>
   </div>
 
   <!-- Background Fireworks Canvas -->
@@ -2038,8 +2039,13 @@
     async function pollStageStateOnce() {
       if (isStagePolling || stageSyncMode === 'local') return;
       isStagePolling = true;
+      const controller = ('AbortController' in window) ? new AbortController() : null;
+      const timer = controller ? setTimeout(() => controller.abort(), 6000) : null;
       try {
-        const res = await fetch(`${GAS_WEB_APP_URL}?action=getStageState&_t=${Date.now()}`, { cache: 'no-store' });
+        const res = await fetch(`${GAS_WEB_APP_URL}?action=getStageState&_t=${Date.now()}`, {
+          cache: 'no-store',
+          signal: controller ? controller.signal : undefined
+        });
         const json = await res.json();
         if (json && json.status === 'success' && json.state) {
           setStageConnIndicator('online', 'ออนไลน์ • ซิงก์อัตโนมัติ');
@@ -2048,6 +2054,7 @@
       } catch (err) {
         setStageConnIndicator('warn', 'รอการเชื่อมต่อเซิร์ฟเวอร์...');
       } finally {
+        if (timer) clearTimeout(timer);
         isStagePolling = false;
       }
     }
@@ -2059,7 +2066,7 @@
         if (!document.hidden && stageSyncMode === 'auto') {
           pollStageStateOnce();
         }
-      }, 1800);
+      }, 2500);
     }
 
     function stopStagePolling() {

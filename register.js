@@ -2252,8 +2252,10 @@ function saveRewardRecord(payload) {
     return { status: 'error', message: 'ไม่มีสิทธิ์ดำเนินการ (อนุญาตเฉพาะแอดมินเท่านั้น)' };
   }
   const lock = LockService.getScriptLock();
+  let lockHeld = false;
   try {
     lock.waitLock(10000);
+    lockHeld = true;
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const rewardSheet = getRewardSheet(ss);
@@ -2357,6 +2359,11 @@ function saveRewardRecord(payload) {
       branch,
       uid
     ]]);
+    SpreadsheetApp.flush();
+
+    // ปล่อย Lock ก่อนยิง LINE Push API เพื่อไม่ให้บล็อกการลงทะเบียนหรือการควบคุมจอเวที
+    lock.releaseLock();
+    lockHeld = false;
 
     // ส่ง Flex Message แจ้งเตือนผ่าน LINE Push API หากผู้รับรางวัลมี LINE UID
     let lineSent = false;
@@ -2400,7 +2407,7 @@ function saveRewardRecord(payload) {
     console.error('Error in saveRewardRecord:', err);
     return { status: 'error', message: err.message };
   } finally {
-    lock.releaseLock();
+    if (lockHeld) lock.releaseLock();
   }
 }
 
@@ -2414,8 +2421,10 @@ function saveBatchRewards(payload) {
     return { status: 'error', message: 'ไม่มีสิทธิ์ดำเนินการ (อนุญาตเฉพาะแอดมินเท่านั้น)' };
   }
   const lock = LockService.getScriptLock();
+  let lockHeld = false;
   try {
     lock.waitLock(15000);
+    lockHeld = true;
 
     let items = [];
     if (Array.isArray(payload.items)) {
@@ -2558,6 +2567,10 @@ function saveBatchRewards(payload) {
       SpreadsheetApp.flush();
     }
 
+    // ปล่อย Lock ทันทีหลังเขียนลง Sheet เสร็จ ก่อนเริ่ม Loop ยิง LINE Push API หลายรายการ
+    lock.releaseLock();
+    lockHeld = false;
+
     let lineSentCount = 0;
     let permissionRequired = false;
 
@@ -2607,7 +2620,7 @@ function saveBatchRewards(payload) {
     console.error('Error in saveBatchRewards:', err);
     return { status: 'error', message: err.message };
   } finally {
-    lock.releaseLock();
+    if (lockHeld) lock.releaseLock();
   }
 }
 
@@ -2619,8 +2632,10 @@ function deleteRewardRecord(payload) {
     return { status: 'error', message: 'ไม่มีสิทธิ์ดำเนินการ (อนุญาตเฉพาะแอดมินเท่านั้น)' };
   }
   const lock = LockService.getScriptLock();
+  let lockHeld = false;
   try {
     lock.waitLock(10000);
+    lockHeld = true;
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const rewardSheet = getRewardSheet(ss);
     if (!rewardSheet) {
@@ -2657,7 +2672,7 @@ function deleteRewardRecord(payload) {
   } catch (err) {
     return { status: 'error', message: err.message };
   } finally {
-    lock.releaseLock();
+    if (lockHeld) lock.releaseLock();
   }
 }
 
@@ -2670,8 +2685,10 @@ function resendRewardLineNotification(payload) {
   }
 
   const lock = LockService.getScriptLock();
+  let lockHeld = false;
   try {
     lock.waitLock(10000);
+    lockHeld = true;
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const rewardSheet = getRewardSheet(ss);
     if (!rewardSheet) {
@@ -2697,6 +2714,7 @@ function resendRewardLineNotification(payload) {
     }
 
     let pictureUrl = '';
+    let uidUpdated = false;
     try {
       const { employeesMap } = getRegisteredEmployeesFromRegisterSheet(ss);
       const regEmp = employeesMap && employeesMap[empId];
@@ -2707,6 +2725,7 @@ function resendRewardLineNotification(payload) {
         if ((!uid || uid === 'TEST_USER') && regEmp.uid && regEmp.uid !== 'TEST_USER') {
           uid = regEmp.uid;
           rewardSheet.getRange(rowIndex, 6).setValue(uid);
+          uidUpdated = true;
         }
         pictureUrl = regEmp.pictureUrl || '';
       }
@@ -2717,6 +2736,13 @@ function resendRewardLineNotification(payload) {
     if (!uid || uid === 'TEST_USER') {
       return { status: 'error', message: 'ไม่พบ LINE UID ของผู้รับรางวัลรายนี้ (ไม่สามารถส่งแจ้งเตือน LINE ได้)' };
     }
+
+    // ปล่อย Lock ก่อนยิง LINE Push API เพื่อไม่ให้ถือค้างข้าม Network Call
+    if (uidUpdated) {
+      SpreadsheetApp.flush();
+    }
+    lock.releaseLock();
+    lockHeld = false;
 
     const pushRes = pushRewardFlexMessage(uid, {
       rewardName: rewardName,
@@ -2746,7 +2772,7 @@ function resendRewardLineNotification(payload) {
     console.error('Error in resendRewardLineNotification:', err);
     return { status: 'error', message: err.message };
   } finally {
-    lock.releaseLock();
+    if (lockHeld) lock.releaseLock();
   }
 }
 
@@ -3099,6 +3125,83 @@ function handleLineWebhookPost(e) {
  * - เมื่อพิมพ์ "ตรวจสอบรางวัล" -> บอทตอบกลับ "กรุณาพิมพ์รหัสพนักงานของท่าน" และบันทึกสถานะรอรหัสพนักงาน
  * - เมื่อพิมพ์รหัสพนักงานเข้ามา -> บอทค้นหารหัสพนักงานใน Sheet "gift" คอลัมน์ B2:B แล้วแจ้งผลการได้รับรางวัล
  */
+const CHAT_WAIT_STATES_PROP_KEY = 'CHAT_WAIT_STATES_V1';
+const CHAT_WAIT_MAX_AGE_MS = 15 * 60 * 1000;
+
+function readChatWaitStatesMap(props) {
+  try {
+    const raw = props.getProperty(CHAT_WAIT_STATES_PROP_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    return (parsed && typeof parsed === 'object') ? parsed : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function pruneAndSaveChatWaitStatesMap(props, map, nowMs) {
+  const clean = {};
+  const keys = Object.keys(map || {});
+  for (let i = 0; i < keys.length; i++) {
+    const k = keys[i];
+    const ts = Number(map[k] || 0);
+    if (ts > 0 && (nowMs - ts) < CHAT_WAIT_MAX_AGE_MS) {
+      clean[k] = ts;
+    }
+  }
+  const cleanKeys = Object.keys(clean);
+  if (cleanKeys.length === 0) {
+    props.deleteProperty(CHAT_WAIT_STATES_PROP_KEY);
+  } else {
+    props.setProperty(CHAT_WAIT_STATES_PROP_KEY, JSON.stringify(clean));
+  }
+}
+
+function setChatWaitState(cache, props, key, cacheTtlSec) {
+  const nowMs = Date.now();
+  try {
+    cache.put(key, 'WAITING', cacheTtlSec);
+  } catch (cErr) {}
+  try {
+    const map = readChatWaitStatesMap(props);
+    map[key] = nowMs;
+    pruneAndSaveChatWaitStatesMap(props, map, nowMs);
+  } catch (pErr) {}
+}
+
+function hasChatWaitState(cache, props, key, maxAgeMs) {
+  try {
+    if (cache.get(key) === 'WAITING') return true;
+  } catch (cErr) {}
+  const nowMs = Date.now();
+  try {
+    const map = readChatWaitStatesMap(props);
+    const ts = Number(map[key] || 0);
+    if (ts > 0 && (nowMs - ts) < maxAgeMs) {
+      return true;
+    }
+    const legacyTs = props.getProperty(key);
+    if (legacyTs && (nowMs - Number(legacyTs) < maxAgeMs)) {
+      return true;
+    }
+  } catch (pErr) {}
+  return false;
+}
+
+function clearChatWaitState(cache, props, key) {
+  try {
+    cache.remove(key);
+  } catch (cErr) {}
+  try {
+    const map = readChatWaitStatesMap(props);
+    if (Object.prototype.hasOwnProperty.call(map, key)) {
+      delete map[key];
+      pruneAndSaveChatWaitStatesMap(props, map, Date.now());
+    }
+    props.deleteProperty(key);
+  } catch (pErr) {}
+}
+
 function handleTextMessage(event) {
   const replyToken = event.replyToken;
   const rawUserId = (event.source && event.source.userId) ? String(event.source.userId).trim() : '';
@@ -3113,14 +3216,8 @@ function handleTextMessage(event) {
   const wishStateKey = 'WAIT_WISH_TEXT_' + userId;
   const userQuoteToken = (event.message && event.message.quoteToken) ? String(event.message.quoteToken).trim() : '';
 
-  const clearRewardWaitState = () => {
-    cache.remove(stateKey);
-    props.deleteProperty(stateKey);
-  };
-  const clearWishWaitState = () => {
-    cache.remove(wishStateKey);
-    props.deleteProperty(wishStateKey);
-  };
+  const clearRewardWaitState = () => clearChatWaitState(cache, props, stateKey);
+  const clearWishWaitState = () => clearChatWaitState(cache, props, wishStateKey);
   const clearAllWaitStates = () => {
     clearRewardWaitState();
     clearWishWaitState();
@@ -3239,8 +3336,7 @@ function handleTextMessage(event) {
   ];
   if (wishPromptKeywords.indexOf(normalizedCommand) !== -1) {
     clearRewardWaitState();
-    cache.put(wishStateKey, 'WAITING', 300); // รอรับข้อความอวยพร 5 นาที
-    props.setProperty(wishStateKey, String(Date.now()));
+    setChatWaitState(cache, props, wishStateKey, 300); // รอรับข้อความอวยพร 5 นาที
 
     if (rawUserId) {
       startLoadingAnimation(rawUserId, 5);
@@ -3291,8 +3387,7 @@ function handleTextMessage(event) {
   // 4. หากผู้ใช้พิมพ์คำว่า "ตรวจสอบรางวัล" (หรือ "ตรวจสอบ รางวัล")
   if (normalizedCommand === 'ตรวจสอบรางวัล') {
     clearWishWaitState();
-    cache.put(stateKey, 'WAITING', 600); // จำสถานะรอรับรหัสพนักงานเป็นเวลา 10 นาที
-    props.setProperty(stateKey, String(Date.now()));
+    setChatWaitState(cache, props, stateKey, 600); // จำสถานะรอรับรหัสพนักงานเป็นเวลา 10 นาที
 
     if (rawUserId) {
       startLoadingAnimation(rawUserId, 5);
@@ -3310,21 +3405,8 @@ function handleTextMessage(event) {
   }
 
   // ตรวจสอบสถานะรอรับคำอวยพร และรอรับรหัสพนักงาน
-  let isWaitingForWish = cache.get(wishStateKey) === 'WAITING';
-  if (!isWaitingForWish) {
-    const savedWishTime = props.getProperty(wishStateKey);
-    if (savedWishTime && (Date.now() - Number(savedWishTime) < 10 * 60 * 1000)) {
-      isWaitingForWish = true;
-    }
-  }
-
-  let isWaitingForEmpId = cache.get(stateKey) === 'WAITING';
-  if (!isWaitingForEmpId) {
-    const savedTime = props.getProperty(stateKey);
-    if (savedTime && (Date.now() - Number(savedTime) < 15 * 60 * 1000)) {
-      isWaitingForEmpId = true;
-    }
-  }
+  const isWaitingForWish = hasChatWaitState(cache, props, wishStateKey, 10 * 60 * 1000);
+  const isWaitingForEmpId = hasChatWaitState(cache, props, stateKey, 15 * 60 * 1000);
 
   // ปุ่มเมนู / ทักทาย (หากกำลังรอพิมพ์คำอวยพรอยู่ จะไม่ให้คำทักทายเช่น "สวัสดีปีใหม่..." ไปแย่งเปิดเมนู)
   const isInlineRewardCmd = /^ตรวจสอบ\s*รางวัล\s+/i.test(rawText) || (rawText.indexOf('ตรวจสอบรางวัล') === 0 && normalizedCommand !== 'ตรวจสอบรางวัล');
