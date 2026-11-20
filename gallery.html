@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>ภาพความประทับใจในงาน CM Party 2026</title>
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind CSS (Pre-compiled) -->
+  <link rel="stylesheet" href="styles.css" onerror="this.onerror=null;this.href='https://cmparty.vercel.app/styles.css'" />
 
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
@@ -349,9 +349,10 @@
         <div class="w-11 h-11 rounded-2xl p-1 bg-gradient-to-tr from-rose-300 via-amber-200 to-emerald-300 shadow-md flex items-center justify-center overflow-hidden">
           <div class="w-full h-full bg-white rounded-xl overflow-hidden flex items-center justify-center">
             <img
-              src="https://lh5.googleusercontent.com/d/1rzj7RdJ76nk5OccBPZ-kj-qxDp_Rg_Yk"
+              src="assets/party-logo.jpg"
               alt="CM Party Logo"
               class="w-full h-full object-cover rounded-xl group-hover:scale-110 transition duration-300"
+              onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='https://cmparty.vercel.app/assets/party-logo.jpg';}"
             />
           </div>
         </div>
@@ -685,7 +686,7 @@
       <div class="flex items-center gap-3">
         <div class="w-10 h-10 rounded-2xl p-0.5 bg-gradient-to-tr from-rose-400 via-amber-200 to-emerald-400 shadow flex items-center justify-center overflow-hidden">
           <div class="w-full h-full bg-white rounded-[14px] overflow-hidden">
-            <img src="https://lh5.googleusercontent.com/d/1rzj7RdJ76nk5OccBPZ-kj-qxDp_Rg_Yk" alt="Logo" class="w-full h-full object-cover rounded-[14px]" />
+            <img src="assets/party-logo.jpg" alt="Logo" class="w-full h-full object-cover rounded-[14px]" onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='https://cmparty.vercel.app/assets/party-logo.jpg';}" />
           </div>
         </div>
         <div>
@@ -2504,6 +2505,28 @@
 
       if (fwAnimFrameId) return;
 
+      const ssGlowSprites = {};
+      function getSsGlowSprite(color) {
+        if (ssGlowSprites[color]) return ssGlowSprites[color];
+        const size = 36;
+        const half = size / 2;
+        const off = document.createElement('canvas');
+        off.width = size;
+        off.height = size;
+        const oCtx = off.getContext('2d');
+        if (oCtx) {
+          const grad = oCtx.createRadialGradient(half, half, 0, half, half, half);
+          grad.addColorStop(0, '#ffffff');
+          grad.addColorStop(0.28, color);
+          grad.addColorStop(0.65, color + '55');
+          grad.addColorStop(1, 'rgba(0,0,0,0)');
+          oCtx.fillStyle = grad;
+          oCtx.fillRect(0, 0, size, size);
+        }
+        ssGlowSprites[color] = off;
+        return off;
+      }
+
       const tick = () => {
         if (!isSlideshowActive) {
           stopStageFireworks();
@@ -2512,19 +2535,14 @@
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // อัปเดตจรวดพลุที่พุ่งขึ้น
+        // อัปเดตจรวดพลุที่พุ่งขึ้น (Offscreen Glow Sprite ไร้ shadowBlur)
         for (let i = fwRockets.length - 1; i >= 0; i--) {
           const r = fwRockets[i];
           r.x += r.vx;
           r.y += r.vy;
           r.vy += 0.12;
 
-          ctx.beginPath();
-          ctx.arc(r.x, r.y, 3.2, 0, Math.PI * 2);
-          ctx.fillStyle = r.color;
-          ctx.shadowBlur = 12;
-          ctx.shadowColor = r.color;
-          ctx.fill();
+          ctx.drawImage(getSsGlowSprite(r.color), r.x - 11, r.y - 11, 22, 22);
 
           if (r.y <= r.targetY || r.vy >= 0) {
             // แตกตัวเป็นประกายพลุ
@@ -2548,6 +2566,7 @@
         }
 
         // อัปเดตประกายพลุที่กระจายออก
+        ctx.globalCompositeOperation = 'lighter';
         for (let i = fwParticles.length - 1; i >= 0; i--) {
           const pt = fwParticles[i];
           pt.x += pt.vx;
@@ -2561,16 +2580,12 @@
             continue;
           }
 
-          ctx.save();
           ctx.globalAlpha = Math.max(0, pt.alpha);
-          ctx.beginPath();
-          ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
-          ctx.fillStyle = pt.color;
-          ctx.shadowBlur = 10;
-          ctx.shadowColor = pt.color;
-          ctx.fill();
-          ctx.restore();
+          const rad = pt.size * 3.6;
+          ctx.drawImage(getSsGlowSprite(pt.color), pt.x - rad, pt.y - rad, rad * 2, rad * 2);
         }
+        ctx.globalAlpha = 1;
+        ctx.globalCompositeOperation = 'source-over';
 
         if (fwRockets.length > 0 || fwParticles.length > 0) {
           fwAnimFrameId = requestAnimationFrame(tick);

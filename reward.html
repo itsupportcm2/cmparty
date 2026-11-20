@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>ระบบบันทึกข้อมูลรางวัล - CM Party</title>
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind CSS (Pre-compiled) -->
+  <link rel="stylesheet" href="styles.css" onerror="this.onerror=null;this.href='https://cmparty.vercel.app/styles.css'" />
 
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
@@ -177,12 +177,11 @@
           <div class="cute-logo-frame p-1.5 rounded-2xl shadow-md shrink-0">
             <div class="bg-white p-1.5 rounded-xl border border-rose-100">
               <img
-                src="https://lh5.googleusercontent.com/d/1rzj7RdJ76nk5OccBPZ-kj-qxDp_Rg_Yk"
+                src="assets/party-logo.jpg"
                 alt="Logo"
                 class="h-12 w-12 object-contain rounded-lg"
-                referrerpolicy="no-referrer"
                 loading="eager"
-                onerror="this.outerHTML='<span class=\'text-2xl px-2\'>🎁</span>'"
+                onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='https://cmparty.vercel.app/assets/party-logo.jpg';}else{this.outerHTML='<span class=\'text-2xl px-2\'>🎁</span>';}"
               />
             </div>
           </div>
@@ -2952,6 +2951,28 @@
     let bwrExtraConfetti = [];
 
     const BWR_FX_COLORS = ['#fde047', '#fb7185', '#34d399', '#38bdf8', '#f472b6', '#ffffff', '#fb923c'];
+    const bwrGlowSprites = {};
+
+    function getBwrGlowSprite(color) {
+      if (bwrGlowSprites[color]) return bwrGlowSprites[color];
+      const size = 36;
+      const half = size / 2;
+      const off = document.createElement('canvas');
+      off.width = size;
+      off.height = size;
+      const oCtx = off.getContext('2d');
+      if (oCtx) {
+        const grad = oCtx.createRadialGradient(half, half, 0, half, half, half);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.28, color);
+        grad.addColorStop(0.65, color + '55');
+        grad.addColorStop(1, 'rgba(0,0,0,0)');
+        oCtx.fillStyle = grad;
+        oCtx.fillRect(0, 0, size, size);
+      }
+      bwrGlowSprites[color] = off;
+      return off;
+    }
 
     function resizeBigRevealCanvases() {
       if (!isBigRevealOpen) return;
@@ -3079,12 +3100,12 @@
       }
 
       bwrFireworkSpawnTimer = setInterval(() => {
-        if (!isBigRevealOpen) return;
+        if (document.hidden || !isBigRevealOpen) return;
         if (bwrFwParticles.length > 420) return;
         const shots = Math.random() < 0.35 ? 2 : 1;
         for (let i = 0; i < shots; i++) {
           setTimeout(() => {
-            if (isBigRevealOpen) spawnBigRevealRocket(true);
+            if (!document.hidden && isBigRevealOpen) spawnBigRevealRocket(true);
           }, i * 240);
         }
       }, 950);
@@ -3098,9 +3119,10 @@
         const cw = fwCanvas.width || window.innerWidth;
         const ch = fwCanvas.height || window.innerHeight;
 
-        // 1. วาดพลุฉากหลังบน #bwrFireworksCanvas
+        // 1. วาดพลุฉากหลังบน #bwrFireworksCanvas (Offscreen Glow Sprite ไร้ shadowBlur)
         fwCtx.clearRect(0, 0, cw, ch);
 
+        fwCtx.lineWidth = 2.4;
         for (let i = bwrFwRockets.length - 1; i >= 0; i--) {
           const r = bwrFwRockets[i];
           r.prevX = r.x;
@@ -3109,21 +3131,13 @@
           r.y += r.vy;
           r.vy += 0.11;
 
-          fwCtx.save();
           fwCtx.beginPath();
           fwCtx.moveTo(r.prevX, r.prevY);
           fwCtx.lineTo(r.x, r.y);
           fwCtx.strokeStyle = r.color;
-          fwCtx.lineWidth = 2.6;
-          fwCtx.shadowBlur = 12;
-          fwCtx.shadowColor = r.color;
           fwCtx.stroke();
 
-          fwCtx.beginPath();
-          fwCtx.arc(r.x, r.y, 3.2, 0, Math.PI * 2);
-          fwCtx.fillStyle = '#ffffff';
-          fwCtx.fill();
-          fwCtx.restore();
+          fwCtx.drawImage(getBwrGlowSprite(r.color), r.x - 10, r.y - 10, 20, 20);
 
           if (r.y <= r.targetY || r.vy >= 0) {
             const pCount = 42;
@@ -3145,6 +3159,7 @@
           }
         }
 
+        fwCtx.globalCompositeOperation = 'lighter';
         for (let i = bwrFwParticles.length - 1; i >= 0; i--) {
           const pt = bwrFwParticles[i];
           pt.x += pt.vx;
@@ -3158,16 +3173,12 @@
             continue;
           }
 
-          fwCtx.save();
           fwCtx.globalAlpha = Math.max(0, pt.alpha);
-          fwCtx.beginPath();
-          fwCtx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
-          fwCtx.fillStyle = pt.color;
-          fwCtx.shadowBlur = 10;
-          fwCtx.shadowColor = pt.color;
-          fwCtx.fill();
-          fwCtx.restore();
+          const rad = pt.size * 3.6;
+          fwCtx.drawImage(getBwrGlowSprite(pt.color), pt.x - rad, pt.y - rad, rad * 2, rad * 2);
         }
+        fwCtx.globalAlpha = 1;
+        fwCtx.globalCompositeOperation = 'source-over';
 
         // 2. วาดกระดาษโปรยต่อเนื่องด้านหน้าบน #rewardConfettiCanvas
         const cfW = cfCanvas.width || window.innerWidth;
@@ -4062,6 +4073,18 @@
         }
       });
     });
+
+    // Offline PWA Service Worker registration
+    if (
+      'serviceWorker' in navigator &&
+      (window.location.protocol === 'https:' || window.location.hostname === 'localhost') &&
+      window.location.hostname.indexOf('googleusercontent.com') === -1 &&
+      window.location.hostname.indexOf('script.google.com') === -1
+    ) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
   </script>
 </body>
 </html>

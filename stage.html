@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>🎉 หน้าจอประกาศผลรางวัล - CM Party 2026</title>
 
-  <!-- Tailwind CSS -->
-  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Tailwind CSS (Pre-compiled) -->
+  <link rel="stylesheet" href="styles.css" onerror="this.onerror=null;this.href='https://cmparty.vercel.app/styles.css'" />
 
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
@@ -1296,14 +1296,36 @@
       const h = window.innerHeight;
       stageConfettiPieces = Array.from({ length: 85 }, () => createStageConfettiPiece(w, h));
 
+      const stageGlowSprites = {};
+      function getStageGlowSprite(color) {
+        if (stageGlowSprites[color]) return stageGlowSprites[color];
+        const size = 36;
+        const half = size / 2;
+        const off = document.createElement('canvas');
+        off.width = size;
+        off.height = size;
+        const oCtx = off.getContext('2d');
+        if (oCtx) {
+          const grad = oCtx.createRadialGradient(half, half, 0, half, half, half);
+          grad.addColorStop(0, '#ffffff');
+          grad.addColorStop(0.28, color);
+          grad.addColorStop(0.65, color + '55');
+          grad.addColorStop(1, 'rgba(0,0,0,0)');
+          oCtx.fillStyle = grad;
+          oCtx.fillRect(0, 0, size, size);
+        }
+        stageGlowSprites[color] = off;
+        return off;
+      }
+
       if (stageFireworkTimer) clearInterval(stageFireworkTimer);
       stageFireworkTimer = setInterval(() => {
-        if (currentStageState.mode !== 'winner') return;
+        if (document.hidden || currentStageState.mode !== 'winner') return;
         if (stageFwParticles.length > 420) return;
         const shots = Math.random() < 0.35 ? 2 : 1;
         for (let i = 0; i < shots; i++) {
           setTimeout(() => {
-            if (currentStageState.mode === 'winner') spawnStageRocket();
+            if (!document.hidden && currentStageState.mode === 'winner') spawnStageRocket();
           }, i * 240);
         }
       }, 950);
@@ -1318,6 +1340,7 @@
         const ch = fwCanvas.height || window.innerHeight;
         fwCtx.clearRect(0, 0, cw, ch);
 
+        fwCtx.lineWidth = 2.4;
         for (let i = stageFwRockets.length - 1; i >= 0; i--) {
           const r = stageFwRockets[i];
           r.prevX = r.x;
@@ -1326,21 +1349,13 @@
           r.y += r.vy;
           r.vy += 0.11;
 
-          fwCtx.save();
           fwCtx.beginPath();
           fwCtx.moveTo(r.prevX, r.prevY);
           fwCtx.lineTo(r.x, r.y);
           fwCtx.strokeStyle = r.color;
-          fwCtx.lineWidth = 2.6;
-          fwCtx.shadowBlur = 12;
-          fwCtx.shadowColor = r.color;
           fwCtx.stroke();
 
-          fwCtx.beginPath();
-          fwCtx.arc(r.x, r.y, 3.2, 0, Math.PI * 2);
-          fwCtx.fillStyle = '#ffffff';
-          fwCtx.fill();
-          fwCtx.restore();
+          fwCtx.drawImage(getStageGlowSprite(r.color), r.x - 10, r.y - 10, 20, 20);
 
           if (r.y <= r.targetY || r.vy >= 0) {
             const pCount = 42;
@@ -1362,6 +1377,7 @@
           }
         }
 
+        fwCtx.globalCompositeOperation = 'lighter';
         for (let i = stageFwParticles.length - 1; i >= 0; i--) {
           const pt = stageFwParticles[i];
           pt.x += pt.vx;
@@ -1375,16 +1391,12 @@
             continue;
           }
 
-          fwCtx.save();
           fwCtx.globalAlpha = Math.max(0, pt.alpha);
-          fwCtx.beginPath();
-          fwCtx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
-          fwCtx.fillStyle = pt.color;
-          fwCtx.shadowBlur = 10;
-          fwCtx.shadowColor = pt.color;
-          fwCtx.fill();
-          fwCtx.restore();
+          const rad = pt.size * 3.6;
+          fwCtx.drawImage(getStageGlowSprite(pt.color), pt.x - rad, pt.y - rad, rad * 2, rad * 2);
         }
+        fwCtx.globalAlpha = 1;
+        fwCtx.globalCompositeOperation = 'source-over';
 
         const cfW = cfCanvas.width || window.innerWidth;
         const cfH = cfCanvas.height || window.innerHeight;
@@ -1814,6 +1826,18 @@
       pollStageStateOnce();
       startStagePolling();
     });
+
+    // Offline PWA Service Worker registration (Stage screen keeps working even if Wi-Fi drops)
+    if (
+      'serviceWorker' in navigator &&
+      (window.location.protocol === 'https:' || window.location.hostname === 'localhost') &&
+      window.location.hostname.indexOf('googleusercontent.com') === -1 &&
+      window.location.hostname.indexOf('script.google.com') === -1
+    ) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(() => {});
+      });
+    }
   </script>
 </body>
 </html>

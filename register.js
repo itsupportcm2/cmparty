@@ -531,16 +531,29 @@ function setupAndAuthorize() {
 }
 
 /**
- * สำหรับเรียกใช้งานจากหน้าเว็บผ่าน google.script.run หรือ doGet(?action=checkEmployee&empId=...)
- * ค้นหารหัสพนักงานจาก B2:B และดึง แผนก (C2:C), ชื่อพนักงาน (D2:D), สาขา (E2:E)
+ * ดึงข้อมูลพนักงานจาก Sheet ตั้งต้น ("การตอบแบบฟอร์ม 1") โดยใช้ ScriptCache (TTL 5 นาที) ลดการอ่าน Sheet ซ้ำเมื่อมีคนสแกนพร้อมกันจำนวนมาก
  */
-function checkEmployeeById(empId) {
-  try {
-    if (!empId) {
-      return { status: 'error', message: 'กรุณาระบุรหัสพนักงาน' };
-    }
+function getSourceEmployeeByIdCached(empId) {
+  const searchId = String(empId || '').trim().replace(/\.0$/, '');
+  if (!searchId) {
+    return { status: 'error', message: 'กรุณาระบุรหัสพนักงาน' };
+  }
 
-    const searchId = String(empId).trim().replace(/\.0$/, '');
+  const cache = CacheService.getScriptCache();
+  const cacheKey = 'SOURCE_EMP_MAP_V1';
+  let compactMap = null;
+
+  try {
+    const cachedJson = cache.get(cacheKey);
+    if (cachedJson) {
+      const parsed = JSON.parse(cachedJson);
+      if (parsed && typeof parsed === 'object') {
+        compactMap = parsed;
+      }
+    }
+  } catch (cacheReadErr) {}
+
+  if (!compactMap) {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const sourceSheet = getSheetSafely(ss, SOURCE_SHEET_NAME);
 
@@ -554,17 +567,10 @@ function checkEmployeeById(empId) {
     }
 
     // ดึงข้อมูลตั้งแต่แถวที่ 2 ถึงแถวสุดท้าย (คอลัมน์ A ถึง F หรือคอลัมน์ทั้งหมด)
-    // Index 0 = A (ประทับเวลา)
-    // Index 1 = B (รหัสพนักงาน)
-    // Index 2 = C (ชื่อ-สกุล หรือ แผนก)
-    // Index 3 = D (แผนก หรือ ชื่อ-สกุล)
-    // Index 4 = E (สาขา)
-    // Index 5 = F (ท่านสนใจร่วมงานหรือไม่?)
     const maxCols = Math.max(6, sourceSheet.getLastColumn());
     const data = sourceSheet.getRange(2, 1, lastRow - 1, maxCols).getValues();
     const headers = sourceSheet.getRange(1, 1, 1, maxCols).getValues()[0];
 
-    // ค้นหาคอลัมน์ "ท่านสนใจร่วมงานหรือไม่?" โดยอัตโนมัติ (ปกติคือคอลัมน์ F / index 5)
     let attendColIdx = 5;
     for (let h = 0; h < headers.length; h++) {
       const hText = String(headers[h] || '').trim();
@@ -574,47 +580,73 @@ function checkEmployeeById(empId) {
       }
     }
 
-    let foundEmployee = null;
-    for (let i = data.length - 1; i >= 0; i--) {
+    const headerC = String(headers[2] || '');
+    const headerD = String(headers[3] || '');
+    const isColCName = headerC.indexOf('ชื่อ') !== -1 && headerD.indexOf('แผนก') !== -1;
+
+    compactMap = {};
+    for (let i = 0; i < data.length; i++) {
       const row = data[i];
       const rowEmpId = String(row[1] || '').trim().replace(/\.0$/, '');
-      const rowColC = String(row[2] || '').trim(); // แผนก (หรือชื่อ-สกุล ตามโครงสร้างฟอร์ม)
-      const rowColD = String(row[3] || '').trim(); // ชื่อ-สกุล (หรือแผนก)
-      const rowColE = String(row[4] || '').trim(); // สาขา
+      if (!rowEmpId || rowEmpId === 'รหัสพนักงาน') continue;
 
-      if (rowEmpId === searchId) {
-        // ตรวจสอบว่าคอลัมน์ C หรือ D เป็นแผนก/ชื่อ เพื่อให้แสดงผลได้ถูกต้องทั้ง 2 กรณี
-        const headerC = String(headers[2] || '');
-        const headerD = String(headers[3] || '');
+      const rowColC = String(row[2] || '').trim();
+      const rowColD = String(row[3] || '').trim();
+      const rowColE = String(row[4] || '').trim();
+      const empName = isColCName ? rowColC : rowColD;
+      const department = isColCName ? rowColD : rowColC;
+      const rawAttend = String(row[attendColIdx] || '').trim();
+      const isNotAttending = rawAttend.indexOf('ไม่') !== -1 || (rawAttend.indexOf('ไป') === -1 && rawAttend !== '');
 
-        let empName = rowColD;
-        let department = rowColC;
+      compactMap[rowEmpId] = [empName, department, rowColE, rawAttend, isNotAttending ? 1 : 0];
+    }
 
-        // หากหัวคอลัมน์ C มีคำว่า "ชื่อ" และคอลัมน์ D มีคำว่า "แผนก" ให้ดึงตามคอลัมน์จริงเพื่อไม่ให้ข้อมูลสลับช่อง
-        if (headerC.indexOf('ชื่อ') !== -1 && headerD.indexOf('แผนก') !== -1) {
-          empName = rowColC;
-          department = rowColD;
-        }
-
-        const rawAttend = String(row[attendColIdx] || '').trim();
-        // ถ้ามีคำว่า "ไม่" หรือไม่มีคำว่า "ไป" ให้ถือว่าไม่มาร่วมงาน
-        const isNotAttending = rawAttend.indexOf('ไม่') !== -1 || (rawAttend.indexOf('ไป') === -1 && rawAttend !== '');
-
-        foundEmployee = {
-          empId: rowEmpId,
-          empName: empName,
-          department: department,
-          branch: rowColE,
-          attendAnswer: rawAttend,
-          isNotAttending: isNotAttending
-        };
-        break;
+    try {
+      const serialized = JSON.stringify(compactMap);
+      if (serialized.length < 95000) {
+        cache.put(cacheKey, serialized, 300);
       }
+    } catch (cachePutErr) {}
+  }
+
+  const tuple = compactMap[searchId];
+  if (!tuple) {
+    return { status: 'not_found', message: 'ไม่พบรหัสพนักงานนี้ในรายชื่อตั้งต้น' };
+  }
+
+  return {
+    status: 'ok',
+    employee: {
+      empId: searchId,
+      empName: String(tuple[0] || ''),
+      department: String(tuple[1] || ''),
+      branch: String(tuple[2] || ''),
+      attendAnswer: String(tuple[3] || ''),
+      isNotAttending: Boolean(tuple[4])
+    }
+  };
+}
+
+/**
+ * สำหรับเรียกใช้งานจากหน้าเว็บผ่าน google.script.run หรือ doGet(?action=checkEmployee&empId=...)
+ * ค้นหารหัสพนักงานจาก B2:B และดึง แผนก (C2:C), ชื่อพนักงาน (D2:D), สาขา (E2:E)
+ */
+function checkEmployeeById(empId) {
+  try {
+    if (!empId) {
+      return { status: 'error', message: 'กรุณาระบุรหัสพนักงาน' };
     }
 
-    if (!foundEmployee) {
-      return { status: 'not_found', message: 'ไม่พบรหัสพนักงานนี้ในรายชื่อตั้งต้น' };
+    const searchId = String(empId).trim().replace(/\.0$/, '');
+    const sourceRes = getSourceEmployeeByIdCached(searchId);
+    if (!sourceRes || sourceRes.status !== 'ok' || !sourceRes.employee) {
+      return {
+        status: (sourceRes && sourceRes.status) || 'not_found',
+        message: (sourceRes && sourceRes.message) || 'ไม่พบรหัสพนักงานนี้ในรายชื่อตั้งต้น'
+      };
     }
+
+    const foundEmployee = sourceRes.employee;
 
     // ตรวจสอบคอลัมน์ "ท่านสนใจร่วมงานหรือไม่?" หากตอบ "ไม่ไป" หรือไม่มาร่วมงาน ไม่อนุญาตให้ลงทะเบียน
     if (foundEmployee.isNotAttending) {
@@ -626,6 +658,7 @@ function checkEmployeeById(empId) {
     }
 
     // ตรวจสอบว่าลงทะเบียนไปแล้วหรือยังใน Sheet Register
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const regSheet = getSheetSafely(ss, TARGET_SHEET_NAME);
     let alreadyRegistered = false;
     let registeredAt = '';
@@ -707,13 +740,12 @@ function checkRegistrationByUid(uid) {
 }
 
 /**
- * บันทึกข้อมูลการลงทะเบียนลงใน Sheet "Register"
+ * บันทึกข้อมูลการลงทะเบียนลงใน Sheet "Register" (ล็อกสั้นที่สุดเท่าที่จำเป็นและปล่อย Lock ก่อนยิง LINE Push)
  */
 function saveRegistrationData(payload) {
   const lock = LockService.getScriptLock();
+  let lockHeld = false;
   try {
-    lock.waitLock(10000);
-
     const empId = String(payload.empId || '').trim().replace(/\.0$/, '');
     const empName = String(payload.empName || '').trim();
     const department = String(payload.department || '').trim();
@@ -726,7 +758,7 @@ function saveRegistrationData(payload) {
       return { status: 'error', message: 'ข้อมูลพนักงานไม่ครบถ้วน กรุณาตรวจสอบรหัสพนักงานอีกครั้ง' };
     }
 
-    // ตรวจสอบสถานะการเปิด-ปิดระบบลงทะเบียน (แอดมินที่ผ่านการยืนยัน Token จึงจะลงทะเบียนข้ามเวลาได้)
+    // 1. ตรวจสอบสิทธิ์เปิด-ปิดระบบ และข้อมูลตั้งต้น/ความเป็นเพื่อน ก่อนขอ Lock
     const sysStatusInfo = getRegistrationSystemStatus();
     if (!sysStatusInfo.isOpen && !isAdminAuthorized(payload)) {
       if (sysStatusInfo.isBeforeOpeningTime && sysStatusInfo.openingDateTime) {
@@ -742,32 +774,26 @@ function saveRegistrationData(payload) {
       return { status: 'error', message: closeMsg };
     }
 
-    // ตรวจสอบสถานะการเข้าร่วมงานและตรวจสอบรหัสพนักงานซ้ำจากแบบฟอร์มตั้งต้น + Sheet Register
-    const empCheck = checkEmployeeById(empId);
-    if (empCheck && empCheck.status === 'not_attending') {
+    const sourceCheck = getSourceEmployeeByIdCached(empId);
+    if (sourceCheck && sourceCheck.status === 'ok' && sourceCheck.employee && sourceCheck.employee.isNotAttending) {
       return { status: 'error', message: 'ท่านไม่ได้มาร่วมงานลงทะเบียนไม่ได้' };
     }
-    if (empCheck && empCheck.alreadyRegistered) {
-      return {
-        status: 'duplicate',
-        message: 'รหัสพนักงานนี้ได้ลงทะเบียนไปแล้ว'
-      };
-    }
 
-    // ตรวจสอบว่าผู้ใช้กดเพิ่มเพื่อนกับ LINE Official Account แล้วหรือไม่
-    if (uid && uid !== 'TEST_USER' && !isUserFriendWithBot(uid, true)) {
+    if (uid && uid !== 'TEST_USER' && !isUserFriendWithBot(uid, false)) {
       return { status: 'error', message: 'กรุณากดเพิ่มเพื่อน LINE กับ cmparty2026 ก่อนทำการลงทะเบียน' };
     }
+
+    // 2. ช่วงสั้นใน Lock: ตรวจซ้ำบน Sheet Register และเขียนแถวใหม่ทันที
+    lock.waitLock(10000);
+    lockHeld = true;
 
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     let regSheet = getSheetSafely(ss, TARGET_SHEET_NAME);
 
-    // หากยังไม่มี Sheet Register ให้สร้างใหม่
     if (!regSheet) {
       regSheet = ss.insertSheet(TARGET_SHEET_NAME);
     }
 
-    // ตรวจสอบหัวคอลัมน์แถวที่ 1 หากแผ่นงานยังว่างเปล่า หรือแถวที่ 1 ยังไม่มีหัวคอลัมน์ ให้สร้าง Header อัตโนมัติพร้อมตกแต่งสี
     const headers = [
       'ประทับเวลา',
       'รหัสพนักงาน',
@@ -791,7 +817,6 @@ function saveRegistrationData(payload) {
         .setFontColor('#ffffff');
       regSheet.setFrozenRows(1);
     } else if (lastRow >= 2) {
-      // ตรวจสอบการลงทะเบียนซ้ำด้วยรหัสพนักงาน (เช็คก่อนเสมอ) และ LINE UID
       const existingData = regSheet.getRange(2, 2, lastRow - 1, 5).getValues(); // คอลัมน์ B ถึง F
       for (let i = 0; i < existingData.length; i++) {
         const rowEmpId = String(existingData[i][0] || '').trim().replace(/\.0$/, '');
@@ -834,8 +859,16 @@ function saveRegistrationData(payload) {
       pictureUrl,
       'ลงทะเบียนสำเร็จ'
     ]);
+    SpreadsheetApp.flush();
 
-    // ส่ง Flex Message บัตรยืนยันการลงทะเบียนเข้าแชท LINE ของผู้ลงทะเบียนทันทีผ่าน LINE Push API
+    lock.releaseLock();
+    lockHeld = false;
+
+    // 3. นอก Lock: ล้างแคชตุ๊กตาหน้าเวทีและส่งบัตรยืนยันผ่าน LINE Push API
+    try {
+      CacheService.getScriptCache().remove('STAGE_ATTENDEES_CACHE');
+    } catch (cErr) {}
+
     let lineSent = false;
     let lineMessageStatus = '';
     if (uid && uid !== 'TEST_USER') {
@@ -877,7 +910,9 @@ function saveRegistrationData(payload) {
     console.error('Error in saveRegistrationData:', err);
     return { status: 'error', message: 'เกิดข้อผิดพลาดในการบันทึกข้อมูล: ' + err.message };
   } finally {
-    lock.releaseLock();
+    if (lockHeld) {
+      lock.releaseLock();
+    }
   }
 }
 
@@ -4655,7 +4690,7 @@ function createGalleryFlexMessage() {
                 contents: [
                   {
                     type: 'image',
-                    url: 'https://lh5.googleusercontent.com/d/1rzj7RdJ76nk5OccBPZ-kj-qxDp_Rg_Yk',
+                    url: 'https://cmparty.vercel.app/assets/party-logo.jpg',
                     size: 'full',
                     aspectMode: 'cover',
                     aspectRatio: '1:1'
