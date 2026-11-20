@@ -2010,6 +2010,35 @@
             </a>
           </div>
 
+          <!-- จัดการ LINE Rich Menu 6 ช่อง (อัตโนมัติผ่าน Messaging API) -->
+          <div class="bg-emerald-50/80 p-3 rounded-2xl border border-emerald-200/80 mb-3 space-y-2">
+            <p class="text-[10px] text-emerald-950 font-semibold flex items-center gap-1">
+              <i class="fa-brands fa-line text-emerald-600 text-xs"></i>
+              <span>จัดการ LINE Rich Menu 6 ช่อง (อัตโนมัติผ่าน API):</span>
+            </p>
+            <div class="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                onclick="manageLineRichMenu('setup')"
+                class="py-2 px-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-green-700 hover:from-emerald-700 hover:to-green-800 text-white font-bold text-[11px] shadow-xs active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer"
+              >
+                <span>🎄</span>
+                <span>ติดตั้ง &amp; เปิดใช้ Rich Menu</span>
+              </button>
+              <button
+                type="button"
+                onclick="manageLineRichMenu('clear')"
+                class="py-2 px-2.5 rounded-xl bg-white hover:bg-rose-50 text-rose-700 font-bold text-[11px] border border-rose-300 shadow-xs active:scale-95 transition-all flex items-center justify-center gap-1 cursor-pointer"
+              >
+                <span>🗑️</span>
+                <span>ปิด/คืนค่า LINE OA</span>
+              </button>
+            </div>
+            <p class="text-[10px] text-emerald-800/80">
+              * หรือพิมพ์ <code class="font-bold">"เปิดริชเมนู"</code> / <code class="font-bold">"ปิดริชเมนู"</code> ในแชท LINE OA ด้วยบัญชีแอดมิน
+            </p>
+          </div>
+
           <!-- ปุ่มเปิด/ปิดระบบแบบทันที (Manual Override) -->
           <div class="pt-0.5">
             <p class="text-[11px] text-gray-600 mb-1.5 font-medium">สวิตช์เปิด-ปิดทันที (Manual Override):</p>
@@ -2222,6 +2251,67 @@
       } catch (err) {
         Swal.close();
         Swal.fire({ icon: 'error', title: 'ข้อผิดพลาดเครือข่าย', text: err.message, confirmButtonColor: '#f43f5e' });
+      }
+    }
+
+    // แอดมินสั่งติดตั้งหรือล้าง LINE Rich Menu 6 ช่องอัตโนมัติผ่าน Messaging API
+    async function manageLineRichMenu(mode) {
+      if (!isCurrentUserAdmin()) {
+        Swal.fire({ icon: 'error', title: 'ไม่มีสิทธิ์', text: 'ฟังก์ชันนี้อนุญาตเฉพาะแอดมินเท่านั้น', confirmButtonColor: '#f43f5e' });
+        return;
+      }
+      const isClear = mode === 'clear';
+      const confirmRes = await Swal.fire({
+        icon: isClear ? 'warning' : 'question',
+        title: isClear ? 'ปิด/คืนค่า Rich Menu?' : 'ติดตั้ง & เปิดใช้ Rich Menu 6 ช่อง?',
+        text: isClear
+          ? 'ระบบจะยกเลิกและลบ Rich Menu ที่สร้างจากโค้ด เพื่อคืนค่าให้จัดการจาก LINE OA Manager ได้ตามเดิม'
+          : 'ระบบจะส่งภาพ 2500x1686 และตั้งค่าปุ่ม 6 ช่องเป็น Default Rich Menu ให้ทุกคนเห็นทันที (จะแสดงทับ Rich Menu จาก LINE OA Manager ชั่วคราว)',
+        showCancelButton: true,
+        confirmButtonColor: isClear ? '#DC2626' : '#059669',
+        cancelButtonColor: '#9CA3AF',
+        confirmButtonText: isClear ? 'ยืนยันปิด Rich Menu' : 'ติดตั้ง & เปิดใช้ทันที',
+        cancelButtonText: 'ยกเลิก'
+      });
+      if (!confirmRes.isConfirmed) return;
+
+      Swal.fire({
+        title: isClear ? 'กำลังยกเลิก Rich Menu...' : 'กำลังอัปโหลด & เปิดใช้ Rich Menu...',
+        text: 'กรุณารอสักครู่...',
+        allowOutsideClick: false,
+        didOpen: () => Swal.showLoading()
+      });
+
+      try {
+        const data = await sendAdminAction({
+          action: isClear ? 'clearRichMenu' : 'setupRichMenu',
+          adminUid: userProfile.userId
+        });
+        Swal.close();
+
+        if (data && data.status === 'success') {
+          Swal.fire({
+            icon: 'success',
+            title: isClear ? 'ปิด Rich Menu สำเร็จ!' : 'เปิดใช้ Rich Menu สำเร็จ!',
+            text: data.message || 'ดำเนินการเรียบร้อยแล้ว',
+            confirmButtonColor: '#059669'
+          });
+        } else {
+          Swal.fire({
+            icon: 'error',
+            title: 'ดำเนินการไม่สำเร็จ',
+            text: (data && data.message) || 'เกิดข้อผิดพลาดในการเชื่อมต่อ LINE API',
+            confirmButtonColor: '#f43f5e'
+          });
+        }
+      } catch (err) {
+        Swal.close();
+        Swal.fire({
+          icon: 'error',
+          title: 'ข้อผิดพลาดเครือข่าย',
+          text: err.message,
+          confirmButtonColor: '#f43f5e'
+        });
       }
     }
 
