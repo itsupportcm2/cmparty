@@ -11,10 +11,10 @@
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
-  <!-- Google Fonts: Prompt -->
+  <!-- Google Fonts: Mali + Fredoka + Prompt -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Mali:wght@500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -151,6 +151,47 @@
       animation: bwrCrownFloat 2.4s ease-in-out infinite;
     }
 
+    .font-cute {
+      font-family: 'Mali', 'Prompt', sans-serif;
+    }
+
+    .font-display {
+      font-family: 'Fredoka', 'Mali', 'Prompt', sans-serif;
+    }
+
+    .btn-candy-3d {
+      border-bottom-width: 4px !important;
+      transition: transform 0.14s ease, box-shadow 0.2s ease !important;
+    }
+    .btn-candy-3d:not(:disabled):active {
+      transform: translateY(2px);
+      border-bottom-width: 2px !important;
+    }
+    .btn-candy-3d:disabled {
+      border-bottom-width: 2px !important;
+      transform: none;
+    }
+
+    @keyframes candyStripeScroll {
+      0% { background-position: 0 0; }
+      100% { background-position: 28px 0; }
+    }
+    .candy-progress-fill {
+      background-image: repeating-linear-gradient(
+        135deg,
+        #197a56 0px,
+        #197a56 7px,
+        #34d399 7px,
+        #34d399 14px,
+        #f5b942 14px,
+        #f5b942 21px,
+        #e11d48 21px,
+        #e11d48 28px
+      );
+      background-size: 28px 28px;
+      animation: candyStripeScroll 1.6s linear infinite;
+    }
+
     .bwr-gold-text {
       background: linear-gradient(90deg, #fef08a 0%, #fbbf24 35%, #fffbeb 55%, #f59e0b 80%, #fef08a 100%);
       background-size: 200% auto;
@@ -170,87 +211,129 @@
 
   <div class="relative z-10 max-w-5xl mx-auto space-y-5 pt-2 pb-10">
 
-    <!-- Header Card (Cute Cozy Christmas Style) -->
+    <!-- Header Card (Cute Cozy Christmas Studio) -->
     <header class="glass-panel rounded-[2rem] overflow-hidden">
-      <div class="relative bg-gradient-to-br from-rose-100 via-[#fff7f9] to-emerald-100 px-6 py-5 text-slate-800 border-b-2 border-dashed border-rose-200 flex flex-col lg:flex-row items-center justify-between gap-4 overflow-hidden">
-        <div class="flex items-center gap-4">
-          <div class="cute-logo-frame p-1.5 rounded-2xl shadow-md shrink-0">
-            <div class="bg-white p-1.5 rounded-xl border border-rose-100">
+      <div class="relative bg-gradient-to-br from-rose-100 via-[#fff9f5] to-emerald-100 px-6 pt-6 pb-5 text-slate-800 border-b-2 border-dashed border-rose-200 flex flex-col gap-4 overflow-hidden">
+        <!-- Curved Fairy Lights Accent SVG -->
+        <svg viewBox="0 0 800 28" preserveAspectRatio="none" class="w-full h-5 -mt-4 pointer-events-none opacity-85" aria-hidden="true">
+          <path d="M0,4 Q200,26 400,6 Q600,26 800,4" fill="none" stroke="#197a56" stroke-width="2.5" stroke-dasharray="5 5"/>
+          <circle cx="95" cy="14" r="4" fill="#e11d48"/><circle cx="200" cy="16" r="4.5" fill="#f5b942"/>
+          <circle cx="305" cy="14" r="4" fill="#34d399"/><circle cx="495" cy="14" r="4" fill="#fb7185"/>
+          <circle cx="600" cy="16" r="4.5" fill="#f5b942"/><circle cx="705" cy="14" r="4" fill="#34d399"/>
+        </svg>
+
+        <div class="flex flex-col lg:flex-row items-center justify-between gap-4">
+          <div class="flex items-center gap-3.5">
+            <div class="relative shrink-0">
+              <div class="cute-logo-frame p-1.5 rounded-2xl shadow-md">
+                <div class="bg-white p-1.5 rounded-xl border border-rose-100">
+                  <img
+                    src="assets/party-logo.jpg"
+                    alt="Logo"
+                    class="h-12 w-12 object-contain rounded-lg"
+                    loading="eager"
+                    onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='https://cmparty.vercel.app/assets/party-logo.jpg';}else{this.outerHTML='<span class=\'text-2xl px-2\'>🎁</span>';}"
+                  />
+                </div>
+              </div>
               <img
-                src="assets/party-logo.jpg"
-                alt="Logo"
-                class="h-12 w-12 object-contain rounded-lg"
-                loading="eager"
-                onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='https://cmparty.vercel.app/assets/party-logo.jpg';}else{this.outerHTML='<span class=\'text-2xl px-2\'>🎁</span>';}"
+                src="assets/sender-santa.png"
+                alt="Santa"
+                class="w-7 h-7 rounded-full object-cover border-2 border-white shadow-md absolute -bottom-1.5 -right-1.5 bg-amber-50"
+                onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='https://cmparty.vercel.app/assets/sender-santa.png';}else{this.classList.add('hidden');}"
               />
             </div>
-          </div>
-          <div>
-            <div class="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/90 border border-rose-200 text-rose-600 text-[11px] font-bold tracking-wider uppercase mb-1 shadow-2xs">
-              <span>🏆</span>
-              <span>CM PARTY LUCKY DRAW</span>
-              <span>🎄</span>
+            <div>
+              <div class="font-display inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-white/95 border border-amber-300 text-rose-700 text-[11px] font-bold tracking-wider uppercase mb-1 shadow-2xs">
+                <span>🏆</span>
+                <span>CM PARTY LUCKY DRAW STUDIO</span>
+                <span>🎄</span>
+              </div>
+              <h1 class="font-cute text-xl sm:text-2xl font-bold cute-title-gradient">
+                ระบบบันทึกและจัดการผู้ได้รับรางวัล 🎁
+              </h1>
             </div>
-            <h1 class="text-xl sm:text-2xl font-extrabold cute-title-gradient">
-              ระบบบันทึกและจัดการผู้ได้รับรางวัล 🎁
-            </h1>
+          </div>
+
+          <!-- Summary Counters (Grouped into Clean Cohesive Pills) -->
+          <div class="flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm">
+            <!-- Group 1: Registrants Pool -->
+            <div class="inline-flex items-center gap-1.5 bg-white/80 backdrop-blur px-2.5 py-1.5 rounded-2xl border-2 border-sky-200/80 shadow-2xs">
+              <div class="px-2 py-0.5 text-center" title="จำนวนผู้ลงทะเบียนจาก Sheet Register">
+                <span class="block text-[10px] font-semibold text-sky-600">ลงทะเบียน</span>
+                <span id="statRegistered" class="font-display font-bold text-base text-sky-700">0</span>
+              </div>
+              <span class="w-px h-7 bg-sky-200"></span>
+              <div class="px-2 py-0.5 text-center" title="จำนวนผู้ลงทะเบียนอัตโนมัติ (ไม่ได้ไปเพราะอยู่ กะ)">
+                <span class="block text-[10px] font-semibold text-teal-700">อยู่กะ</span>
+                <span id="statShiftWorkers" class="font-display font-bold text-base text-teal-700">0</span>
+              </div>
+              <span class="w-px h-7 bg-sky-200"></span>
+              <div class="px-2 py-0.5 text-center" title="จำนวนผู้ลงทะเบียนแผนก 1.บริหาร (ร่วมงานได้ แต่ไม่มีสิทธิ์รับรางวัล)">
+                <span class="block text-[10px] font-semibold text-purple-700">1.บริหาร</span>
+                <span id="statExcludedMgmt" class="font-display font-bold text-base text-purple-700">0</span>
+              </div>
+            </div>
+
+            <!-- Group 2: Prizes Progress -->
+            <div class="inline-flex items-center gap-1.5 bg-white/80 backdrop-blur px-2.5 py-1.5 rounded-2xl border-2 border-rose-200/90 shadow-2xs">
+              <div class="px-2 py-0.5 text-center">
+                <span class="block text-[10px] font-semibold text-rose-600">ทั้งหมด</span>
+                <span id="statTotal" class="font-display font-bold text-base text-rose-700">0</span>
+              </div>
+              <span class="w-px h-7 bg-rose-200"></span>
+              <div class="px-2 py-0.5 text-center">
+                <span class="block text-[10px] font-semibold text-emerald-600">แจกแล้ว</span>
+                <span id="statAssigned" class="font-display font-bold text-base text-emerald-700">0</span>
+              </div>
+              <span class="w-px h-7 bg-rose-200"></span>
+              <div class="px-2 py-0.5 text-center">
+                <span class="block text-[10px] font-semibold text-amber-600">คงเหลือ</span>
+                <span id="statRemaining" class="font-display font-bold text-base text-amber-700">0</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              id="rewardSoundBtn"
+              onclick="toggleRewardSound()"
+              class="bg-amber-50/95 hover:bg-amber-100 px-3 py-2.5 rounded-2xl border-2 border-amber-300 text-center font-bold text-amber-800 shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
+              title="เปิด/ปิดเสียงเอฟเฟกต์สุ่มรางวัล"
+            >
+              <i id="rewardSoundIcon" class="fa-solid fa-volume-high text-xs text-amber-600"></i>
+              <span class="text-xs hidden sm:inline">เสียงเอฟเฟกต์</span>
+            </button>
+            <button
+              type="button"
+              id="bigRevealToggleBtn"
+              onclick="toggleBigRevealAuto()"
+              class="bg-slate-100 hover:bg-slate-200 px-3 py-2.5 rounded-2xl border-2 border-slate-300 text-center font-bold text-slate-500 shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
+              title="เปิด/ปิด การเด้งจอใหญ่ซ้อนในหน้าแอดมิน (ปกติจะส่งขึ้นหน้า stage.html ให้อัตโนมัติอยู่แล้ว)"
+            >
+              <i id="bigRevealToggleIcon" class="fa-solid fa-tv text-xs text-slate-400"></i>
+              <span id="bigRevealToggleText" class="text-xs hidden sm:inline">จอใหญ่ในหน้านี้: ปิด</span>
+            </button>
+            <a
+              href="gallery.html"
+              class="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 px-3.5 py-2.5 rounded-2xl border-2 border-white text-center font-bold text-white shadow-md shadow-rose-500/20 transition flex items-center gap-1.5"
+              title="ดูแกลเลอรีภาพกิจกรรม"
+            >
+              <i class="fa-solid fa-camera-retro text-amber-200"></i>
+              <span class="text-xs">ภาพกิจกรรม</span>
+            </a>
           </div>
         </div>
 
-        <!-- Summary Counters -->
-        <div class="flex flex-wrap items-center justify-center gap-2 text-xs sm:text-sm">
-          <div class="bg-sky-50/90 backdrop-blur px-3 py-2 rounded-2xl border-2 border-sky-200 text-center shadow-2xs" title="จำนวนผู้ลงทะเบียนจาก Sheet Register">
-            <span class="block text-[11px] font-semibold text-sky-600">ผู้ลงทะเบียนทั้งหมด</span>
-            <span id="statRegistered" class="font-extrabold text-lg text-sky-700">0</span>
+        <!-- Candy-Cane Prize Progress Bar -->
+        <div class="flex items-center gap-3 pt-1">
+          <span class="text-[11px] font-bold text-rose-800 shrink-0 flex items-center gap-1">
+            <span>🍬</span>
+            <span>ความคืบหน้าการแจกรางวัล</span>
+          </span>
+          <div class="flex-1 h-3 rounded-full bg-white/90 border border-rose-200 overflow-hidden shadow-inner p-0.5">
+            <div id="prizeProgressBar" class="h-full rounded-full candy-progress-fill transition-all duration-500" style="width: 0%;"></div>
           </div>
-          <div class="bg-teal-50/90 backdrop-blur px-3 py-2 rounded-2xl border-2 border-teal-200 text-center shadow-2xs" title="จำนวนผู้ลงทะเบียนอัตโนมัติ (ไม่ได้ไปเพราะอยู่ กะ)">
-            <span class="block text-[11px] font-semibold text-teal-700">อยู่กะ (ออโต้)</span>
-            <span id="statShiftWorkers" class="font-extrabold text-lg text-teal-700">0</span>
-          </div>
-          <div class="bg-purple-50/90 backdrop-blur px-3 py-2 rounded-2xl border-2 border-purple-200 text-center shadow-2xs" title="จำนวนผู้ลงทะเบียนแผนก 1.บริหาร (ร่วมงานได้ แต่ไม่มีสิทธิ์รับรางวัล)">
-            <span class="block text-[11px] font-semibold text-purple-700">แผนก 1.บริหาร</span>
-            <span id="statExcludedMgmt" class="font-extrabold text-lg text-purple-700">0</span>
-          </div>
-          <div class="bg-rose-50/90 backdrop-blur px-3 py-2 rounded-2xl border-2 border-rose-200 text-center shadow-2xs">
-            <span class="block text-[11px] font-semibold text-rose-600">รางวัลทั้งหมด</span>
-            <span id="statTotal" class="font-extrabold text-lg text-rose-700">0</span>
-          </div>
-          <div class="bg-emerald-50/90 backdrop-blur px-3 py-2 rounded-2xl border-2 border-emerald-200 text-center shadow-2xs">
-            <span class="block text-[11px] font-semibold text-emerald-600">แจกแล้ว</span>
-            <span id="statAssigned" class="font-extrabold text-lg text-emerald-700">0</span>
-          </div>
-          <div class="bg-amber-50/90 backdrop-blur px-3 py-2 rounded-2xl border-2 border-amber-200 text-center shadow-2xs">
-            <span class="block text-[11px] font-semibold text-amber-600">คงเหลือ</span>
-            <span id="statRemaining" class="font-extrabold text-lg text-amber-700">0</span>
-          </div>
-          <button
-            type="button"
-            id="rewardSoundBtn"
-            onclick="toggleRewardSound()"
-            class="bg-amber-50/95 hover:bg-amber-100 px-3 py-2.5 rounded-2xl border-2 border-amber-300 text-center font-bold text-amber-800 shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
-            title="เปิด/ปิดเสียงเอฟเฟกต์สุ่มรางวัล"
-          >
-            <i id="rewardSoundIcon" class="fa-solid fa-volume-high text-xs text-amber-600"></i>
-            <span class="text-xs hidden sm:inline">เสียงเอฟเฟกต์</span>
-          </button>
-          <button
-            type="button"
-            id="bigRevealToggleBtn"
-            onclick="toggleBigRevealAuto()"
-            class="bg-slate-100 hover:bg-slate-200 px-3 py-2.5 rounded-2xl border-2 border-slate-300 text-center font-bold text-slate-500 shadow-2xs transition flex items-center gap-1.5 cursor-pointer"
-            title="เปิด/ปิด การเด้งจอใหญ่ซ้อนในหน้าแอดมิน (ปกติจะส่งขึ้นหน้า stage.html ให้อัตโนมัติอยู่แล้ว)"
-          >
-            <i id="bigRevealToggleIcon" class="fa-solid fa-tv text-xs text-slate-400"></i>
-            <span id="bigRevealToggleText" class="text-xs hidden sm:inline">จอใหญ่ในหน้านี้: ปิด</span>
-          </button>
-          <a
-            href="gallery.html"
-            class="bg-gradient-to-r from-rose-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 px-3.5 py-2.5 rounded-2xl border-2 border-white text-center font-bold text-white shadow-md shadow-rose-500/20 transition flex items-center gap-1.5"
-            title="ดูแกลเลอรีภาพกิจกรรม"
-          >
-            <i class="fa-solid fa-camera-retro text-amber-200"></i>
-            <span class="text-xs">ภาพกิจกรรม</span>
-          </a>
+          <span id="prizeProgressText" class="font-display text-[11px] font-bold text-rose-700 shrink-0">0 / 0 (0%)</span>
         </div>
       </div>
 
@@ -260,6 +343,10 @@
         class="px-5 sm:px-6 py-3 bg-gradient-to-r from-slate-900 via-rose-950 to-slate-900 text-white border-b border-rose-200/30 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 text-xs"
       >
         <div class="flex flex-wrap items-center gap-2">
+          <span id="stageOnAirBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-300/45 text-emerald-200 font-display font-bold text-[10px] tracking-wider">
+            <span id="stageOnAirDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+            <span id="stageOnAirText">STANDBY</span>
+          </span>
           <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-400/20 border border-amber-300/45 text-amber-200 font-bold text-[11px]">
             <span>📺</span>
             <span>รีโมตจอใหญ่ (stage.html)</span>
@@ -432,7 +519,7 @@
                 id="btnSaveReward"
                 onclick="handleQuickSave()"
                 disabled
-                class="flex-1 py-2.5 px-4 rounded-2xl bg-gradient-to-r from-rose-500 via-red-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed text-white font-bold text-sm border-2 border-white/80 shadow-md shadow-rose-500/20 hover:shadow-lg active:scale-95 transition flex items-center justify-center gap-2 cursor-pointer"
+                class="btn-candy-3d flex-1 py-2.5 px-4 rounded-2xl bg-gradient-to-r from-rose-500 via-red-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:from-slate-300 disabled:to-slate-300 disabled:border-slate-400 disabled:cursor-not-allowed text-white font-bold text-sm border-2 border-rose-700/70 shadow-md shadow-rose-500/20 hover:shadow-lg flex items-center justify-center gap-2 cursor-pointer"
               >
                 <i class="fa-solid fa-paper-plane"></i>
                 <span>บันทึก & แจ้งเตือน LINE</span>
@@ -586,7 +673,7 @@
               id="btnRunAutoDraw"
               onclick="handleStartAutoDraw()"
               disabled
-              class="flex-1 py-3 px-5 rounded-2xl bg-gradient-to-r from-rose-500 via-red-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:from-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed text-white font-bold text-sm border-2 border-white shadow-lg shadow-rose-500/20 active:scale-[0.99] transition flex items-center justify-center gap-2 cursor-pointer"
+              class="btn-candy-3d flex-1 py-3 px-5 rounded-2xl bg-gradient-to-r from-rose-500 via-red-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:from-slate-300 disabled:to-slate-300 disabled:border-slate-400 disabled:cursor-not-allowed text-white font-bold text-sm border-2 border-rose-700/70 shadow-lg shadow-rose-500/20 flex items-center justify-center gap-2 cursor-pointer"
             >
               <i class="fa-solid fa-shuffle"></i>
               <span id="btnRunAutoDrawText">กรุณาเลือกรางวัลที่ต้องการสุ่ม</span>
@@ -808,9 +895,14 @@
           </h2>
         </div>
 
-        <!-- Winner Profile Picture -->
-        <div class="relative inline-flex items-center justify-center pt-4">
-          <span class="bwr-crown-float absolute -top-3 text-3xl sm:text-4xl drop-shadow-[0_4px_12px_rgba(251,191,36,0.75)] pointer-events-none">👑</span>
+        <!-- Winner Profile Picture + 4K Vector Golden Crown -->
+        <div class="relative inline-flex items-center justify-center pt-7">
+          <svg viewBox="0 0 80 54" class="bwr-crown-float w-12 h-9 sm:w-14 sm:h-10 absolute -top-2 z-20 drop-shadow-[0_4px_12px_rgba(251,191,36,0.85)] pointer-events-none" aria-hidden="true">
+            <path d="M10,44 L6,16 L24,29 L40,8 L56,29 L74,16 L70,44 Z" fill="#fbbf24" stroke="#ffffff" stroke-width="2" stroke-linejoin="round"/>
+            <rect x="10" y="42" width="60" height="7" rx="3.5" fill="#b45309" stroke="#fef08a" stroke-width="1.5"/>
+            <circle cx="40" cy="6" r="4.5" fill="#fb7185" stroke="#ffffff" stroke-width="1.2"/>
+            <circle cx="40" cy="30" r="4" fill="#e11d48" stroke="#fef08a" stroke-width="1.2"/>
+          </svg>
           <img
             id="bwrAvatarImg"
             src=""
@@ -1205,6 +1297,12 @@
       document.getElementById('statTotal').innerText = total;
       document.getElementById('statAssigned').innerText = assigned;
       document.getElementById('statRemaining').innerText = remaining;
+
+      const pct = total > 0 ? Math.round((assigned / total) * 100) : 0;
+      const barEl = document.getElementById('prizeProgressBar');
+      const txtEl = document.getElementById('prizeProgressText');
+      if (barEl) barEl.style.width = `${pct}%`;
+      if (txtEl) txtEl.innerText = `${assigned} / ${total} (${pct}%)`;
 
       // อัปเดต Datalist รายชื่อผู้ลงทะเบียนจาก Sheet Register
       const datalist = document.getElementById('registeredEmployeesDatalist');
@@ -3667,6 +3765,21 @@
     }
 
     function updateStageRemoteUI(state) {
+      const onAirBadge = document.getElementById('stageOnAirBadge');
+      const onAirDot = document.getElementById('stageOnAirDot');
+      const onAirText = document.getElementById('stageOnAirText');
+      if (onAirBadge && onAirDot && onAirText) {
+        if (state.mode === 'winner' || state.mode === 'rolling') {
+          onAirBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/35 border border-rose-300/65 text-rose-100 font-display font-bold text-[10px] tracking-wider';
+          onAirDot.className = 'w-2 h-2 rounded-full bg-rose-400 animate-ping';
+          onAirText.innerText = 'ON AIR';
+        } else {
+          onAirBadge.className = 'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-300/45 text-emerald-200 font-display font-bold text-[10px] tracking-wider';
+          onAirDot.className = 'w-2 h-2 rounded-full bg-emerald-400';
+          onAirText.innerText = 'STANDBY';
+        }
+      }
+
       const statusEl = document.getElementById('stageRemoteStatusText');
       const navEl = document.getElementById('stageRemoteNav');
       const navTextEl = document.getElementById('stageRemoteNavText');

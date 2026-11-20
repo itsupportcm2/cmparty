@@ -11,10 +11,10 @@
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
-  <!-- Google Fonts: Prompt & Great Vibes -->
+  <!-- Google Fonts: Mali + Fredoka + Prompt & Great Vibes -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Great+Vibes&family=Mali:wght@500;600;700&family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -115,12 +115,47 @@
       background: rgba(225, 29, 72, 0.65);
     }
 
+    .font-cute {
+      font-family: 'Mali', 'Prompt', sans-serif;
+    }
+
+    .font-display {
+      font-family: 'Fredoka', 'Mali', 'Prompt', sans-serif;
+    }
+
     .gallery-img-card {
-      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.32s ease;
+    }
+    .polaroid-tilt-left {
+      transform: rotate(-0.8deg);
+    }
+    .polaroid-tilt-right {
+      transform: rotate(0.8deg);
     }
     .gallery-img-card:hover {
-      transform: translateY(-5px) scale(1.02) rotate(-0.5deg);
-      box-shadow: 0 18px 34px -10px rgba(244, 63, 94, 0.25), 0 0 0 3px rgba(251, 113, 133, 0.25);
+      transform: translateY(-6px) scale(1.03) rotate(0deg);
+      box-shadow: 0 20px 38px -10px rgba(214, 51, 84, 0.28), 0 0 0 3px rgba(245, 185, 66, 0.35);
+      z-index: 15;
+    }
+
+    .washi-tape {
+      position: absolute;
+      top: -9px;
+      left: 50%;
+      width: 58px;
+      height: 16px;
+      transform: translateX(-50%) rotate(-3deg);
+      border-radius: 2px;
+      opacity: 0.92;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.14);
+      z-index: 20;
+      pointer-events: none;
+    }
+    .washi-tape-red {
+      background: repeating-linear-gradient(135deg, rgba(225, 29, 72, 0.78) 0px, rgba(225, 29, 72, 0.78) 6px, rgba(255, 255, 255, 0.9) 6px, rgba(255, 255, 255, 0.9) 12px);
+    }
+    .washi-tape-green {
+      background: repeating-linear-gradient(135deg, rgba(25, 122, 86, 0.78) 0px, rgba(25, 122, 86, 0.78) 6px, rgba(253, 224, 71, 0.85) 6px, rgba(253, 224, 71, 0.85) 12px);
     }
 
     /* CSS Animations สำหรับสไลด์โชว์ (ลูกเล่นการเปลี่ยนภาพ) */
@@ -313,9 +348,9 @@
       top: 100%;
       left: 50%;
       transform: translateX(-50%);
-      border-width: 5px;
+      border-width: 6px;
       border-style: solid;
-      border-color: #fda4af transparent transparent transparent;
+      border-color: #fb7185 transparent transparent transparent;
     }
 
     /* 🎅 Flying Santa Sleigh across upper slideshow stage */
@@ -346,24 +381,32 @@
     <div class="max-w-7xl mx-auto px-4 py-2.5 flex items-center justify-between gap-3">
       <!-- Logo & Brand -->
       <a href="index.html" class="flex items-center gap-3 group">
-        <div class="w-11 h-11 rounded-2xl p-1 bg-gradient-to-tr from-rose-300 via-amber-200 to-emerald-300 shadow-md flex items-center justify-center overflow-hidden">
-          <div class="w-full h-full bg-white rounded-xl overflow-hidden flex items-center justify-center">
-            <img
-              src="assets/party-logo.jpg"
-              alt="CM Party Logo"
-              class="w-full h-full object-cover rounded-xl group-hover:scale-110 transition duration-300"
-              onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='https://cmparty.vercel.app/assets/party-logo.jpg';}"
-            />
+        <div class="relative shrink-0">
+          <div class="w-11 h-11 rounded-2xl p-1 bg-gradient-to-tr from-rose-300 via-amber-200 to-emerald-300 shadow-md flex items-center justify-center overflow-hidden">
+            <div class="w-full h-full bg-white rounded-xl overflow-hidden flex items-center justify-center">
+              <img
+                src="assets/party-logo.jpg"
+                alt="CM Party Logo"
+                class="w-full h-full object-cover rounded-xl group-hover:scale-110 transition duration-300"
+                onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='https://cmparty.vercel.app/assets/party-logo.jpg';}"
+              />
+            </div>
           </div>
+          <img
+            src="assets/sender-photo.png"
+            alt="Photographer"
+            class="w-5 h-5 rounded-full object-cover border border-white shadow absolute -bottom-1 -right-1 bg-rose-50"
+            onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='https://cmparty.vercel.app/assets/sender-photo.png';}else{this.classList.add('hidden');}"
+          />
         </div>
         <div>
           <div class="flex items-center gap-2">
-            <span class="font-extrabold text-sm tracking-wide text-rose-700">CM PARTY 2026</span>
-            <span class="text-[10px] bg-gradient-to-r from-rose-100 to-pink-100 text-rose-700 px-2.5 py-0.5 rounded-full border border-rose-200 font-bold shadow-xs">
+            <span class="font-display font-bold text-sm tracking-wide text-rose-700">CM PARTY 2026</span>
+            <span class="font-display text-[10px] bg-gradient-to-r from-rose-100 to-amber-100 text-rose-700 px-2.5 py-0.5 rounded-full border border-rose-200 font-bold shadow-xs">
               🎄 Gallery
             </span>
           </div>
-          <p class="text-[11px] text-slate-600 font-medium">ภาพความประทับใจในงาน CM Party 2026</p>
+          <p class="font-cute text-[11px] text-slate-600 font-semibold">ภาพความประทับใจในงาน CM Party 2026</p>
         </div>
       </a>
 
@@ -777,6 +820,17 @@
 
     <!-- Main Stage (Active Slide) -->
     <div id="ssStage" class="relative z-10 flex-1 flex items-center justify-center overflow-hidden p-2 sm:p-8" onclick="handleStageClick()">
+      <!-- Top-Corner Delicate Hanging Fairy Lights SVG (Slideshow Cinema Atmosphere) -->
+      <svg viewBox="0 0 220 90" class="hidden sm:block absolute top-0 left-0 w-44 h-20 pointer-events-none opacity-80 z-20" aria-hidden="true">
+        <path d="M0,12 Q80,45 180,0" fill="none" stroke="#197a56" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="42" cy="24" r="4" fill="#fde047"/><circle cx="96" cy="26" r="4.5" fill="#fb7185"/>
+        <circle cx="144" cy="14" r="4" fill="#34d399"/>
+      </svg>
+      <svg viewBox="0 0 220 90" class="hidden sm:block absolute top-0 right-0 w-44 h-20 pointer-events-none opacity-80 z-20 -scale-x-100" aria-hidden="true">
+        <path d="M0,12 Q80,45 180,0" fill="none" stroke="#197a56" stroke-width="3" stroke-linecap="round"/>
+        <circle cx="42" cy="24" r="4" fill="#fde047"/><circle cx="96" cy="26" r="4.5" fill="#fb7185"/>
+        <circle cx="144" cy="14" r="4" fill="#34d399"/>
+      </svg>
       <!-- Prev & Next Arrows (hover reveal) -->
       <button
         type="button"
@@ -959,8 +1013,18 @@
       </div>
 
       <!-- Cute Dolls Row -->
-      <div id="ssStageCrowdRow" class="flex items-end justify-center gap-2 sm:gap-3.5 min-h-[78px] sm:min-h-[84px] pt-4 pb-0.5 px-1 overflow-visible">
+      <div id="ssStageCrowdRow" class="relative z-10 flex items-end justify-center gap-2 sm:gap-3.5 min-h-[78px] sm:min-h-[84px] pt-4 pb-2 px-1 overflow-visible">
         <!-- Rendered dynamically by JS -->
+      </div>
+
+      <!-- Snowy Winter Ground Wave & Tiny Gift/Pine Accent under Dolls -->
+      <div class="pointer-events-none select-none absolute bottom-0 left-0 right-0 z-0 overflow-hidden rounded-b-lg" aria-hidden="true">
+        <svg viewBox="0 0 1200 34" preserveAspectRatio="none" class="w-full h-5 sm:h-6">
+          <path d="M0,18 Q180,4 380,18 T760,16 T1200,14 L1200,34 L0,34 Z" fill="#ffffff" opacity="0.22"/>
+          <path d="M0,24 Q240,10 520,23 T1040,20 T1200,22 L1200,34 L0,34 Z" fill="#fffdf7" opacity="0.32"/>
+          <polygon points="42,26 50,10 58,26" fill="#34d399" opacity="0.65"/>
+          <polygon points="1142,26 1150,10 1158,26" fill="#34d399" opacity="0.65"/>
+        </svg>
       </div>
     </div>
 
@@ -1962,13 +2026,18 @@
 
       filteredImages.forEach((img, index) => {
         const card = document.createElement('div');
-        card.className = 'gallery-img-card group relative aspect-square rounded-3xl overflow-hidden bg-white p-1.5 border-2 border-rose-200/90 shadow-md cursor-pointer';
+        const tiltCls = index % 2 === 0 ? 'polaroid-tilt-left' : 'polaroid-tilt-right';
+        const tapeCls = index % 2 === 0 ? 'washi-tape-red' : 'washi-tape-green';
+        card.className = `gallery-img-card group relative rounded-2xl bg-[#fffdf9] p-2 sm:p-2.5 pb-2.5 border-2 border-rose-200/80 shadow-md cursor-pointer mt-2 ${tiltCls}`;
         card.onclick = () => openLightbox(index);
 
         const formattedSize = formatFileSize(img.size);
 
         card.innerHTML = `
-          <div class="relative w-full h-full rounded-2xl overflow-hidden bg-rose-50">
+          <!-- Washi Tape Strip -->
+          <span class="washi-tape ${tapeCls}" aria-hidden="true"></span>
+
+          <div class="relative aspect-square w-full rounded-xl overflow-hidden bg-rose-50 border border-rose-100">
             <!-- รูปภาพหลักแสดงผลผ่าน URL Google lh5 -->
             <img
               src="${img.url}"
@@ -2012,6 +2081,12 @@
             >
               <i class="fa-regular fa-copy"></i>
             </button>
+          </div>
+
+          <!-- Polaroid Handwritten Bottom Strip -->
+          <div class="pt-1.5 px-1 flex items-center justify-between gap-1 text-[10px] text-rose-800/80">
+            <span class="font-cute font-bold truncate">❄️ ${img.date ? img.date.split(' ')[0] : 'CM Party'}</span>
+            <span class="font-display font-bold text-emerald-700 shrink-0">${formattedSize}</span>
           </div>
         `;
 
@@ -3014,7 +3089,7 @@
 
       if (activeWish && activeWish.text) {
         const bubble = document.createElement('div');
-        bubble.className = 'ss-wish-bubble px-2.5 py-1 rounded-2xl bg-white/95 text-rose-900 text-[10px] font-bold shadow-[0_6px_18px_rgba(244,63,94,0.38)] border-2 border-rose-300';
+        bubble.className = 'ss-wish-bubble font-cute px-2.5 py-1 rounded-2xl bg-[#fffdf7] text-rose-900 text-[10px] font-bold shadow-[0_6px_18px_rgba(214,51,84,0.42)] border-2 border-rose-400';
         bubble.textContent = '💬 ' + activeWish.text;
         doll.appendChild(bubble);
       } else if (isWelcome) {

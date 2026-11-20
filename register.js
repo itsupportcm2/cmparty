@@ -978,7 +978,7 @@ function buildChristmasGlassFlexMessage(opts) {
                   {
                     type: 'box',
                     layout: 'vertical',
-                    backgroundColor: opts.badgeBgColor || '#FBBF24',
+                    backgroundColor: opts.badgeBgColor || '#F5B942',
                     cornerRadius: '20px',
                     paddingStart: '10px',
                     paddingEnd: '10px',
@@ -4432,46 +4432,80 @@ function createWelcomeFlexMessage(profile) {
   const displayName = profile.displayName || 'ผู้ใช้งาน';
   const pictureUrl = (profile.pictureUrl && profile.pictureUrl.startsWith('https://'))
     ? profile.pictureUrl
-    : 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
-  const statusMessage = profile.statusMessage || 'ยินดีต้อนรับเข้าสู่ระบบอัปโหลดรูปภาพ!';
-  const userId = profile.userId || '-';
+    : 'https://cmparty.vercel.app/assets/party-logo.jpg';
+  const statusMessage = profile.statusMessage || 'ยินดีต้อนรับเข้าสู่ปาร์ตี้คริสต์มาส & ปีใหม่ 2026!';
 
   return withBotSender({
     type: 'flex',
-    altText: `ยินดีต้อนรับคุณ ${displayName}!`,
+    altText: `🎄 ยินดีต้อนรับคุณ ${displayName} เข้าสู่ CM Party 2026!`,
     contents: {
       type: 'bubble',
       size: 'mega',
       header: {
         type: 'box',
         layout: 'vertical',
-        backgroundColor: '#06C755',
+        backgroundColor: '#9F1239',
+        background: {
+          type: 'linearGradient',
+          angle: '135deg',
+          startColor: '#9F1239',
+          endColor: '#580B24'
+        },
         paddingAll: '20px',
         contents: [
           {
-            type: 'text',
-            text: '🎉 WELCOME NEW FRIEND',
-            color: '#FFFFFF',
-            weight: 'bold',
-            size: 'sm',
-            align: 'center'
+            type: 'box',
+            layout: 'horizontal',
+            alignItems: 'center',
+            contents: [
+              {
+                type: 'box',
+                layout: 'vertical',
+                backgroundColor: '#F5B942',
+                cornerRadius: '20px',
+                paddingStart: '10px',
+                paddingEnd: '10px',
+                paddingTop: '4px',
+                paddingBottom: '4px',
+                flex: 0,
+                contents: [
+                  {
+                    type: 'text',
+                    text: '🎄 CM PARTY 2026',
+                    color: '#580B24',
+                    size: 'xxs',
+                    weight: 'bold'
+                  }
+                ]
+              },
+              {
+                type: 'text',
+                text: 'WELCOME NEW FRIEND',
+                color: '#FDE68A',
+                size: 'xxs',
+                weight: 'bold',
+                align: 'end'
+              }
+            ]
           },
           {
             type: 'text',
-            text: 'ยินดีต้อนรับเพื่อนใหม่!',
+            text: 'ยินดีต้อนรับสู่ปาร์ตี้คริสต์มาส!',
             color: '#FFFFFF',
             weight: 'bold',
-            size: 'xl',
+            size: 'lg',
             align: 'center',
-            margin: 'sm'
+            margin: 'md',
+            wrap: true
           }
         ]
       },
       body: {
         type: 'box',
         layout: 'vertical',
+        backgroundColor: '#FFFBF7',
         spacing: 'md',
-        paddingAll: '24px',
+        paddingAll: '20px',
         contents: [
           {
             type: 'box',
@@ -4481,11 +4515,11 @@ function createWelcomeFlexMessage(profile) {
               {
                 type: 'box',
                 layout: 'vertical',
-                width: '100px',
-                height: '100px',
-                cornerRadius: '50px',
+                width: '88px',
+                height: '88px',
+                cornerRadius: '44px',
                 borderWidth: '3px',
-                borderColor: '#06C755',
+                borderColor: '#F5B942',
                 contents: [
                   {
                     type: 'image',
@@ -4500,8 +4534,8 @@ function createWelcomeFlexMessage(profile) {
                 type: 'text',
                 text: displayName,
                 weight: 'bold',
-                size: 'xl',
-                color: '#111111',
+                size: 'lg',
+                color: '#881337',
                 margin: 'md',
                 align: 'center',
                 wrap: true
@@ -4509,8 +4543,8 @@ function createWelcomeFlexMessage(profile) {
               {
                 type: 'text',
                 text: statusMessage,
-                size: 'sm',
-                color: '#666666',
+                size: 'xs',
+                color: '#64748B',
                 margin: 'xs',
                 align: 'center',
                 wrap: true
@@ -4518,62 +4552,43 @@ function createWelcomeFlexMessage(profile) {
             ]
           },
           {
-            type: 'separator',
-            margin: 'lg'
-          },
-          {
             type: 'box',
             layout: 'vertical',
-            margin: 'lg',
+            backgroundColor: '#FFFFFF',
+            borderColor: '#FECDD3',
+            borderWidth: '1px',
+            cornerRadius: '14px',
+            paddingAll: '14px',
             spacing: 'sm',
-            backgroundColor: '#F7F9FA',
-            cornerRadius: '8px',
-            paddingAll: '12px',
             contents: [
               {
-                type: 'box',
-                layout: 'baseline',
-                spacing: 'sm',
-                contents: [
-                  {
-                    type: 'text',
-                    text: 'User ID:',
-                    color: '#888888',
-                    size: 'xs',
-                    flex: 2
-                  },
-                  {
-                    type: 'text',
-                    text: userId,
-                    color: '#333333',
-                    size: 'xs',
-                    flex: 5,
-                    wrap: true
-                  }
-                ]
+                type: 'text',
+                text: '🎁 กิจกรรมสนุกภายในงานเลี้ยง:',
+                color: '#9F1239',
+                weight: 'bold',
+                size: 'xs'
               },
               {
-                type: 'box',
-                layout: 'baseline',
-                spacing: 'sm',
-                contents: [
-                  {
-                    type: 'text',
-                    text: 'วิธีใช้งาน:',
-                    color: '#888888',
-                    size: 'xs',
-                    flex: 2
-                  },
-                  {
-                    type: 'text',
-                    text: 'กดปุ่ม "ลงทะเบียนร่วมงาน" ด้านล่าง, ส่งรูปภาพมาที่แชทนี้เพื่ออัปโหลดขึ้น Drive หรือพิมพ์ "ตรวจสอบรางวัล" เพื่อเช็คผลรางวัล!',
-                    color: '#06C755',
-                    weight: 'bold',
-                    size: 'xs',
-                    flex: 5,
-                    wrap: true
-                  }
-                ]
+                type: 'text',
+                text: '1) กด "ลงทะเบียนเข้างาน" เพื่อรับ VIP Ticket & สิทธิ์จับรางวัล',
+                color: '#334155',
+                size: 'xs',
+                wrap: true
+              },
+              {
+                type: 'text',
+                text: '2) ส่งรูปถ่ายสวยๆ เข้าแชทนี้เพื่อขึ้นจอสไลด์โชว์',
+                color: '#334155',
+                size: 'xs',
+                wrap: true
+              },
+              {
+                type: 'text',
+                text: '3) พิมพ์ "อวยพร", "เสี่ยงเซียมซี" หรือ "ตรวจสอบรางวัล" ได้ทันที!',
+                color: '#14532D',
+                weight: 'bold',
+                size: 'xs',
+                wrap: true
               }
             ]
           }
@@ -4582,19 +4597,30 @@ function createWelcomeFlexMessage(profile) {
       footer: {
         type: 'box',
         layout: 'vertical',
+        backgroundColor: '#14532D',
         paddingAll: '16px',
-        paddingTop: '0px',
         spacing: 'sm',
         contents: [
           {
             type: 'button',
             style: 'primary',
-            color: '#06C755',
+            color: '#F5B942',
             height: 'md',
             action: {
               type: 'uri',
-              label: 'ลงทะเบียนร่วมงาน',
+              label: '🎟️ ลงทะเบียนเข้างาน (VIP Pass)',
               uri: LIFF_REGISTER_URL
+            }
+          },
+          {
+            type: 'button',
+            style: 'secondary',
+            color: '#ECFDF5',
+            height: 'sm',
+            action: {
+              type: 'uri',
+              label: '📸 ดูแกลเลอรีภาพกิจกรรม',
+              uri: GALLERY_WEB_URL
             }
           }
         ]
@@ -4627,12 +4653,12 @@ function createGalleryFlexMessage() {
       header: {
         type: 'box',
         layout: 'vertical',
-        backgroundColor: '#7F1D1D',
+        backgroundColor: '#9F1239',
         background: {
           type: 'linearGradient',
           angle: '135deg',
-          startColor: '#991B1B',
-          endColor: '#450A0A'
+          startColor: '#9F1239',
+          endColor: '#580B24'
         },
         paddingAll: '20px',
         contents: [
@@ -4644,7 +4670,7 @@ function createGalleryFlexMessage() {
               {
                 type: 'box',
                 layout: 'vertical',
-                backgroundColor: '#FBBF24',
+                backgroundColor: '#F5B942',
                 cornerRadius: '20px',
                 paddingStart: '10px',
                 paddingEnd: '10px',
@@ -4655,7 +4681,7 @@ function createGalleryFlexMessage() {
                   {
                     type: 'text',
                     text: 'CM GALLERY 2026',
-                    color: '#78350F',
+                    color: '#580B24',
                     size: 'xxs',
                     weight: 'bold'
                   }

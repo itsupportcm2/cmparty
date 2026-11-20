@@ -11,10 +11,10 @@
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
-  <!-- Google Fonts: Prompt -->
+  <!-- Google Fonts: Mali (Cute Display) + Fredoka + Prompt -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Mali:wght@500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- LINE LIFF SDK v2 (Latest Edge) -->
   <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
@@ -31,11 +31,74 @@
       background:
         radial-gradient(circle at 12% 10%, rgba(254, 205, 211, 0.55) 0%, transparent 40%),
         radial-gradient(circle at 88% 12%, rgba(167, 243, 208, 0.45) 0%, transparent 42%),
-        radial-gradient(circle at 50% 90%, rgba(253, 230, 138, 0.35) 0%, transparent 45%),
-        linear-gradient(160deg, #fff5f7 0%, #fffdf9 48%, #f0fdf4 100%);
+        radial-gradient(circle at 50% 90%, rgba(253, 230, 138, 0.38) 0%, transparent 45%),
+        linear-gradient(160deg, #fff6f4 0%, #fffdf7 48%, #f1fcf6 100%);
       background-attachment: fixed;
       min-height: 100vh;
       overflow-x: hidden;
+    }
+
+    .font-cute {
+      font-family: 'Mali', 'Prompt', sans-serif;
+    }
+
+    .font-display {
+      font-family: 'Fredoka', 'Mali', 'Prompt', sans-serif;
+    }
+
+    .btn-candy-3d {
+      border-bottom-width: 4px !important;
+      transition: transform 0.14s ease, box-shadow 0.2s ease, filter 0.2s ease !important;
+    }
+    .btn-candy-3d:not(:disabled):active {
+      transform: translateY(2px);
+      border-bottom-width: 2px !important;
+    }
+    .btn-candy-3d:disabled {
+      border-bottom-width: 2px !important;
+      transform: none;
+    }
+
+    .snowglobe-shell {
+      position: relative;
+      border-radius: 9999px;
+      background: radial-gradient(circle at 30% 25%, rgba(255, 255, 255, 0.96) 0%, rgba(255, 241, 242, 0.85) 55%, rgba(254, 215, 170, 0.45) 100%);
+      border: 3px solid rgba(245, 185, 66, 0.72);
+      box-shadow: 0 12px 30px -8px rgba(214, 51, 84, 0.28), inset 0 4px 12px rgba(255, 255, 255, 0.95);
+      animation: cuteBounceGlow 3.2s ease-in-out infinite;
+    }
+    .snowglobe-shell::before {
+      content: '';
+      position: absolute;
+      top: 10%;
+      left: 16%;
+      width: 34%;
+      height: 18%;
+      border-radius: 9999px;
+      background: rgba(255, 255, 255, 0.78);
+      transform: rotate(-28deg);
+      pointer-events: none;
+      z-index: 20;
+    }
+
+    @keyframes ticketFoilShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+    .ticket-foil-ribbon {
+      background: linear-gradient(110deg, #b91c3b 0%, #e11d48 28%, #f5b942 52%, #197a56 76%, #b91c3b 100%);
+      background-size: 220% 220%;
+      animation: ticketFoilShift 7s ease infinite;
+    }
+
+    @keyframes ornamentSway {
+      0%, 100% { transform: rotate(-4deg); }
+      50% { transform: rotate(4deg); }
+    }
+    .ornament-sway {
+      transform-origin: top center;
+      animation: ornamentSway 3.4s ease-in-out infinite;
     }
 
     /* เอฟเฟกต์หิมะตก (Cute Pastel Snowflakes บนพื้นหลังสว่าง) */
@@ -189,54 +252,89 @@
   <!-- Decorative Cute Candy Cane Lights Top Bar -->
   <div class="fixed top-0 left-0 right-0 h-2 cute-candy-border z-20 shadow-sm"></div>
 
+  <!-- Cozy Snowy Pine Village Bottom Horizon Silhouette -->
+  <div class="fixed bottom-0 left-0 right-0 z-0 pointer-events-none select-none opacity-85" aria-hidden="true">
+    <svg viewBox="0 0 1440 160" preserveAspectRatio="none" class="w-full h-24 sm:h-32">
+      <path d="M0,120 C220,70 420,135 720,95 C1020,55 1240,120 1440,88 L1440,160 L0,160 Z" fill="#fde8ec" opacity="0.65"/>
+      <path d="M0,135 C280,95 540,145 860,112 C1120,85 1300,135 1440,115 L1440,160 L0,160 Z" fill="#ecfdf5" opacity="0.85"/>
+      <polygon points="85,132 103,82 121,132" fill="#86efac" opacity="0.55"/>
+      <polygon points="118,136 132,96 146,136" fill="#6ee7b7" opacity="0.65"/>
+      <polygon points="1290,132 1308,80 1326,132" fill="#86efac" opacity="0.55"/>
+      <polygon points="1325,136 1342,90 1359,136" fill="#fda4af" opacity="0.45"/>
+    </svg>
+  </div>
+
   <!-- Main Card -->
   <main class="relative z-10 w-full max-w-md glass-card rounded-[2rem] overflow-hidden transition-all duration-300">
 
     <!-- Cute Pastel Christmas Banner Header -->
-    <div class="relative bg-gradient-to-br from-rose-100 via-[#fff7f9] to-emerald-100 pt-5 pb-14 px-6 text-center text-slate-700 border-b-2 border-dashed border-rose-200 overflow-hidden">
+    <div class="relative bg-gradient-to-br from-rose-100 via-[#fff9f5] to-emerald-100 pt-10 pb-14 px-6 text-center text-slate-700 border-b-2 border-dashed border-rose-200 overflow-hidden">
       <div class="absolute -top-6 -left-6 w-28 h-28 bg-rose-300/25 rounded-full blur-xl pointer-events-none"></div>
       <div class="absolute -bottom-8 -right-8 w-32 h-32 bg-emerald-300/25 rounded-full blur-xl pointer-events-none"></div>
-      <span class="absolute top-4 left-4 text-lg cute-wiggle select-none pointer-events-none">🎄</span>
-      <span class="absolute top-4 right-4 text-lg cute-wiggle select-none pointer-events-none" style="animation-delay: 0.45s;">⛄</span>
 
-      <!-- Fairy Lights Row -->
-      <div class="flex items-center justify-center gap-2.5 mb-2.5 relative z-10" aria-hidden="true">
-        <span class="cute-fairy-dot w-2 h-2 rounded-full bg-rose-400 shadow-[0_0_6px_#fb7185] inline-block" style="animation-delay: 0s;"></span>
-        <span class="h-[1.5px] w-3 bg-rose-200 rounded-full"></span>
-        <span class="cute-fairy-dot w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399] inline-block" style="animation-delay: 0.3s;"></span>
-        <span class="h-[1.5px] w-3 bg-rose-200 rounded-full"></span>
-        <span class="cute-fairy-dot w-2 h-2 rounded-full bg-amber-400 shadow-[0_0_6px_#fbbf24] inline-block" style="animation-delay: 0.6s;"></span>
-        <span class="h-[1.5px] w-3 bg-rose-200 rounded-full"></span>
-        <span class="cute-fairy-dot w-2 h-2 rounded-full bg-sky-400 shadow-[0_0_6px_#38bdf8] inline-block" style="animation-delay: 0.9s;"></span>
+      <!-- Curved Christmas Garland & Hanging Ornaments SVG -->
+      <svg viewBox="0 0 420 58" class="absolute top-0 left-0 right-0 w-full h-14 pointer-events-none z-10" aria-hidden="true">
+        <path d="M-10,6 Q105,36 210,12 Q315,36 430,6" fill="none" stroke="#197a56" stroke-width="5.5" stroke-linecap="round"/>
+        <path d="M-10,6 Q105,36 210,12 Q315,36 430,6" fill="none" stroke="#34d399" stroke-width="2" stroke-dasharray="6 8" stroke-linecap="round"/>
+        <circle cx="48" cy="20" r="4" fill="#fbbf24"/>
+        <circle cx="105" cy="23" r="4.5" fill="#fb7185"/>
+        <circle cx="158" cy="18" r="3.8" fill="#38bdf8"/>
+        <circle cx="262" cy="18" r="3.8" fill="#fbbf24"/>
+        <circle cx="315" cy="23" r="4.5" fill="#34d399"/>
+        <circle cx="372" cy="20" r="4" fill="#fb7185"/>
+        <!-- Swaying Bauble Left -->
+        <g class="ornament-sway" style="transform-origin: 48px 20px;">
+          <line x1="48" y1="20" x2="48" y2="34" stroke="#d97706" stroke-width="1.5"/>
+          <circle cx="48" cy="42" r="9" fill="#e11d48" stroke="#fef08a" stroke-width="1.5"/>
+          <circle cx="45" cy="39" r="2.2" fill="#ffffff" opacity="0.65"/>
+        </g>
+        <!-- Swaying Gold Star Right -->
+        <g class="ornament-sway" style="transform-origin: 372px 20px; animation-delay: 0.9s;">
+          <line x1="372" y1="20" x2="372" y2="33" stroke="#d97706" stroke-width="1.5"/>
+          <polygon points="372,31 375,39 383,39 376.5,44 379,52 372,47 365,52 367.5,44 361,39 369,39" fill="#fbbf24" stroke="#ffffff" stroke-width="1"/>
+        </g>
+      </svg>
+
+      <!-- Festive Badge + Peeking Elf Mascot -->
+      <div class="relative z-10 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/95 backdrop-blur-sm border-2 border-amber-300/80 text-rose-700 text-[11px] font-bold mb-3 shadow-xs">
+        <img
+          src="assets/sender-elf.png"
+          alt="Elf"
+          class="w-6 h-6 rounded-full object-cover border border-rose-200 -ml-1 bg-rose-50"
+          onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='https://cmparty.vercel.app/assets/sender-elf.png';}else{this.outerHTML='<span>🎅🏻</span>';}"
+        />
+        <span class="font-display tracking-wide">MERRY CHRISTMAS &amp; HAPPY NEW YEAR</span>
+        <span class="text-amber-500">✦</span>
       </div>
 
-      <!-- Festive Badge -->
-      <div class="relative z-10 inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-white/90 backdrop-blur-sm border-2 border-rose-200 text-rose-600 text-[11px] font-bold mb-2.5 shadow-xs">
-        <span>🎅🏻</span>
-        <span>MERRY CHRISTMAS & HAPPY NEW YEAR</span>
-        <span>✨</span>
-      </div>
-
-      <!-- Company Logo / Event Icon -->
+      <!-- Snowglobe Company Logo Frame (Tap for Bell Delight) -->
       <div class="relative z-10 flex justify-center my-1.5">
-        <div class="cute-logo-frame p-1.5 rounded-[1.5rem] shadow-lg inline-flex items-center justify-center transition-transform hover:scale-105 duration-200">
-          <div class="bg-white p-1.5 rounded-2xl border border-rose-100">
+        <button
+          type="button"
+          onclick="ringCountdownBell(event)"
+          class="snowglobe-shell p-2.5 inline-flex items-center justify-center transition-transform hover:scale-105 active:scale-95 duration-200 cursor-pointer"
+          title="แตะลูกแก้วหิมะเพื่อรับพลังความสุข 🎄"
+        >
+          <div class="bg-white p-2 rounded-full border-2 border-rose-100 shadow-inner">
             <img
               src="assets/party-logo.jpg"
               alt="CM Party Icon"
-              class="w-20 h-20 md:w-24 md:h-24 object-contain rounded-xl mx-auto"
+              class="w-20 h-20 md:w-24 md:h-24 object-contain rounded-full mx-auto"
               loading="eager"
               onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='https://cmparty.vercel.app/assets/party-logo.jpg';}else{this.outerHTML='<div class=\'w-20 h-20 flex flex-col items-center justify-center font-bold text-rose-600 text-xs gap-1\'><span class=\'text-2xl\'>🎄</span><span>CM PARTY</span></div>';}"
             />
           </div>
-        </div>
+          <span class="absolute -bottom-1.5 px-3 py-0.5 rounded-full bg-gradient-to-r from-rose-600 to-amber-500 text-white text-[9px] font-display font-bold tracking-widest border-2 border-white shadow">
+            CM PARTY 2026
+          </span>
+        </button>
       </div>
 
-      <h1 class="relative z-10 text-2xl font-extrabold tracking-tight cute-title-gradient mt-2">
+      <h1 class="relative z-10 font-cute text-2xl sm:text-[26px] font-bold tracking-tight cute-title-gradient mt-3">
         ระบบลงทะเบียนเข้างานเลี้ยง 🎄
       </h1>
-      <p class="relative z-10 text-xs text-rose-700/80 font-medium mt-1">
-        กรอกรหัสพนักงานเพื่อตรวจสอบและยืนยันการเข้างาน ✨
+      <p class="relative z-10 text-xs text-rose-700/85 font-medium mt-1">
+        กรอกรหัสพนักงานเพื่อรับบัตรเข้างาน VIP &amp; สิทธิ์ลุ้นรางวัล ✨
       </p>
     </div>
 
@@ -393,7 +491,7 @@
         id="btnSubmitRegister"
         onclick="handleSubmitRegistration()"
         disabled
-        class="w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-rose-500 via-red-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 disabled:cursor-not-allowed text-white font-bold text-base border-2 border-white/80 shadow-lg shadow-rose-500/25 hover:shadow-xl active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
+        class="btn-candy-3d w-full py-3.5 px-6 rounded-2xl bg-gradient-to-r from-rose-500 via-red-500 to-pink-500 hover:from-rose-600 hover:to-pink-600 disabled:from-slate-300 disabled:via-slate-300 disabled:to-slate-300 disabled:border-slate-400 disabled:cursor-not-allowed text-white font-bold text-base border-2 border-rose-700/70 shadow-lg shadow-rose-500/25 hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer"
       >
         <i class="fa-solid fa-gift"></i>
         <span>ยืนยันการลงทะเบียนเข้างาน</span>
@@ -438,7 +536,7 @@
           type="button"
           id="btnAddFriendBtn"
           onclick="triggerRequestFriendship()"
-          class="w-full py-3.5 px-6 rounded-2xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-base border-2 border-white shadow-lg shadow-emerald-500/20 hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2 cursor-pointer"
+          class="btn-candy-3d w-full py-3.5 px-6 rounded-2xl bg-[#06C755] hover:bg-[#05b34c] text-white font-bold text-base border-2 border-emerald-700 shadow-lg shadow-emerald-500/20 hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer"
         >
           <i class="fa-brands fa-line text-2xl"></i>
           <span>เพิ่มเพื่อน LINE (cmparty2026)</span>
@@ -458,12 +556,20 @@
 
     <!-- Already Registered View (Christmas VIP E-Ticket - แสดงเมื่อ UID นี้เคยลงทะเบียนไปแล้ว) -->
     <div id="alreadyRegisteredContainer" class="hidden p-5 sm:p-6 text-center space-y-4">
-      <div class="relative rounded-3xl overflow-hidden bg-gradient-to-b from-rose-50/90 via-white to-emerald-50/75 border-2 border-rose-200/90 shadow-lg">
-        <!-- Ticket Top Festive Ribbon -->
-        <div class="bg-gradient-to-r from-rose-500 via-pink-500 to-amber-400 px-4 py-2.5 text-white flex items-center justify-between text-[11px] font-extrabold tracking-wide shadow-xs">
-          <span>🎄 CM PARTY 2026</span>
-          <span class="px-2.5 py-0.5 rounded-full bg-white/25 border border-white/50 text-[10px]">VIP E-TICKET ✨</span>
+      <div class="relative rounded-3xl overflow-hidden bg-gradient-to-b from-[#fff7f5] via-white to-emerald-50/75 border-2 border-amber-300/80 shadow-xl">
+        <!-- Ticket Top Holographic Foil Ribbon -->
+        <div class="ticket-foil-ribbon px-4 py-2.5 text-white flex items-center justify-between text-[11px] font-extrabold tracking-wide shadow-xs">
+          <span class="font-display">🎄 CM PARTY 2026</span>
+          <span class="px-2.5 py-0.5 rounded-full bg-white/25 border border-white/60 text-[10px] font-display">VIP E-TICKET ✨</span>
         </div>
+
+        <!-- Wax Seal Verified Stamp SVG (Top Right Corner) -->
+        <svg viewBox="0 0 80 80" class="w-16 h-16 absolute top-11 right-3 pointer-events-none select-none drop-shadow-md rotate-12 opacity-90 z-10" aria-hidden="true">
+          <path d="M40 6 L47 13 L56 10 L59 19 L68 21 L66 30 L74 36 L68 44 L72 53 L63 57 L62 66 L52 66 L47 74 L40 68 L33 74 L28 66 L18 66 L17 57 L8 53 L12 44 L6 36 L14 30 L12 21 L21 19 L24 10 L33 13 Z" fill="#b91c3b" stroke="#f5b942" stroke-width="2"/>
+          <circle cx="40" cy="40" r="22" fill="#991b35" stroke="#fde68a" stroke-width="1.5" stroke-dasharray="3 2"/>
+          <text x="40" y="37" text-anchor="middle" fill="#fef08a" font-size="8.5" font-weight="bold" font-family="sans-serif">VERIFIED</text>
+          <text x="40" y="49" text-anchor="middle" fill="#ffffff" font-size="10" font-weight="900" font-family="sans-serif">2026</text>
+        </svg>
 
         <!-- Profile & Check-In Badge -->
         <div class="px-5 pt-5 pb-4 space-y-2.5">
@@ -473,7 +579,7 @@
               src="https://cdn-icons-png.flaticon.com/512/847/847969.png"
               alt="LINE Profile"
               referrerpolicy="no-referrer"
-              class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md bg-rose-100"
+              class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md bg-rose-100 ring-2 ring-amber-300"
             />
             <span class="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-emerald-500 text-white border-2 border-white flex items-center justify-center shadow-sm">
               <i class="fa-solid fa-check text-xs"></i>
@@ -484,7 +590,7 @@
             <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 text-[11px] font-extrabold">
               <i class="fa-solid fa-circle-check"></i> ลงทะเบียนเข้าร่วมงานสำเร็จแล้ว
             </span>
-            <h3 id="regInfoLineName" class="text-lg font-extrabold text-slate-800 truncate px-2">
+            <h3 id="regInfoLineName" class="font-cute text-lg font-bold text-slate-800 truncate px-2">
               ผู้ร่วมงาน CM Party 2026
             </h3>
             <p class="text-[11px] text-slate-500">
@@ -495,14 +601,14 @@
 
         <!-- Ticket Perforation Divider -->
         <div class="relative flex items-center px-3">
-          <span class="w-4 h-4 -ml-5 rounded-full bg-white border-r-2 border-rose-200 shrink-0"></span>
-          <div class="w-full border-t-2 border-dashed border-rose-200/90"></div>
-          <span class="w-4 h-4 -mr-5 rounded-full bg-white border-l-2 border-rose-200 shrink-0"></span>
+          <span class="w-4 h-4 -ml-5 rounded-full bg-white border-r-2 border-amber-300 shrink-0"></span>
+          <div class="w-full border-t-2 border-dashed border-amber-300/90"></div>
+          <span class="w-4 h-4 -mr-5 rounded-full bg-white border-l-2 border-amber-300 shrink-0"></span>
         </div>
 
         <!-- Ticket Details -->
         <div class="px-5 py-4 space-y-3">
-          <div id="registeredInfoCard" class="hidden bg-white/90 border border-emerald-200/90 rounded-2xl p-3.5 text-left text-xs space-y-2 text-slate-700 shadow-2xs">
+          <div id="registeredInfoCard" class="hidden bg-white/95 border border-emerald-200/90 rounded-2xl p-3.5 text-left text-xs space-y-2 text-slate-700 shadow-2xs">
             <p class="flex justify-between items-center gap-2">
               <span class="text-slate-500">รหัสพนักงาน:</span>
               <span id="regInfoEmpId" class="font-extrabold text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200">-</span>
@@ -528,13 +634,37 @@
             </p>
             <p>พิมพ์ <b>"อวยพร"</b> เพื่อส่งคำอวยพรขึ้นหัวตุ๊กตาบนจอใหญ่ หรือพิมพ์ <b>"เสี่ยงเซียมซี"</b> ลุ้นคำทำนายปีใหม่ได้เลย!</p>
           </div>
+
+          <!-- Decorative VIP Barcode Stub -->
+          <div class="pt-1 flex flex-col items-center gap-1 opacity-75" aria-hidden="true">
+            <svg viewBox="0 0 220 22" class="w-44 h-5">
+              <rect x="4" y="0" width="3" height="22" fill="#881337"/><rect x="10" y="0" width="1.5" height="22" fill="#881337"/>
+              <rect x="14" y="0" width="4" height="22" fill="#881337"/><rect x="21" y="0" width="2" height="22" fill="#881337"/>
+              <rect x="27" y="0" width="5" height="22" fill="#197a56"/><rect x="35" y="0" width="2" height="22" fill="#881337"/>
+              <rect x="40" y="0" width="3.5" height="22" fill="#881337"/><rect x="47" y="0" width="1.5" height="22" fill="#881337"/>
+              <rect x="52" y="0" width="4.5" height="22" fill="#881337"/><rect x="60" y="0" width="2" height="22" fill="#881337"/>
+              <rect x="65" y="0" width="3" height="22" fill="#d97706"/><rect x="72" y="0" width="5" height="22" fill="#881337"/>
+              <rect x="81" y="0" width="2" height="22" fill="#881337"/><rect x="86" y="0" width="3.5" height="22" fill="#881337"/>
+              <rect x="93" y="0" width="1.5" height="22" fill="#881337"/><rect x="98" y="0" width="4.5" height="22" fill="#197a56"/>
+              <rect x="106" y="0" width="2" height="22" fill="#881337"/><rect x="112" y="0" width="4" height="22" fill="#881337"/>
+              <rect x="119" y="0" width="2" height="22" fill="#881337"/><rect x="125" y="0" width="5" height="22" fill="#881337"/>
+              <rect x="134" y="0" width="2" height="22" fill="#d97706"/><rect x="139" y="0" width="3" height="22" fill="#881337"/>
+              <rect x="145" y="0" width="4.5" height="22" fill="#881337"/><rect x="153" y="0" width="1.5" height="22" fill="#881337"/>
+              <rect x="158" y="0" width="3.5" height="22" fill="#881337"/><rect x="165" y="0" width="2" height="22" fill="#197a56"/>
+              <rect x="171" y="0" width="5" height="22" fill="#881337"/><rect x="179" y="0" width="2" height="22" fill="#881337"/>
+              <rect x="184" y="0" width="4" height="22" fill="#881337"/><rect x="191" y="0" width="2" height="22" fill="#881337"/>
+              <rect x="196" y="0" width="4.5" height="22" fill="#881337"/><rect x="204" y="0" width="2" height="22" fill="#881337"/>
+              <rect x="209" y="0" width="4" height="22" fill="#881337"/>
+            </svg>
+            <span class="font-display text-[9px] tracking-[0.22em] text-rose-800/70 font-bold">CM FROZENFOOD • VIP PASS 2026</span>
+          </div>
         </div>
       </div>
 
       <div class="space-y-2.5">
         <a
           href="gallery.html"
-          class="w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold text-sm border-2 border-white shadow-lg shadow-rose-500/20 hover:shadow-xl active:scale-95 transition-all flex items-center justify-center gap-2"
+          class="btn-candy-3d w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold text-sm border-2 border-rose-700/70 shadow-lg shadow-rose-500/20 hover:shadow-xl flex items-center justify-center gap-2"
         >
           <i class="fa-solid fa-camera-retro text-base"></i>
           <span>📸 ดูภาพบรรยากาศในงานเลี้ยง (Photo Gallery)</span>
