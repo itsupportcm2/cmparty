@@ -1525,6 +1525,7 @@
       }
 
       if (regData && regData.empId) {
+        window.lastRegisteredEmpData = regData;
         document.getElementById('registeredInfoCard').classList.remove('hidden');
         document.getElementById('regInfoEmpId').innerText = regData.empId || '-';
         document.getElementById('regInfoEmpName').innerText = regData.empName || '-';
@@ -1672,6 +1673,17 @@
         showCountdownView(cfg.openingDateTime || new Date(Date.now() + 3600000).toISOString(), cfg.closingDateTime || '');
       } else if (mode === 'closed') {
         showSystemClosedView(cfg.closingDateTime || '');
+      } else if (mode === 'ticket') {
+        if (countdownTimerInterval) {
+          clearInterval(countdownTimerInterval);
+          countdownTimerInterval = null;
+        }
+        showAlreadyRegisteredView(window.lastRegisteredEmpData || {
+          empId: 'VIP-2026',
+          empName: (userProfile && userProfile.displayName) || 'ผู้ร่วมงาน CM Party 2026',
+          department: 'ตัวอย่างบัตรเข้างาน (VIP Preview)',
+          branch: 'CM Frozenfood'
+        });
       } else if (mode === 'form') {
         if (countdownTimerInterval) {
           clearInterval(countdownTimerInterval);
@@ -1755,14 +1767,16 @@
       const cols = gvizObj.table.cols || [];
       const rows = gvizObj.table.rows || [];
       const colFLabel = (cols[5] && cols[5].label) ? String(cols[5].label).toUpperCase() : '';
+      const colILabel = (cols[8] && cols[8].label) ? String(cols[8].label) : '';
       // แผ่นงานแรก (การตอบแบบฟอร์ม 1) คอลัมน์ F คือ "ท่านสนใจร่วมงานหรือไม่?" ต้องไม่นำมาคิดเป็นแผ่นงาน Register เด็ดขาด
       if (colFLabel.indexOf('สนใจร่วมงาน') !== -1 || colFLabel.indexOf('ร่วมงานหรือไม่') !== -1) {
         return false;
       }
-      if (colFLabel.indexOf('UID') !== -1 || colFLabel.indexOf('LINE') !== -1) return true;
-      if (rows.length > 0 && rows[0].c && rows[0].c[5]) {
-        const cellF = String(rows[0].c[5].v ?? rows[0].c[5].f ?? '').trim().toUpperCase();
-        if (cellF.indexOf('UID') !== -1 || cellF.indexOf('U') === 0) return true;
+      if (colFLabel.indexOf('UID') !== -1 || colFLabel.indexOf('LINE') !== -1 || colILabel.indexOf('สถานะ') !== -1) return true;
+      if (rows.length > 0 && rows[0].c) {
+        const cellF = rows[0].c[5] ? String(rows[0].c[5].v ?? rows[0].c[5].f ?? '').trim().toUpperCase() : '';
+        const cellI = rows[0].c[8] ? String(rows[0].c[8].v ?? rows[0].c[8].f ?? '').trim() : '';
+        if (cellF.indexOf('UID') !== -1 || cellF.indexOf('U') === 0 || cellI.indexOf('ลงทะเบียน') !== -1 || cellI === 'สถานะ') return true;
       }
       return false;
     }
@@ -2061,7 +2075,7 @@
               <i class="fa-solid fa-eye text-amber-600"></i>
               <span>สลับดูหน้าจอตัวอย่าง (เฉพาะแอดมิน):</span>
             </p>
-            <div class="grid grid-cols-3 gap-1.5">
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
               <button type="button" onclick="adminSwitchPreview('countdown')" class="py-2 px-2 rounded-xl bg-amber-100 hover:bg-amber-200 text-amber-900 font-bold text-[10px] border border-amber-300 transition cursor-pointer flex items-center justify-center gap-1">
                 <i class="fa-solid fa-tree text-emerald-700"></i>
                 <span>หน้า Countdown</span>
@@ -2069,6 +2083,10 @@
               <button type="button" onclick="adminSwitchPreview('form')" class="py-2 px-2 rounded-xl bg-emerald-100 hover:bg-emerald-200 text-emerald-900 font-bold text-[10px] border border-emerald-300 transition cursor-pointer flex items-center justify-center gap-1">
                 <i class="fa-solid fa-pen-to-square"></i>
                 <span>หน้าฟอร์ม</span>
+              </button>
+              <button type="button" onclick="adminSwitchPreview('ticket')" class="py-2 px-2 rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-900 font-bold text-[10px] border border-purple-300 transition cursor-pointer flex items-center justify-center gap-1">
+                <i class="fa-solid fa-ticket text-purple-700"></i>
+                <span>หน้าบัตร VIP</span>
               </button>
               <button type="button" onclick="adminSwitchPreview('closed')" class="py-2 px-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-900 font-bold text-[10px] border border-rose-300 transition cursor-pointer flex items-center justify-center gap-1">
                 <i class="fa-solid fa-lock"></i>

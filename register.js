@@ -1491,7 +1491,7 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
   if (params.action === 'inspectRichMenu') {
-    return ContentService.createTextOutput(JSON.stringify(inspectLineRichMenus()))
+    return ContentService.createTextOutput(JSON.stringify(inspectLineRichMenus(params)))
       .setMimeType(ContentService.MimeType.JSON);
   }
 
@@ -3326,9 +3326,17 @@ function handleTextMessage(event) {
     }
   }
 
-  // ปุ่มเมนู / ทักทาย (ให้ทำงานได้ทันทีแม้ค้างอยู่ในโหมดรอคำตอบ)
-  const helpKeywords = ['เมนู', 'ช่วยเหลือ', 'วิธีใช้', 'แนะนำ', 'สวัสดี', 'ทัก', 'ลงทะเบียน', 'ลงทะเบียนร่วมงาน', 'help', 'menu', 'hi', 'hello', 'start', '?', 'คำสั่ง'];
-  const isHelpPrompt = helpKeywords.some(kw => lowerCommand === kw || lowerCommand.indexOf(kw) === 0);
+  // ปุ่มเมนู / ทักทาย (หากกำลังรอพิมพ์คำอวยพรอยู่ จะไม่ให้คำทักทายเช่น "สวัสดีปีใหม่..." ไปแย่งเปิดเมนู)
+  const isInlineRewardCmd = /^ตรวจสอบ\s*รางวัล\s+/i.test(rawText) || (rawText.indexOf('ตรวจสอบรางวัล') === 0 && normalizedCommand !== 'ตรวจสอบรางวัล');
+  const strictHelpKeywords = ['เมนู', 'ช่วยเหลือ', 'วิธีใช้', 'ลงทะเบียน', 'ลงทะเบียนร่วมงาน', 'help', 'menu', 'start', '?', 'คำสั่ง'];
+  const greetingHelpKeywords = ['แนะนำ', 'สวัสดี', 'ทัก', 'hi', 'hello'];
+  const isHelpPrompt = !isInlineRewardCmd && (
+    strictHelpKeywords.some(kw => lowerCommand === kw) ||
+    (!isWaitingForWish && !isWaitingForEmpId && (
+      strictHelpKeywords.some(kw => lowerCommand.indexOf(kw) === 0) ||
+      greetingHelpKeywords.some(kw => lowerCommand === kw || lowerCommand.indexOf(kw) === 0)
+    ))
+  );
 
   if (isHelpPrompt) {
     clearAllWaitStates();
@@ -3381,8 +3389,8 @@ function handleTextMessage(event) {
     return;
   }
 
-  // 5. หากอยู่ในสถานะรอพิมพ์คำอวยพร (หลังจากกด/พิมพ์ "อวยพร")
-  if (isWaitingForWish) {
+  // 5. หากอยู่ในสถานะรอพิมพ์คำอวยพร (หลังจากกด/พิมพ์ "อวยพร" และไม่ใช่คำสั่ง "ตรวจสอบรางวัล <รหัส>")
+  if (isWaitingForWish && !isInlineRewardCmd) {
     clearWishWaitState();
 
     if (normalizedCommand === 'ยกเลิกอวยพร' || normalizedCommand === 'ยกเลิก') {
@@ -4132,7 +4140,7 @@ function buildPartyMenuFlexMessage(quickReply) {
         type: 'box',
         layout: 'vertical',
         flex: 1,
-        spacing: 'xxs',
+        spacing: 'xs',
         contents: [
           {
             type: 'text',
@@ -5450,10 +5458,39 @@ function deleteRichMenusMatching(token, shouldDeleteFn) {
   return { deletedCount: deletedIds.length, deletedIds: deletedIds };
 }
 
+const CURRENT_GAS_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbx6yDgQvf3RvCVu8nHRN3yQM6IM5Be2JZpESNT6nJ3XddDsOlrMj_S7nIPCRUqmZBjFYw/exec';
+
+function getLineWebhookEndpointInfo(token) {
+  try {
+    const res = callLineMessagingApi('https://api.line.me/v2/bot/channel/webhook/endpoint', 'get', token);
+    if (res.code >= 200 && res.code < 300) {
+      return JSON.parse(res.body || '{}');
+    }
+    return { error: `HTTP ${res.code}: ${res.body}` };
+  } catch (err) {
+    return { error: err.message };
+  }
+}
+
+function validateLineReplyMessageObj(token, msgObj) {
+  try {
+    const res = callLineMessagingApi(
+      'https://api.line.me/v2/bot/message/validate/reply',
+      'post',
+      token,
+      JSON.stringify({ messages: [msgObj] }),
+      'application/json'
+    );
+    return { valid: res.code >= 200 && res.code < 300, code: res.code, body: res.body || 'OK' };
+  } catch (err) {
+    return { valid: false, code: 0, body: err.message };
+  }
+}
+
 /**
  * ตรวจสอบ Rich Menu ปัจจุบันใน LINE Official Account ว่ามาจาก LINE OA Manager หรือ Messaging API
  */
-function inspectLineRichMenus() {
+function inspectLineRichMenus(params) {
   const token = getLineBotAccessToken();
   if (!token) {
     return { status: 'error', message: 'ไม่พบ LINE_BOT_ACCESS_TOKEN ใน Script Properties' };
@@ -5461,6 +5498,20 @@ function inspectLineRichMenus() {
 
   try {
     const props = PropertiesService.getScriptProperties();
+    let webhookInfo = getLineWebhookEndpointInfo(token);
+    let webhookUpdated = false;
+    if (params && String(params.syncWebhook || '') === '1') {
+      const putRes = callLineMessagingApi(
+        'https://api.line.me/v2/bot/channel/webhook/endpoint',
+        'put',
+        token,
+        JSON.stringify({ endpoint: CURRENT_GAS_WEBHOOK_URL }),
+        'application/json'
+      );
+      webhookUpdated = putRes.code >= 200 && putRes.code < 300;
+      webhookInfo = getLineWebhookEndpointInfo(token);
+    }
+
     const defaultRichMenuId = getCurrentDefaultRichMenuId(token);
     const rawMenus = listApiRichMenus(token);
     const apiMenus = rawMenus.map(rm => ({
@@ -5489,8 +5540,19 @@ function inspectLineRichMenus() {
         : `กำลังแสดงเมนูที่สร้างจาก Messaging API เดิม ชื่อ "${activeName}" (ID: ${defaultRichMenuId})`;
     }
 
+    const flexValidation = {
+      fortune: validateLineReplyMessageObj(token, buildNewYearFortuneMessage('')),
+      partyMenu: validateLineReplyMessageObj(token, buildPartyMenuFlexMessage(buildWishSentQuickReply())),
+      gallery: validateLineReplyMessageObj(token, createGalleryFlexMessage()),
+      welcome: validateLineReplyMessageObj(token, createWelcomeFlexMessage({ displayName: 'ทดสอบ', pictureUrl: 'https://cmparty.vercel.app/assets/party-logo.jpg', statusMessage: 'Hello' }))
+    };
+
     return {
       status: 'success',
+      webhookInfo: webhookInfo,
+      webhookMatchesCurrentDeploy: Boolean(webhookInfo && webhookInfo.endpoint === CURRENT_GAS_WEBHOOK_URL),
+      webhookUpdated: webhookUpdated,
+      flexValidation: flexValidation,
       defaultRichMenuId: defaultRichMenuId || null,
       apiMenuCount: apiMenus.length,
       apiMenus: apiMenus,

@@ -1727,7 +1727,7 @@
 
     function updateStageRecentWinnersHistory(state) {
       if (!state || typeof state !== 'object') return;
-      if (state.stats && Number(state.stats.assignedPrizes) === 0 && (!Array.isArray(state.winners) || state.winners.length === 0)) {
+      if (state.clearRecentWinners === true) {
         stageRecentWinnersHistory = [];
         try { sessionStorage.removeItem(STAGE_RECENT_WINNERS_KEY); } catch (e) {}
         return;

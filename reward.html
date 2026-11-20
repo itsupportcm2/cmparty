@@ -3922,6 +3922,23 @@
       }
     }
 
+    let recentStageWinnersMemory = [];
+
+    function rememberRecentStageWinners(items) {
+      if (!Array.isArray(items) || items.length === 0) return;
+      const merged = [];
+      const seen = new Set();
+      for (const w of [...items, ...recentStageWinnersMemory]) {
+        if (!w || !w.empName || w.empName === '-') continue;
+        const key = `${String(w.empId || '').trim()}|${String(w.rewardName || '').trim()}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        merged.push(w);
+        if (merged.length >= 10) break;
+      }
+      recentStageWinnersMemory = merged;
+    }
+
     function getRecentAssignedWinnersSnapshot(limit = 5) {
       const recent = [];
       const seen = new Set();
@@ -3932,13 +3949,9 @@
         .reverse()
         .map(r => sanitizeStageWinner(r));
 
-      for (const w of [...prevWinners, ...assignedFromSheet]) {
+      for (const w of [...prevWinners, ...recentStageWinnersMemory, ...assignedFromSheet]) {
         if (!w || !w.empName || w.empName === '-') continue;
         const cleanEmpId = String(w.empId || '').trim();
-        const stillAssigned = (Array.isArray(rewardsList) ? rewardsList : []).some(
-          r => String(r.empId || '').trim() === cleanEmpId && String(r.rewardName || '').trim() === String(w.rewardName || '').trim()
-        );
-        if (!stillAssigned && assignedFromSheet.length > 0) continue;
         const key = `${cleanEmpId}|${w.rewardName || ''}`;
         if (seen.has(key)) continue;
         seen.add(key);
@@ -3995,6 +4008,7 @@
     function pushStageWinners(items, startIndex = 0, { keepCelebration = false, showToast = false } = {}) {
       if (!Array.isArray(items) || items.length === 0) return;
       const cleanWinners = items.map(sanitizeStageWinner);
+      rememberRecentStageWinners(cleanWinners);
       const nextNonce = keepCelebration
         ? (Number(currentStageState.celebrateNonce) || 1)
         : ((Number(currentStageState.celebrateNonce) || 0) + 1);
