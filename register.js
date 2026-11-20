@@ -3376,10 +3376,8 @@ function handleTextMessage(event) {
         }
       ]
     };
-    const helpText = '🎄 ยินดีต้อนรับสู่ CM Party 2026 ค่ะ!\nเลือกเมนูด้านล่างเพื่อร่วมสนุกได้เลย: ส่งคำอวยพรขึ้นจอเวที, เสี่ยงเซียมซีปีใหม่, ดูภาพในงาน หรือส่งรูปมาที่แชทนี้เพื่อขึ้นจอแกลเลอรีทันที 📸✨';
-    replyLineMessage(replyToken, [
-      buildQuotedRewardTextMessage(helpText, userQuoteToken, helpQuickReply, 'elf')
-    ]);
+    const helpFlex = buildPartyMenuFlexMessage(helpQuickReply);
+    replyLineMessage(replyToken, [helpFlex]);
     return;
   }
 
@@ -3904,13 +3902,6 @@ function buildNewYearFortuneMessage(userQuoteToken) {
   ];
 
   const picked = fortunes[Math.floor(Math.random() * fortunes.length)];
-  const msgText =
-    `🥠 เซียมซีปีใหม่ CM Party 2026\n` +
-    `━━━━━━━━━━━━━━━━\n` +
-    `📜 ใบที่ ${picked.no} • ${picked.level}\n\n` +
-    `${picked.text}\n\n` +
-    `🍀 ไอเทมนำโชคคืนนี้: ${picked.lucky}\n` +
-    `━━━━━━━━━━━━━━━━`;
 
   const fortuneQuickReply = {
     items: [
@@ -3949,7 +3940,361 @@ function buildNewYearFortuneMessage(userQuoteToken) {
     ]
   };
 
-  return buildQuotedRewardTextMessage(msgText, userQuoteToken, fortuneQuickReply, 'elf');
+  const fortuneFlex = {
+    type: 'flex',
+    altText: `🥠 เซียมซีปีใหม่ CM Party 2026 • ใบที่ ${picked.no} (${picked.level}): ${picked.text}`,
+    quickReply: fortuneQuickReply,
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      header: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#9F1239',
+        background: {
+          type: 'linearGradient',
+          angle: '135deg',
+          startColor: '#9F1239',
+          centerColor: '#7F1D1D',
+          centerPosition: '55%',
+          endColor: '#580B24'
+        },
+        paddingAll: '18px',
+        spacing: 'xs',
+        alignItems: 'center',
+        contents: [
+          {
+            type: 'box',
+            layout: 'horizontal',
+            backgroundColor: '#F5B942',
+            cornerRadius: '20px',
+            paddingStart: '12px',
+            paddingEnd: '12px',
+            paddingTop: '4px',
+            paddingBottom: '4px',
+            contents: [
+              {
+                type: 'text',
+                text: `🥠 เซียมซีปีใหม่ 2026 • ใบที่ ${picked.no}`,
+                color: '#450A0A',
+                size: 'xxs',
+                weight: 'bold',
+                align: 'center'
+              }
+            ]
+          },
+          {
+            type: 'text',
+            text: picked.level,
+            color: '#FEF08A',
+            size: 'xl',
+            weight: 'bold',
+            align: 'center',
+            margin: 'sm'
+          },
+          {
+            type: 'text',
+            text: 'CM Party 2026 • Golden Fortune Slip',
+            color: '#FECDD3',
+            size: 'xxs',
+            align: 'center'
+          }
+        ]
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#FFFBF7',
+        paddingAll: '18px',
+        spacing: 'md',
+        contents: [
+          {
+            type: 'box',
+            layout: 'vertical',
+            backgroundColor: '#FFF1F2',
+            borderColor: '#F5B942',
+            borderWidth: '2px',
+            cornerRadius: '16px',
+            paddingAll: '16px',
+            spacing: 'sm',
+            contents: [
+              {
+                type: 'text',
+                text: '📜 คำทำนายดวงปาร์ตี้ & ปีใหม่ของคุณ',
+                color: '#9F1239',
+                size: 'xs',
+                weight: 'bold',
+                align: 'center'
+              },
+              {
+                type: 'separator',
+                color: '#FECDD3'
+              },
+              {
+                type: 'text',
+                text: picked.text,
+                color: '#4C0519',
+                size: 'sm',
+                weight: 'bold',
+                align: 'center',
+                wrap: true,
+                margin: 'sm'
+              }
+            ]
+          },
+          {
+            type: 'box',
+            layout: 'vertical',
+            backgroundColor: '#ECFDF5',
+            borderColor: '#6EE7B7',
+            borderWidth: '1px',
+            cornerRadius: '14px',
+            paddingAll: '12px',
+            spacing: 'xs',
+            contents: [
+              {
+                type: 'text',
+                text: '🍀 ไอเทมเสริมดวงนำโชคคืนนี้',
+                color: '#047857',
+                size: 'xxs',
+                weight: 'bold',
+                align: 'center'
+              },
+              {
+                type: 'text',
+                text: picked.lucky,
+                color: '#065F46',
+                size: 'sm',
+                weight: 'bold',
+                align: 'center',
+                wrap: true
+              }
+            ]
+          }
+        ]
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#14532D',
+        paddingAll: '14px',
+        spacing: 'sm',
+        contents: [
+          {
+            type: 'button',
+            style: 'primary',
+            color: '#D97706',
+            height: 'sm',
+            action: {
+              type: 'message',
+              label: '🥠 เสี่ยงเซียมซีอีก',
+              text: 'เสี่ยงเซียมซี'
+            }
+          },
+          {
+            type: 'button',
+            style: 'primary',
+            color: '#BE123C',
+            height: 'sm',
+            action: {
+              type: 'message',
+              label: '💬 ส่งคำอวยพรขึ้นจอ',
+              text: 'อวยพรขึ้นจอ'
+            }
+          }
+        ]
+      }
+    }
+  };
+
+  return withBotSender(fortuneFlex, 'elf');
+}
+
+function buildPartyMenuFlexMessage(quickReply) {
+  const buildGuideItem = (iconText, titleText, descText, bgCol, borderCol, titleCol) => ({
+    type: 'box',
+    layout: 'horizontal',
+    backgroundColor: bgCol,
+    borderColor: borderCol,
+    borderWidth: '1px',
+    cornerRadius: '12px',
+    paddingAll: '10px',
+    spacing: 'sm',
+    alignItems: 'center',
+    contents: [
+      {
+        type: 'text',
+        text: iconText,
+        size: 'lg',
+        flex: 0
+      },
+      {
+        type: 'box',
+        layout: 'vertical',
+        flex: 1,
+        spacing: 'xxs',
+        contents: [
+          {
+            type: 'text',
+            text: titleText,
+            color: titleCol,
+            size: 'xs',
+            weight: 'bold',
+            wrap: true
+          },
+          {
+            type: 'text',
+            text: descText,
+            color: '#4B5563',
+            size: 'xxs',
+            wrap: true
+          }
+        ]
+      }
+    ]
+  });
+
+  const menuFlex = {
+    type: 'flex',
+    altText: '🎄 คู่มือร่วมสนุก CM Party 2026: ส่งรูปขึ้นจอ อวยพร เสี่ยงเซียมซี และตรวจรางวัล',
+    contents: {
+      type: 'bubble',
+      size: 'mega',
+      header: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#9F1239',
+        background: {
+          type: 'linearGradient',
+          angle: '135deg',
+          startColor: '#9F1239',
+          centerColor: '#7F1D1D',
+          centerPosition: '55%',
+          endColor: '#580B24'
+        },
+        paddingAll: '18px',
+        spacing: 'xs',
+        alignItems: 'center',
+        contents: [
+          {
+            type: 'box',
+            layout: 'horizontal',
+            backgroundColor: '#F5B942',
+            cornerRadius: '20px',
+            paddingStart: '12px',
+            paddingEnd: '12px',
+            paddingTop: '4px',
+            paddingBottom: '4px',
+            contents: [
+              {
+                type: 'text',
+                text: '🎄 CM PARTY 2026 • PARTY PASSPORT',
+                color: '#450A0A',
+                size: 'xxs',
+                weight: 'bold',
+                align: 'center'
+              }
+            ]
+          },
+          {
+            type: 'text',
+            text: 'เมนูสนุก & ส่งรูปขึ้นจอใหญ่ ✨',
+            color: '#FFFFFF',
+            size: 'lg',
+            weight: 'bold',
+            align: 'center',
+            margin: 'sm'
+          },
+          {
+            type: 'text',
+            text: 'เลือกกิจกรรมด้านล่าง หรือส่งรูปถ่ายเข้าแชทนี้ได้เลย!',
+            color: '#FEF08A',
+            size: 'xxs',
+            align: 'center',
+            wrap: true
+          }
+        ]
+      },
+      body: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#FFFBF7',
+        paddingAll: '16px',
+        spacing: 'sm',
+        contents: [
+          buildGuideItem(
+            '📸',
+            'ส่งรูปถ่ายขึ้นจอแกลเลอรีทันที',
+            'กดเลือกรูปส่งเข้าห้องแชทนี้ รูปจะแสดงบนสไลด์โชว์หน้าเวทีอัตโนมัติ',
+            '#ECFDF5',
+            '#A7F3D0',
+            '#065F46'
+          ),
+          buildGuideItem(
+            '💬',
+            'ส่งคำอวยพรเด้งบนหัวตุ๊กตา',
+            'กดปุ่มอวยพรขึ้นจอ ข้อความจะลอยขึ้นบนตัวละครของคุณหน้าเวที',
+            '#FFF1F2',
+            '#FECDD3',
+            '#9F1239'
+          ),
+          buildGuideItem(
+            '🎁',
+            'ตรวจสอบผลรางวัล Lucky Draw',
+            'เช็กสิทธิ์และผลรางวัลของคุณได้ทันทีด้วยรหัสพนักงาน',
+            '#FEF3C7',
+            '#FDE68A',
+            '#92400E'
+          ),
+          buildGuideItem(
+            '🥠',
+            'เสี่ยงเซียมซีปีใหม่ 2026',
+            'รับใบเซียมซีทองคำทำนายดวงปังๆ พร้อมไอเทมนำโชคคืนนี้',
+            '#FFF7ED',
+            '#FED7AA',
+            '#9A3412'
+          )
+        ]
+      },
+      footer: {
+        type: 'box',
+        layout: 'vertical',
+        backgroundColor: '#14532D',
+        paddingAll: '14px',
+        spacing: 'sm',
+        contents: [
+          {
+            type: 'button',
+            style: 'primary',
+            color: '#D97706',
+            height: 'sm',
+            action: {
+              type: 'uri',
+              label: '📝 ลงทะเบียน / บัตร VIP',
+              uri: LIFF_REGISTER_URL
+            }
+          },
+          {
+            type: 'button',
+            style: 'primary',
+            color: '#BE123C',
+            height: 'sm',
+            action: {
+              type: 'message',
+              label: '💬 ส่งคำอวยพรขึ้นจอ',
+              text: 'อวยพรขึ้นจอ'
+            }
+          }
+        ]
+      }
+    }
+  };
+
+  if (quickReply && Array.isArray(quickReply.items) && quickReply.items.length > 0) {
+    menuFlex.quickReply = quickReply;
+  }
+
+  return withBotSender(menuFlex, 'elf');
 }
 
 /**
@@ -4384,19 +4729,35 @@ function isUserFriendWithBot(userId, bypassCache) {
 function replyMustAddFriendMessage(replyToken) {
   const flexMessage = {
     type: 'flex',
-    altText: 'กรุณากดเพิ่มเพื่อนก่อนเข้าใช้งานแชท CM Party',
+    altText: 'กรุณากดเพิ่มเพื่อนก่อนเข้าใช้งานแชท CM Party 2026',
     contents: {
       type: 'bubble',
       size: 'mega',
       header: {
         type: 'box',
         layout: 'vertical',
-        backgroundColor: '#DC2626',
+        backgroundColor: '#9F1239',
+        background: {
+          type: 'linearGradient',
+          angle: '135deg',
+          startColor: '#9F1239',
+          centerColor: '#7F1D1D',
+          centerPosition: '55%',
+          endColor: '#580B24'
+        },
         paddingAll: '16px',
+        spacing: 'xs',
         contents: [
           {
             type: 'text',
-            text: '⚠️ ต้องเพิ่มเพื่อนก่อนใช้งานแชท',
+            text: '🎄 CM PARTY 2026 • FRIEND CHECK',
+            color: '#FDE68A',
+            weight: 'bold',
+            size: 'xxs'
+          },
+          {
+            type: 'text',
+            text: '⚠️ กรุณาเพิ่มเพื่อนก่อนใช้งานแชท',
             color: '#FFFFFF',
             weight: 'bold',
             size: 'md'
@@ -4406,34 +4767,51 @@ function replyMustAddFriendMessage(replyToken) {
       body: {
         type: 'box',
         layout: 'vertical',
+        backgroundColor: '#FFFBF7',
         spacing: 'md',
         paddingAll: '16px',
         contents: [
           {
-            type: 'text',
-            text: 'คุณยังไม่ได้กดเพิ่มเพื่อนกับเรา',
-            weight: 'bold',
-            size: 'sm',
-            color: '#1F2937'
-          },
-          {
-            type: 'text',
-            text: 'กรุณากดปุ่ม "เพิ่มเพื่อน" (Add Friend) ที่ด้านบนของห้องแชท หรือกดปุ่มด้านล่าง เพื่อเริ่มใช้งานระบบลงทะเบียน ตรวจสอบรางวัล และอัปโหลดภาพกิจกรรมครับ',
-            wrap: true,
-            size: 'xs',
-            color: '#4B5563'
+            type: 'box',
+            layout: 'vertical',
+            backgroundColor: '#FFF1F2',
+            borderColor: '#F5B942',
+            borderWidth: '1px',
+            cornerRadius: '14px',
+            paddingAll: '14px',
+            spacing: 'xs',
+            contents: [
+              {
+                type: 'text',
+                text: 'คุณยังไม่ได้กดเพิ่มเพื่อนกับ LINE OA ของงาน',
+                weight: 'bold',
+                size: 'sm',
+                color: '#881337',
+                wrap: true
+              },
+              {
+                type: 'text',
+                text: 'กรุณากดปุ่ม "เพิ่มเพื่อน" (Add Friend) ที่ด้านบนของห้องแชท หรือกดปุ่มสีทองด้านล่าง เพื่อเริ่มลงทะเบียน ตรวจสอบรางวัล และส่งรูปขึ้นจอใหญ่ค่ะ ✨',
+                wrap: true,
+                size: 'xs',
+                color: '#4C0519',
+                margin: 'xs'
+              }
+            ]
           }
         ]
       },
       footer: {
         type: 'box',
         layout: 'vertical',
-        paddingAll: '12px',
+        backgroundColor: '#14532D',
+        paddingAll: '14px',
         contents: [
           {
             type: 'button',
             style: 'primary',
-            color: '#06C755',
+            color: '#D97706',
+            height: 'sm',
             action: {
               type: 'uri',
               label: 'กดเพิ่มเพื่อนที่นี่ ➕',

@@ -3,7 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>ระบบบันทึกข้อมูลรางวัล - CM Party</title>
+  <title>ระบบบันทึกข้อมูลรางวัล - CM Party 2026</title>
+  <meta name="theme-color" content="#881337" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="🎁 ระบบสุ่มและจัดการรางวัล Lucky Draw - CM Party 2026" />
+  <meta property="og:description" content="ระบบควบคุมเวทีสุ่มรางวัลและส่งการ์ดแจ้งเตือนผู้โชคดีผ่าน LINE Official Account สำหรับงานเลี้ยง CM Frozenfood 2026" />
+  <meta property="og:image" content="https://cmparty.vercel.app/assets/line-rich-menu-2500x1686.jpg" />
+  <link rel="icon" type="image/jpeg" href="assets/party-logo.jpg" />
+  <link rel="apple-touch-icon" href="assets/party-logo.jpg" />
 
   <!-- Tailwind CSS (Pre-compiled) -->
   <link rel="stylesheet" href="styles.css" onerror="this.onerror=null;this.href='https://cmparty.vercel.app/styles.css'" />
@@ -3915,6 +3922,32 @@
       }
     }
 
+    function getRecentAssignedWinnersSnapshot(limit = 5) {
+      const recent = [];
+      const seen = new Set();
+      const prevWinners = Array.isArray(currentStageState.winners) ? currentStageState.winners : [];
+      const assignedFromSheet = (Array.isArray(rewardsList) ? rewardsList : [])
+        .filter(r => r && String(r.empId || '').trim() !== '')
+        .slice()
+        .reverse()
+        .map(r => sanitizeStageWinner(r));
+
+      for (const w of [...prevWinners, ...assignedFromSheet]) {
+        if (!w || !w.empName || w.empName === '-') continue;
+        const cleanEmpId = String(w.empId || '').trim();
+        const stillAssigned = (Array.isArray(rewardsList) ? rewardsList : []).some(
+          r => String(r.empId || '').trim() === cleanEmpId && String(r.rewardName || '').trim() === String(w.rewardName || '').trim()
+        );
+        if (!stillAssigned && assignedFromSheet.length > 0) continue;
+        const key = `${cleanEmpId}|${w.rewardName || ''}`;
+        if (seen.has(key)) continue;
+        seen.add(key);
+        recent.push(w);
+        if (recent.length >= limit) break;
+      }
+      return recent;
+    }
+
     function syncStandbyContextToStage(isUserAction = false) {
       if (!isStageAutoSyncEnabled()) return;
       // ป้องกันการเขียน Standby ทับผู้ชนะบนจอระหว่างรีเฟรชหน้า (F5) ก่อนซิงค์สถานะเดิมกลับมา
@@ -3925,6 +3958,7 @@
       broadcastStageState({
         mode: 'standby',
         prizeLabel,
+        winners: getRecentAssignedWinnersSnapshot(5),
         stats
       }, { debounceCloud: true });
     }
@@ -3935,7 +3969,7 @@
         mode: 'standby',
         prizeLabel,
         rollingNames: [],
-        winners: [],
+        winners: getRecentAssignedWinnersSnapshot(5),
         activeIndex: 0,
         stats: getStageStatsSnapshot()
       });

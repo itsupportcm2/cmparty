@@ -3,7 +3,14 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-  <title>ลงทะเบียนเข้างานเลี้ยง - CM Party</title>
+  <title>ลงทะเบียนเข้างานเลี้ยง - CM Party 2026</title>
+  <meta name="theme-color" content="#881337" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="🎄 ลงทะเบียนเข้างานเลี้ยง & รับบัตร VIP - CM Party 2026" />
+  <meta property="og:description" content="ระบบลงทะเบียนเข้าร่วมงานเลี้ยงคริสต์มาสและปีใหม่ CM Frozenfood 2026 พร้อมรับบัตร VIP E-Ticket และลุ้นรางวัล Lucky Draw" />
+  <meta property="og:image" content="https://cmparty.vercel.app/assets/line-rich-menu-2500x1686.jpg" />
+  <link rel="icon" type="image/jpeg" href="assets/party-logo.jpg" />
+  <link rel="apple-touch-icon" href="assets/party-logo.jpg" />
 
   <!-- Tailwind CSS (Pre-compiled) -->
   <link rel="stylesheet" href="styles.css" onerror="this.onerror=null;this.href='https://cmparty.vercel.app/styles.css'" />
@@ -625,6 +632,26 @@
               <span class="text-slate-500">สาขา:</span>
               <span id="regInfoBranch" class="font-bold text-emerald-600 text-right">-</span>
             </p>
+          </div>
+
+          <!-- Assigned Stage Christmas Doll Preview Card (Bridges Phone VIP Ticket <-> Gallery Big Stage) -->
+          <div id="vipStageDollCard" class="hidden rounded-2xl bg-gradient-to-r from-rose-50/95 via-amber-50/90 to-emerald-50/95 border-2 border-amber-200/90 p-3 text-left shadow-2xs">
+            <div class="flex items-center gap-3">
+              <div id="vipStageDollAvatarBox" class="w-14 h-16 shrink-0 rounded-2xl bg-gradient-to-b from-rose-900 via-rose-950 to-emerald-950 border-2 border-amber-300 shadow-sm flex flex-col items-center justify-center relative overflow-hidden pt-1">
+              </div>
+              <div class="min-w-0 flex-1 space-y-0.5">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200 text-[9px] font-extrabold">
+                  <span>🎭</span>
+                  <span>ตัวละครของคุณบนจอเวทีใหญ่</span>
+                </span>
+                <p id="vipStageDollTitle" class="font-cute text-xs sm:text-sm font-bold text-rose-950 truncate">
+                  🎅 ซานต้าหมวกแดง
+                </p>
+                <p class="text-[10px] text-slate-600 leading-snug">
+                  มองหาตุ๊กตาตัวนี้เดินโบกมือหน้าเวทีในหน้า <b>Photo Gallery</b> และพิมพ์ <b>"อวยพร"</b> ในแชทเพื่อให้ข้อความเด้งบนหัวตุ๊กตาได้เลย!
+                </p>
+              </div>
+            </div>
           </div>
 
           <div class="rounded-2xl bg-amber-50/90 border border-amber-200/90 px-3 py-2.5 text-[11px] text-amber-900 leading-relaxed text-left">
@@ -1412,6 +1439,69 @@
     }
 
     // ซ่อนฟอร์มลงทะเบียนและแสดงหน้าแจ้งเตือนว่าลงทะเบียนเรียบร้อยแล้ว (Christmas VIP E-Ticket)
+    // สร้างพรีวิวตุ๊กตาคริสต์มาสประจำตัวบนเวที (ใช้สูตรเดียวกับ gallery.html 100%)
+    function getVipStageDollThemeIndex(empId) {
+      const s = String(empId || '');
+      let hash = 0;
+      for (let i = 0; i < s.length; i++) {
+        hash = ((hash << 5) - hash) + s.charCodeAt(i);
+        hash |= 0;
+      }
+      return Math.abs(hash) % 4;
+    }
+
+    function renderVipStageDollPreview(empId, pictureUrl) {
+      const cardEl = document.getElementById('vipStageDollCard');
+      const boxEl = document.getElementById('vipStageDollAvatarBox');
+      const titleEl = document.getElementById('vipStageDollTitle');
+      if (!cardEl || !boxEl || !titleEl) return;
+
+      const themeIdx = getVipStageDollThemeIndex(empId);
+      const themes = [
+        {
+          title: '🎅 ซานต้าหมวกแดง (Santa Claus)',
+          suit: '#e11d48', trim: '#ffffff', accent: '#fde047',
+          hatSvg: `<svg viewBox="0 0 48 26" class="w-7 h-4 -mb-2 relative z-20 drop-shadow"><path d="M8 22 C12 6, 26 2, 39 10 L35 22 Z" fill="#e11d48"/><circle cx="40" cy="11" r="4.2" fill="#ffffff"/><rect x="6" y="19" width="32" height="6" rx="3" fill="#ffffff"/></svg>`
+        },
+        {
+          title: '🧝‍♂️ เอลฟ์น้อยหมวกเขียว (Christmas Elf)',
+          suit: '#059669', trim: '#fde047', accent: '#f43f5e',
+          hatSvg: `<svg viewBox="0 0 48 26" class="w-7 h-4 -mb-2 relative z-20 drop-shadow"><path d="M9 22 L24 3 L39 22 Z" fill="#059669"/><circle cx="24" cy="4" r="3.5" fill="#fde047"/><rect x="7" y="19" width="34" height="5.5" rx="2.75" fill="#fbbf24"/></svg>`
+        },
+        {
+          title: '🦌 กวางเรนเดียร์จมูกแดง (Rudolph)',
+          suit: '#92400e', trim: '#fb7185', accent: '#fde68a',
+          hatSvg: `<svg viewBox="0 0 48 24" class="w-8 h-4 -mb-1.5 relative z-20 drop-shadow"><path d="M14 22 L11 8 M11 14 L6 10 M12 11 L16 7" stroke="#92400e" stroke-width="3" stroke-linecap="round" fill="none"/><path d="M34 22 L37 8 M37 14 L42 10 M36 11 L32 7" stroke="#92400e" stroke-width="3" stroke-linecap="round" fill="none"/><circle cx="24" cy="18" r="3" fill="#ef4444"/></svg>`
+        },
+        {
+          title: '⛄ สโนว์แมนหมวกไหมพรม (Cozy Snowman)',
+          suit: '#0284c7', trim: '#f8fafc', accent: '#fb7185',
+          hatSvg: `<svg viewBox="0 0 48 26" class="w-7 h-4 -mb-2 relative z-20 drop-shadow"><path d="M11 21 C12 9, 36 9, 37 21 Z" fill="#0284c7"/><circle cx="24" cy="7" r="4" fill="#ffffff"/><rect x="8" y="19" width="32" height="5.5" rx="2.75" fill="#bae6fd"/></svg>`
+        }
+      ];
+      const t = themes[themeIdx];
+      const safeAvatar = (pictureUrl && /^https?:\/\//i.test(pictureUrl))
+        ? pictureUrl
+        : 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+
+      titleEl.textContent = t.title;
+      boxEl.innerHTML = `
+        ${t.hatSvg}
+        <div class="w-7 h-7 rounded-full overflow-hidden border-2 border-white bg-rose-100 shadow-xs relative z-10">
+          <img src="${safeAvatar}" alt="Doll Avatar" referrerpolicy="no-referrer" class="w-full h-full object-cover" onerror="this.src='https://cdn-icons-png.flaticon.com/512/847/847969.png'" />
+        </div>
+        <svg viewBox="0 0 56 36" class="w-8 h-5 -mt-1 relative z-10 drop-shadow">
+          <path d="M13 10 C5 8, 3 2, 7 1 C10 0, 13 6, 15 9" fill="${t.suit}" stroke="${t.trim}" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M41 10 C47 12, 49 18, 45 20 C42 21, 39 16, 39 12" fill="${t.suit}" stroke="${t.trim}" stroke-width="1.5" stroke-linecap="round"/>
+          <path d="M15 8 C15 4, 41 4, 41 8 L43 26 C43 29, 13 29, 13 26 Z" fill="${t.suit}"/>
+          <rect x="16" y="6" width="24" height="4.5" rx="2.2" fill="${t.trim}"/>
+          <rect x="14" y="18" width="28" height="3.5" fill="${t.accent}" opacity="0.9"/>
+          <circle cx="28" cy="14" r="1.8" fill="${t.trim}"/>
+        </svg>
+      `;
+      cardEl.classList.remove('hidden');
+    }
+
     function showAlreadyRegisteredView(regData) {
       const loadingEl = document.getElementById('liffLoadingContainer');
       if (loadingEl) loadingEl.classList.add('hidden');
@@ -1440,6 +1530,7 @@
         document.getElementById('regInfoEmpName').innerText = regData.empName || '-';
         document.getElementById('regInfoDept').innerText = regData.department || '-';
         document.getElementById('regInfoBranch').innerText = regData.branch || '-';
+        renderVipStageDollPreview(regData.empId, (userProfile && userProfile.pictureUrl) || '');
       }
 
       const isAdmin = isCurrentUserAdmin();

@@ -4,6 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
   <title>🎉 หน้าจอประกาศผลรางวัล - CM Party 2026</title>
+  <meta name="theme-color" content="#2a0410" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="🎉 หน้าจอเวทีประกาศผลรางวัล Lucky Draw - CM Party 2026" />
+  <meta property="og:description" content="หน้าจอเวทีใหญ่ประกาศผลรางวัล Lucky Draw งานเลี้ยงคริสต์มาสและปีใหม่ CM Frozenfood 2026" />
+  <meta property="og:image" content="https://cmparty.vercel.app/assets/line-rich-menu-2500x1686.jpg" />
+  <link rel="icon" type="image/jpeg" href="assets/party-logo.jpg" />
+  <link rel="apple-touch-icon" href="assets/party-logo.jpg" />
 
   <!-- Tailwind CSS (Pre-compiled) -->
   <link rel="stylesheet" href="styles.css" onerror="this.onerror=null;this.href='https://cmparty.vercel.app/styles.css'" />
@@ -418,6 +425,18 @@
           <span class="block text-[11px] text-emerald-200 font-semibold">แจกไปแล้ว</span>
           <span id="stageStatAssigned" class="font-display text-xl sm:text-2xl font-bold text-emerald-300">0</span>
         </div>
+      </div>
+
+      <!-- Recent Winners Ribbon on Standby Screen (Helps attendees returning to their table see who just won) -->
+      <div
+        id="stageRecentWinnersBox"
+        class="hidden w-full max-w-3xl rounded-2xl bg-black/40 backdrop-blur-md border border-amber-300/40 px-4 py-3 shadow-lg space-y-2"
+      >
+        <p class="text-[11px] sm:text-xs font-extrabold text-amber-300 tracking-wide flex items-center justify-center gap-1.5">
+          <span>🏆</span>
+          <span>ทำเนียบผู้โชคดีล่าสุด (Recent Winners)</span>
+        </p>
+        <div id="stageRecentWinnersList" class="flex flex-wrap items-center justify-center gap-2"></div>
       </div>
 
       <!-- Subtle Christmas BGM Now Playing Equalizer Pill -->
@@ -1696,7 +1715,82 @@
       rollingDisplayTimer = setInterval(updateStep, 75);
     }
 
+    const STAGE_RECENT_WINNERS_KEY = 'CM_PARTY_STAGE_RECENT_WINNERS_V1';
+    let stageRecentWinnersHistory = [];
+    try {
+      const savedRecent = sessionStorage.getItem(STAGE_RECENT_WINNERS_KEY);
+      if (savedRecent) {
+        const parsedRecent = JSON.parse(savedRecent);
+        if (Array.isArray(parsedRecent)) stageRecentWinnersHistory = parsedRecent.slice(0, 5);
+      }
+    } catch (e) {}
+
+    function updateStageRecentWinnersHistory(state) {
+      if (!state || typeof state !== 'object') return;
+      if (state.stats && Number(state.stats.assignedPrizes) === 0 && (!Array.isArray(state.winners) || state.winners.length === 0)) {
+        stageRecentWinnersHistory = [];
+        try { sessionStorage.removeItem(STAGE_RECENT_WINNERS_KEY); } catch (e) {}
+        return;
+      }
+      if (Array.isArray(state.winners) && state.winners.length > 0) {
+        const merged = [];
+        const seen = new Set();
+        for (const w of [...state.winners, ...stageRecentWinnersHistory]) {
+          if (!w || !w.empName || w.empName === '-') continue;
+          const key = `${w.empId || ''}|${w.rewardName || ''}`;
+          if (seen.has(key)) continue;
+          seen.add(key);
+          merged.push({
+            rewardName: String(w.rewardName || '-'),
+            empId: String(w.empId || '-'),
+            empName: String(w.empName || '-'),
+            department: String(w.department || '-')
+          });
+          if (merged.length >= 5) break;
+        }
+        stageRecentWinnersHistory = merged;
+        try {
+          sessionStorage.setItem(STAGE_RECENT_WINNERS_KEY, JSON.stringify(stageRecentWinnersHistory));
+        } catch (e) {}
+      }
+    }
+
+    function renderStageRecentWinnersRibbon() {
+      const boxEl = document.getElementById('stageRecentWinnersBox');
+      const listEl = document.getElementById('stageRecentWinnersList');
+      if (!boxEl || !listEl) return;
+
+      if (!Array.isArray(stageRecentWinnersHistory) || stageRecentWinnersHistory.length === 0) {
+        boxEl.classList.add('hidden');
+        listEl.innerHTML = '';
+        return;
+      }
+
+      listEl.innerHTML = '';
+      stageRecentWinnersHistory.slice(0, 5).forEach((w) => {
+        const pill = document.createElement('div');
+        pill.className = 'inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 border border-amber-200/35 text-xs text-white shadow-xs';
+        const prizeSpan = document.createElement('span');
+        prizeSpan.className = 'font-bold text-amber-300';
+        prizeSpan.textContent = `🎁 ${w.rewardName}:`;
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'font-semibold text-white';
+        nameSpan.textContent = w.empName;
+        pill.appendChild(prizeSpan);
+        pill.appendChild(nameSpan);
+        if (w.department && w.department !== '-') {
+          const deptSpan = document.createElement('span');
+          deptSpan.className = 'text-[10px] text-rose-200/90';
+          deptSpan.textContent = `(${w.department})`;
+          pill.appendChild(deptSpan);
+        }
+        listEl.appendChild(pill);
+      });
+      boxEl.classList.remove('hidden');
+    }
+
     function renderStageFromState(state) {
+      updateStageRecentWinnersHistory(state);
       const standbyView = document.getElementById('stageStandbyView');
       const rollingView = document.getElementById('stageRollingView');
       const winnerView = document.getElementById('stageWinnerView');
@@ -1844,6 +1938,7 @@
       } else if (statsBar) {
         statsBar.classList.add('hidden');
       }
+      renderStageRecentWinnersRibbon();
 
       if (stageAudioUnlocked && stageSoundEnabled && stageBgmEnabled) {
         startStageBgm();
