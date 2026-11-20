@@ -18,10 +18,10 @@
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
-  <!-- Google Fonts: Mali + Fredoka + Prompt -->
+  <!-- Custom Font: PK Christmas (+ Prompt fallback) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Mali:wght@500;600;700&family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -33,8 +33,17 @@
   <script src="config.js"></script>
 
   <style>
+    @font-face {
+      font-family: 'PK Christmas';
+      src:
+        url('assets/PK_Christmas-Regular.ttf') format('truetype'),
+        url('https://cmparty.vercel.app/assets/PK_Christmas-Regular.ttf') format('truetype');
+      font-style: normal;
+      font-display: swap;
+    }
+
     body {
-      font-family: 'Prompt', sans-serif;
+      font-family: 'PK Christmas', 'Prompt', sans-serif;
       background:
         radial-gradient(circle at 12% 10%, rgba(254, 205, 211, 0.55) 0%, transparent 40%),
         radial-gradient(circle at 88% 12%, rgba(167, 243, 208, 0.45) 0%, transparent 42%),
@@ -159,11 +168,11 @@
     }
 
     .font-cute {
-      font-family: 'Mali', 'Prompt', sans-serif;
+      font-family: 'PK Christmas', 'Prompt', sans-serif;
     }
 
     .font-display {
-      font-family: 'Fredoka', 'Mali', 'Prompt', sans-serif;
+      font-family: 'PK Christmas', 'Prompt', sans-serif;
     }
 
     .btn-candy-3d {

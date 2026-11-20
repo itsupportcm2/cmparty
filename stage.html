@@ -18,15 +18,24 @@
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
-  <!-- Google Fonts: Mali + Fredoka + Prompt -->
+  <!-- Custom Font: PK Christmas (+ Prompt fallback) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Mali:wght@500;600;700&family=Prompt:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <!-- Shared CM Party Configuration -->
   <script src="config.js"></script>
 
   <style>
+    @font-face {
+      font-family: 'PK Christmas';
+      src:
+        url('assets/PK_Christmas-Regular.ttf') format('truetype'),
+        url('https://cmparty.vercel.app/assets/PK_Christmas-Regular.ttf') format('truetype');
+      font-style: normal;
+      font-display: swap;
+    }
+
     html, body {
       height: 100%;
       margin: 0;
@@ -34,7 +43,7 @@
     }
 
     body {
-      font-family: 'Prompt', sans-serif;
+      font-family: 'PK Christmas', 'Prompt', sans-serif;
       color: #ffffff;
       overflow: hidden;
       background:
@@ -135,11 +144,11 @@
     }
 
     .font-cute {
-      font-family: 'Mali', 'Prompt', sans-serif;
+      font-family: 'PK Christmas', 'Prompt', sans-serif;
     }
 
     .font-display {
-      font-family: 'Fredoka', 'Mali', 'Prompt', sans-serif;
+      font-family: 'PK Christmas', 'Prompt', sans-serif;
     }
 
     @keyframes stageBokehFloat {
