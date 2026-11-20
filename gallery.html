@@ -2743,16 +2743,16 @@
           fetchedList = parseRegisterGvizAttendees(resNoSpace.value);
         }
 
-        // 2. Fallback ผ่าน GAS Web App หาก Gviz อ่านไม่สำเร็จ (ใช้ GAS_WEB_APP_URL ก่อนแล้วค่อย fallback)
+        // 2. Fallback ผ่าน GAS Web App หาก Gviz อ่านไม่สำเร็จ (ดึงเฉพาะข้อมูลแสดงตุ๊กตาหน้าเวทีโดยไม่เปิดเผย UID/ข้อมูลภายใน)
         if (!fetchedList) {
-          const gasRes = await fetch(`${GAS_WEB_APP_URL}?action=getRewardInitData&_t=${Date.now()}`, { cache: 'no-store' });
+          const gasRes = await fetch(`${GAS_WEB_APP_URL}?action=getStageAttendees&_t=${Date.now()}`, { cache: 'no-store' });
           const gasJson = await gasRes.json();
-          if (gasJson && gasJson.status === 'success' && gasJson.employees) {
-            fetchedList = Object.values(gasJson.employees)
-              .filter(emp => emp && emp.empId && String(emp.regStatus || '').indexOf('อยู่กะ') === -1)
+          if (gasJson && gasJson.status === 'success' && Array.isArray(gasJson.attendees)) {
+            fetchedList = gasJson.attendees
+              .filter(emp => emp && emp.empId)
               .map(emp => ({
                 empId: String(emp.empId || '').trim(),
-                displayName: String(emp.displayName || emp.empName || emp.empId || '').trim(),
+                displayName: String(emp.displayName || emp.empId || '').trim(),
                 pictureUrl: String(emp.pictureUrl || '').trim()
               }));
           }

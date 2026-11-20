@@ -14,6 +14,108 @@ function getLineBotAccessToken() {
 }
 
 const EXTRA_ADMIN_UIDS_PROP_KEY = 'EXTRA_ADMIN_UIDS';
+const LINE_LIFF_CHANNEL_ID = '2012486224';
+
+function sha256ShortKey(rawStr) {
+  const digest = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    String(rawStr || ''),
+    Utilities.Charset.UTF_8
+  );
+  return Utilities.base64EncodeWebSafe(digest).replace(/=+$/, '').slice(0, 32);
+}
+
+/**
+ * ตรวจสอบความถูกต้องของ LINE LIFF Token (ID Token หรือ Access Token) กับ LINE OAuth2 Verify API
+ * ใช้ร่วมกับ CacheService (ไม่เกิน 5 นาที) เพื่อความรวดเร็วและป้องกันการปลอมแปลง adminUid / uid
+ */
+function verifyLineUserFromPayload(payload) {
+  if (!payload || typeof payload !== 'object') {
+    return { verified: false, uid: '' };
+  }
+
+  const idToken = String(payload.lineIdToken || payload.idToken || '').trim();
+  const accessToken = String(payload.lineAccessToken || payload.accessToken || '').trim();
+  const cache = CacheService.getScriptCache();
+
+  // 1. ตรวจสอบ ID Token (1 HTTP call หาก LIFF เปิด scope openid)
+  if (idToken) {
+    const idCacheKey = 'LINE_IDT_' + sha256ShortKey(idToken);
+    try {
+      const cachedUid = cache.get(idCacheKey);
+      if (cachedUid && /^U[a-zA-Z0-9]+$/.test(cachedUid)) {
+        return { verified: true, uid: cachedUid, method: 'id_token_cache' };
+      }
+    } catch (cErr) {}
+
+    try {
+      const res = UrlFetchApp.fetch('https://api.line.me/oauth2/v2.1/verify', {
+        method: 'post',
+        payload: {
+          id_token: idToken,
+          client_id: LINE_LIFF_CHANNEL_ID
+        },
+        muteHttpExceptions: true
+      });
+      if (res.getResponseCode() === 200) {
+        const json = JSON.parse(res.getContentText() || '{}');
+        const sub = String(json.sub || '').trim();
+        const expSec = Number(json.exp || 0);
+        const remSec = expSec > 0 ? Math.floor(expSec - (Date.now() / 1000)) - 5 : 300;
+        if (String(json.aud || '') === LINE_LIFF_CHANNEL_ID && /^U[a-zA-Z0-9]+$/.test(sub) && remSec > 0) {
+          try {
+            cache.put(idCacheKey, sub, Math.min(300, Math.max(10, remSec)));
+          } catch (putErr) {}
+          return { verified: true, uid: sub, method: 'id_token' };
+        }
+      }
+    } catch (idErr) {}
+  }
+
+  // 2. ตรวจสอบ Access Token (รองรับทุก LIFF ที่มี scope profile)
+  if (accessToken) {
+    const atCacheKey = 'LINE_AT_' + sha256ShortKey(accessToken);
+    try {
+      const cachedAtUid = cache.get(atCacheKey);
+      if (cachedAtUid && /^U[a-zA-Z0-9]+$/.test(cachedAtUid)) {
+        return { verified: true, uid: cachedAtUid, method: 'access_token_cache' };
+      }
+    } catch (cErr) {}
+
+    try {
+      const verifyRes = UrlFetchApp.fetch(
+        'https://api.line.me/oauth2/v2.1/verify?access_token=' + encodeURIComponent(accessToken),
+        { method: 'get', muteHttpExceptions: true }
+      );
+      if (verifyRes.getResponseCode() === 200) {
+        const vJson = JSON.parse(verifyRes.getContentText() || '{}');
+        const expiresIn = Number(vJson.expires_in || 0);
+        if (String(vJson.client_id || '') === LINE_LIFF_CHANNEL_ID && expiresIn > 0) {
+          const profileRes = UrlFetchApp.fetch('https://api.line.me/v2/profile', {
+            method: 'get',
+            headers: {
+              'Authorization': 'Bearer ' + accessToken
+            },
+            muteHttpExceptions: true
+          });
+          if (profileRes.getResponseCode() === 200) {
+            const pJson = JSON.parse(profileRes.getContentText() || '{}');
+            const verifiedUid = String(pJson.userId || '').trim();
+            if (/^U[a-zA-Z0-9]+$/.test(verifiedUid)) {
+              const ttl = Math.min(300, Math.max(10, Math.floor(expiresIn) - 10));
+              try {
+                cache.put(atCacheKey, verifiedUid, ttl);
+              } catch (putErr) {}
+              return { verified: true, uid: verifiedUid, method: 'access_token' };
+            }
+          }
+        }
+      }
+    } catch (atErr) {}
+  }
+
+  return { verified: false, uid: '' };
+}
 
 function getExtraAdminsList() {
   try {
@@ -50,9 +152,17 @@ function isAdminUid(uid) {
   return getExtraAdminsList().some(a => a.uid === cleanUid);
 }
 
+function getVerifiedAdminUid(payload) {
+  if (!payload || typeof payload !== 'object') return '';
+  const auth = verifyLineUserFromPayload(payload);
+  if (auth && auth.verified && isAdminUid(auth.uid)) {
+    return auth.uid;
+  }
+  return '';
+}
+
 function isAdminAuthorized(payload) {
-  const uid = String((payload && (payload.adminUid || payload.uid)) || '').trim();
-  return isAdminUid(uid);
+  return Boolean(getVerifiedAdminUid(payload));
 }
 
 function getAdminManagementList(payload) {
@@ -303,11 +413,10 @@ function getRegistrationSystemStatus() {
 }
 
 /**
- * บันทึกการกำหนดวันเวลาเปิด-ปิดระบบ หรือเปิด/ปิดระบบลงทะเบียนทันที (เฉพาะ Admin UID เท่านั้น)
+ * บันทึกการกำหนดวันเวลาเปิด-ปิดระบบ หรือเปิด/ปิดระบบลงทะเบียนทันที (เฉพาะ Admin ที่ผ่านการยืนยัน Token เท่านั้น)
  */
-function setRegistrationSchedule(openingDateTime, closingDateTime, requesterUid, manualStatus) {
-  const cleanUid = String(requesterUid || '').trim();
-  if (!isAdminUid(cleanUid)) {
+function setRegistrationSchedule(openingDateTime, closingDateTime, authPayloadOrUid, manualStatus) {
+  if (!authPayloadOrUid || typeof authPayloadOrUid !== 'object' || !isAdminAuthorized(authPayloadOrUid)) {
     return {
       status: 'forbidden',
       message: 'ไม่มีสิทธิ์ในการเปลี่ยนการตั้งค่าระบบ (เฉพาะแอดมินเท่านั้น)'
@@ -617,9 +726,9 @@ function saveRegistrationData(payload) {
       return { status: 'error', message: 'ข้อมูลพนักงานไม่ครบถ้วน กรุณาตรวจสอบรหัสพนักงานอีกครั้ง' };
     }
 
-    // ตรวจสอบสถานะการเปิด-ปิดระบบลงทะเบียน
+    // ตรวจสอบสถานะการเปิด-ปิดระบบลงทะเบียน (แอดมินที่ผ่านการยืนยัน Token จึงจะลงทะเบียนข้ามเวลาได้)
     const sysStatusInfo = getRegistrationSystemStatus();
-    if (!sysStatusInfo.isOpen && !isAdminUid(uid)) {
+    if (!sysStatusInfo.isOpen && !isAdminAuthorized(payload)) {
       if (sysStatusInfo.isBeforeOpeningTime && sysStatusInfo.openingDateTime) {
         return {
           status: 'error',
@@ -1312,15 +1421,15 @@ function doGet(e) {
     })).setMimeType(ContentService.MimeType.JSON);
   }
 
-  // กรณีตรวจสอบสถานะเปิด-ปิดระบบลงทะเบียน: ?action=getSystemStatus&uid=...
+  // กรณีตรวจสอบสถานะเปิด-ปิดระบบลงทะเบียน: ?action=getSystemStatus
   if (params.action === 'getSystemStatus') {
-    const requesterUid = String(params.uid || '').trim();
+    const verifiedAdminUid = getVerifiedAdminUid(params);
     const statusInfo = getRegistrationSystemStatus();
     return ContentService.createTextOutput(JSON.stringify({
       status: 'success',
       ...statusInfo,
-      isAdmin: isAdminUid(requesterUid),
-      isSuperAdmin: requesterUid === ADMIN_UID,
+      isAdmin: Boolean(verifiedAdminUid),
+      isSuperAdmin: verifiedAdminUid === ADMIN_UID,
       serverTime: new Date().toISOString()
     })).setMimeType(ContentService.MimeType.JSON);
   }
@@ -1341,11 +1450,10 @@ function doGet(e) {
 
   // กรณีแอดมินตั้งวันเวลาเปิด-ปิดระบบ หรือสลับเปิด-ปิดระบบ
   if (params.action === 'setSchedule' || params.action === 'setClosingDateTime' || params.action === 'toggleSystemStatus') {
-    const adminUid = String(params.adminUid || params.uid || '').trim();
     const openingDateTime = params.openingDateTime !== undefined ? params.openingDateTime : null;
     const closingDateTime = params.closingDateTime !== undefined ? params.closingDateTime : null;
     const manualStatus = params.targetStatus ? String(params.targetStatus) : null;
-    const res = setRegistrationSchedule(openingDateTime, closingDateTime, adminUid, manualStatus);
+    const res = setRegistrationSchedule(openingDateTime, closingDateTime, params, manualStatus);
     return ContentService.createTextOutput(JSON.stringify(res))
       .setMimeType(ContentService.MimeType.JSON);
   }
@@ -1357,8 +1465,14 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
 
-  // กรณีสร้างหัวคอลัมน์ผ่าน GET API: ?action=initHeaders
+  // กรณีสร้างหัวคอลัมน์ผ่าน GET API: ?action=initHeaders (เฉพาะแอดมินเท่านั้น)
   if (params.action === 'initHeaders') {
+    if (!isAdminAuthorized(params)) {
+      return ContentService.createTextOutput(JSON.stringify({
+        status: 'error',
+        message: 'ไม่มีสิทธิ์ดำเนินการ (อนุญาตเฉพาะแอดมินเท่านั้น)'
+      })).setMimeType(ContentService.MimeType.JSON);
+    }
     initRegisterSheetHeaders();
     return ContentService.createTextOutput(JSON.stringify({
       status: 'success',
@@ -1375,13 +1489,13 @@ function doGet(e) {
   }
 
   // กรณีจัดการข้อมูลรางวัล (Reward CRUD ผ่าน GET):
-  // - ?action=getRewardInitData (ดึงรายการรางวัล + รายชื่อพนักงานจาก Sheet Register ทั้งหมดในครั้งเดียว)
+  // - ?action=getRewardInitData (เฉพาะแอดมิน)
   // - ?action=checkRegisteredEmployee&empId=... (ค้นหาผู้ลงทะเบียนจาก Sheet Register เท่านั้น)
-  // - ?action=getRewards
+  // - ?action=getRewards (เฉพาะแอดมิน)
   // - ?action=saveReward&rowIndex=...&rewardName=...&empId=...
   // - ?action=deleteReward&rowIndex=...
   if (params.action === 'getRewardInitData') {
-    return ContentService.createTextOutput(JSON.stringify(getRewardInitData()))
+    return ContentService.createTextOutput(JSON.stringify(getRewardInitData(params)))
       .setMimeType(ContentService.MimeType.JSON);
   }
   if (params.action === 'checkRegisteredEmployee') {
@@ -1389,7 +1503,11 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
   if (params.action === 'getRewards') {
-    return ContentService.createTextOutput(JSON.stringify(getRewardsList()))
+    return ContentService.createTextOutput(JSON.stringify(getRewardsList(params)))
+      .setMimeType(ContentService.MimeType.JSON);
+  }
+  if (params.action === 'getStageAttendees') {
+    return ContentService.createTextOutput(JSON.stringify(getPublicStageAttendees()))
       .setMimeType(ContentService.MimeType.JSON);
   }
   if (params.action === 'saveReward') {
@@ -1502,13 +1620,13 @@ function doPost(e) {
 
     // กรณีตรวจสอบสถานะเปิด-ปิดระบบลงทะเบียนผ่าน POST: action = getSystemStatus
     if (payload.action === 'getSystemStatus') {
-      const requesterUid = String(payload.uid || '').trim();
+      const verifiedAdminUid = getVerifiedAdminUid(payload);
       const statusInfo = getRegistrationSystemStatus();
       return ContentService.createTextOutput(JSON.stringify({
         status: 'success',
         ...statusInfo,
-        isAdmin: isAdminUid(requesterUid),
-        isSuperAdmin: requesterUid === ADMIN_UID,
+        isAdmin: Boolean(verifiedAdminUid),
+        isSuperAdmin: verifiedAdminUid === ADMIN_UID,
         serverTime: new Date().toISOString()
       })).setMimeType(ContentService.MimeType.JSON);
     }
@@ -1529,11 +1647,10 @@ function doPost(e) {
 
     // กรณีแอดมินตั้งวันเวลาเปิด-ปิดระบบผ่าน POST: action = setSchedule, setClosingDateTime หรือ toggleSystemStatus
     if (payload.action === 'setSchedule' || payload.action === 'setClosingDateTime' || payload.action === 'toggleSystemStatus') {
-      const adminUid = String(payload.adminUid || payload.uid || '').trim();
       const openingDateTime = payload.openingDateTime !== undefined ? payload.openingDateTime : null;
       const closingDateTime = payload.closingDateTime !== undefined ? payload.closingDateTime : null;
       const manualStatus = payload.targetStatus ? String(payload.targetStatus) : null;
-      const res = setRegistrationSchedule(openingDateTime, closingDateTime, adminUid, manualStatus);
+      const res = setRegistrationSchedule(openingDateTime, closingDateTime, payload, manualStatus);
       return ContentService.createTextOutput(JSON.stringify(res))
         .setMimeType(ContentService.MimeType.JSON);
     }
@@ -1545,7 +1662,7 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
     if (payload.action === 'getRewardInitData') {
-      return ContentService.createTextOutput(JSON.stringify(getRewardInitData()))
+      return ContentService.createTextOutput(JSON.stringify(getRewardInitData(payload)))
         .setMimeType(ContentService.MimeType.JSON);
     }
     if (payload.action === 'checkRegisteredEmployee') {
@@ -1553,7 +1670,11 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
     if (payload.action === 'getRewards') {
-      return ContentService.createTextOutput(JSON.stringify(getRewardsList()))
+      return ContentService.createTextOutput(JSON.stringify(getRewardsList(payload)))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    if (payload.action === 'getStageAttendees') {
+      return ContentService.createTextOutput(JSON.stringify(getPublicStageAttendees()))
         .setMimeType(ContentService.MimeType.JSON);
     }
     if (payload.action === 'saveReward') {
@@ -1934,9 +2055,12 @@ function checkRegisteredEmployeeById(empId) {
 
 /**
  * ดึงข้อมูลเริ่มต้นสำหรับหน้า reward.html ในครั้งเดียว (รายการรางวัลทั้งหมด + Map พนักงานที่ลงทะเบียนแล้วจาก Sheet "Register")
- * เพื่อให้หน้าเว็บค้นหารหัสพนักงานได้ทันทีแบบ 0ms (รวดเร็ว ไม่หน่วงเวลาคีย์)
+ * สงวนสิทธิ์เฉพาะแอดมินที่ผ่านการยืนยัน LINE Token แล้วเท่านั้น
  */
-function getRewardInitData() {
+function getRewardInitData(payload) {
+  if (!isAdminAuthorized(payload)) {
+    return { status: 'error', message: 'ไม่มีสิทธิ์เข้าถึงข้อมูล (อนุญาตเฉพาะแอดมินเท่านั้น)' };
+  }
   try {
     // ซิงก์คนที่มีเงื่อนไข "ไม่ได้ไปเพราะอยู่ กะ" เข้า Sheet Register อัตโนมัติ (จำกัดความถี่ไม่เกิน 1 ครั้ง/นาที)
     try {
@@ -1964,12 +2088,56 @@ function getRewardInitData() {
   }
 }
 
-function getRewardsList() {
+function getRewardsList(payload) {
+  if (!isAdminAuthorized(payload)) {
+    return { status: 'error', message: 'ไม่มีสิทธิ์เข้าถึงข้อมูล (อนุญาตเฉพาะแอดมินเท่านั้น)' };
+  }
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const { uidMap } = getRegisteredEmployeesFromRegisterSheet(ss);
     const rewards = getRewardsListInternal(ss, uidMap);
     return { status: 'success', rewards: rewards };
+  } catch (err) {
+    return { status: 'error', message: err.message };
+  }
+}
+
+/**
+ * ดึงข้อมูลสำหรับแสดงตุ๊กตาผู้ร่วมงานหน้าเวทีใน gallery.html (เฉพาะ empId, displayName, pictureUrl ไม่เปิดเผย LINE UID)
+ */
+function getPublicStageAttendees() {
+  const cache = CacheService.getScriptCache();
+  const cacheKey = 'STAGE_ATTENDEES_CACHE';
+  try {
+    const cached = cache.get(cacheKey);
+    if (cached) {
+      return JSON.parse(cached);
+    }
+  } catch (e) {}
+
+  try {
+    const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+    const { employeesMap } = getRegisteredEmployeesFromRegisterSheet(ss);
+    const attendees = [];
+    Object.keys(employeesMap).forEach(k => {
+      const emp = employeesMap[k];
+      if (!emp || !emp.empId) return;
+      if (String(emp.regStatus || '').indexOf('อยู่กะ') !== -1) return;
+      attendees.push({
+        empId: String(emp.empId || '').trim(),
+        displayName: String(emp.displayName || emp.empName || emp.empId || '').trim(),
+        pictureUrl: String(emp.pictureUrl || '').trim()
+      });
+    });
+
+    const result = {
+      status: 'success',
+      attendees: attendees
+    };
+    try {
+      cache.put(cacheKey, JSON.stringify(result), 10);
+    } catch (cErr) {}
+    return result;
   } catch (err) {
     return { status: 'error', message: err.message };
   }

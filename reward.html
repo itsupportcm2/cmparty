@@ -922,9 +922,25 @@
     const REGISTER_SHEET_NAME = 'Register';
     const REWARD_SHEET_GID = CM_CFG.REWARD_SHEET_GID || '195154721';
     const LIFF_ID = CM_CFG.LIFF_ID || '2012486224-eFJTgFwr';
-    const ADMIN_UID = CM_CFG.ADMIN_UID || 'U1dcbd47c6981745c2f41c5691cde7ff3';
     const EXCLUDED_REWARD_DEPARTMENTS = ['1.บริหาร'];
     let currentAdminUid = '';
+
+    function getLiffAuthTokens() {
+      const tokens = {};
+      try {
+        if (typeof liff !== 'undefined' && liff.isLoggedIn && liff.isLoggedIn()) {
+          if (typeof liff.getAccessToken === 'function') {
+            const at = liff.getAccessToken();
+            if (at) tokens.lineAccessToken = at;
+          }
+          if (typeof liff.getIDToken === 'function') {
+            const it = liff.getIDToken();
+            if (it) tokens.lineIdToken = it;
+          }
+        }
+      } catch (e) {}
+      return tokens;
+    }
 
     function isExcludedRewardEmployee(emp) {
       const normDept = String((emp && emp.department) || '').replace(/\s+/g, '').trim();
@@ -1127,13 +1143,14 @@
     async function callGasApi(payload) {
       const securedPayload = {
         ...payload,
-        adminUid: currentAdminUid
+        adminUid: currentAdminUid,
+        ...getLiffAuthTokens()
       };
 
       if (typeof google !== 'undefined' && google.script && google.script.run) {
         return await new Promise((resolve, reject) => {
           const runner = google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
-          if (securedPayload.action === 'getRewardInitData') runner.getRewardInitData();
+          if (securedPayload.action === 'getRewardInitData') runner.getRewardInitData(securedPayload);
           else if (securedPayload.action === 'saveReward') runner.saveRewardRecord(securedPayload);
           else if (securedPayload.action === 'saveBatchRewards') runner.saveBatchRewards(securedPayload);
           else if (securedPayload.action === 'deleteReward') runner.deleteRewardRecord(securedPayload);
@@ -1390,6 +1407,8 @@
       btn.disabled = true;
       btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i><span>กำลังบันทึก...</span>';
 
+      const matchedDisplayName = (currentMatchedEmployee && currentMatchedEmployee.displayName) || '';
+
       const payload = {
         action: 'saveReward',
         rowIndex: rowIndex,
@@ -1457,7 +1476,7 @@
               empName: payload.empName,
               department: payload.department,
               branch: payload.branch,
-              displayName: (currentMatchedEmployee && currentMatchedEmployee.displayName) || '',
+              displayName: matchedDisplayName,
               pictureUrl: payload.pictureUrl,
               statusText: res.lineSent ? '✅ ส่งการ์ดแจ้งเตือน LINE แล้ว' : '✅ บันทึกรางวัลเรียบร้อย',
               statusTone: 'saved'
@@ -2582,10 +2601,10 @@
 
     function initRewardSfxPool() {
       const files = {
-        cheer: 'sfx-cheer.ogg',
-        cheerApplause: 'sfx-cheer-applause.ogg',
+        cheer: 'sfx-cheer.mp3',
+        cheerApplause: 'sfx-cheer-applause.mp3',
         applause: 'sfx-applause.wav',
-        fireworks: 'sfx-fireworks.ogg'
+        fireworks: 'sfx-fireworks.mp3'
       };
       Object.keys(files).forEach(key => {
         if (!rewardSfxPool[key]) {
@@ -3918,18 +3937,25 @@
 
         const profile = await liff.getProfile();
         const uid = String((profile && profile.userId) || '').trim();
+        const authTokens = getLiffAuthTokens();
 
-        let isAuthorizedAdmin = (uid === ADMIN_UID);
-        if (!isAuthorizedAdmin && uid) {
+        let isAuthorizedAdmin = false;
+        if (uid && (authTokens.lineAccessToken || authTokens.lineIdToken)) {
           try {
-            const checkRes = await fetch(`${GAS_WEB_APP_URL}?action=getSystemStatus&uid=${encodeURIComponent(uid)}&_t=${Date.now()}`, {
-              method: 'GET',
-              redirect: 'follow'
+            const checkRes = await fetch(GAS_WEB_APP_URL, {
+              method: 'POST',
+              redirect: 'follow',
+              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+              body: JSON.stringify({
+                action: 'getSystemStatus',
+                uid: uid,
+                ...authTokens
+              })
             });
             const checkJson = await checkRes.json();
             isAuthorizedAdmin = Boolean(checkJson && checkJson.isAdmin === true);
           } catch (admErr) {
-            console.warn('Extra admin check warning:', admErr);
+            console.warn('Admin verification error:', admErr);
           }
         }
 

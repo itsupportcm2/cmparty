@@ -518,10 +518,10 @@
 
     function initStageSfxPool() {
       const files = {
-        cheer: 'sfx-cheer.ogg',
-        cheerApplause: 'sfx-cheer-applause.ogg',
+        cheer: 'sfx-cheer.mp3',
+        cheerApplause: 'sfx-cheer-applause.mp3',
         applause: 'sfx-applause.wav',
-        fireworks: 'sfx-fireworks.ogg'
+        fireworks: 'sfx-fireworks.mp3'
       };
       Object.keys(files).forEach(key => {
         if (!stageSfxPool[key]) {
@@ -615,15 +615,22 @@
      */
     const STAGE_BGM_PLAYLIST = [
       { file: 'bgm-christmas-1.mp3', title: 'We Wish You A Merry Christmas (Symphony)' },
-      { file: 'bgm-christmas-2.ogg', title: 'Jingle Bells (Calm Instrumental)' }
+      { file: 'bgm-christmas-2.mp3', title: 'Jingle Bells (Calm Instrumental)' }
     ];
     const STAGE_BGM_TARGET_VOL = 0.28;
     let stageBgmEnabled = true;
     let stageBgmIndex = 0;
+    let stageBgmLoadSeq = 0;
     let stageBgmAudio = null;
     let stageBgmFadeInterval = null;
     let stageBgmStartDelayTimer = null;
     let stageBgmResumeTimer = null;
+
+    function markStageAudioUnlocked() {
+      stageAudioUnlocked = true;
+      const banner = document.getElementById('stageAudioUnlockBanner');
+      if (banner) banner.classList.add('hidden');
+    }
 
     function updateBgmPlayingIndicator(isPlaying) {
       const box = document.getElementById('stageBgmNowPlaying');
@@ -651,6 +658,56 @@
       }
     }
 
+    function playStageBgmTrack(trackIdx, delayFadeMs = 0) {
+      if (!stageSoundEnabled || !stageBgmEnabled || currentStageState.mode !== 'standby') {
+        updateBgmPlayingIndicator(false);
+        return;
+      }
+      if (stageBgmStartDelayTimer) {
+        clearTimeout(stageBgmStartDelayTimer);
+        stageBgmStartDelayTimer = null;
+      }
+      const audio = ensureStageBgmAudio();
+      const safeIdx = ((Number(trackIdx) || 0) + STAGE_BGM_PLAYLIST.length) % STAGE_BGM_PLAYLIST.length;
+      const track = STAGE_BGM_PLAYLIST[safeIdx] || STAGE_BGM_PLAYLIST[0];
+      const seq = ++stageBgmLoadSeq;
+
+      stageBgmIndex = safeIdx;
+      audio.src = SFX_BASE_URL + track.file;
+      audio.volume = 0;
+
+      const p = audio.play();
+      if (p && typeof p.then === 'function') {
+        p.then(() => {
+          if (seq !== stageBgmLoadSeq) return;
+          if (!stageSoundEnabled || !stageBgmEnabled || currentStageState.mode !== 'standby') {
+            audio.pause();
+            updateBgmPlayingIndicator(false);
+            return;
+          }
+          markStageAudioUnlocked();
+          if (delayFadeMs > 0) {
+            stageBgmStartDelayTimer = setTimeout(() => {
+              if (seq === stageBgmLoadSeq && stageSoundEnabled && stageBgmEnabled && currentStageState.mode === 'standby') {
+                fadeStageBgmVolume(STAGE_BGM_TARGET_VOL, 1000, false);
+                updateBgmPlayingIndicator(true);
+              }
+            }, delayFadeMs);
+          } else {
+            fadeStageBgmVolume(STAGE_BGM_TARGET_VOL, 1000, false);
+            updateBgmPlayingIndicator(true);
+          }
+        }).catch(() => {
+          if (seq !== stageBgmLoadSeq) return;
+          if (safeIdx !== 0) {
+            playStageBgmTrack(0, 0);
+          } else {
+            updateBgmPlayingIndicator(false);
+          }
+        });
+      }
+    }
+
     function ensureStageBgmAudio() {
       if (stageBgmAudio) return stageBgmAudio;
       const track = STAGE_BGM_PLAYLIST[stageBgmIndex] || STAGE_BGM_PLAYLIST[0];
@@ -663,37 +720,12 @@
           updateBgmPlayingIndicator(false);
           return;
         }
-        stageBgmIndex = (stageBgmIndex + 1) % STAGE_BGM_PLAYLIST.length;
-        const nextTrack = STAGE_BGM_PLAYLIST[stageBgmIndex];
-        stageBgmAudio.src = SFX_BASE_URL + nextTrack.file;
-        stageBgmAudio.volume = 0;
-        stageBgmAudio.play().then(() => {
-          fadeStageBgmVolume(STAGE_BGM_TARGET_VOL, 1000, false);
-          updateBgmPlayingIndicator(true);
-        }).catch(() => {
-          if (stageBgmIndex !== 0) {
-            stageBgmIndex = 0;
-            stageBgmAudio.src = SFX_BASE_URL + STAGE_BGM_PLAYLIST[0].file;
-            stageBgmAudio.play().then(() => {
-              fadeStageBgmVolume(STAGE_BGM_TARGET_VOL, 1000, false);
-              updateBgmPlayingIndicator(true);
-            }).catch(() => updateBgmPlayingIndicator(false));
-          } else {
-            updateBgmPlayingIndicator(false);
-          }
-        });
+        playStageBgmTrack((stageBgmIndex + 1) % STAGE_BGM_PLAYLIST.length);
       });
 
       stageBgmAudio.addEventListener('error', () => {
-        if (stageBgmIndex !== 0) {
-          stageBgmIndex = 0;
-          stageBgmAudio.src = SFX_BASE_URL + STAGE_BGM_PLAYLIST[0].file;
-          if (stageSoundEnabled && stageBgmEnabled && currentStageState.mode === 'standby') {
-            stageBgmAudio.play().then(() => {
-              fadeStageBgmVolume(STAGE_BGM_TARGET_VOL, 1000, false);
-              updateBgmPlayingIndicator(true);
-            }).catch(() => updateBgmPlayingIndicator(false));
-          }
+        if (stageBgmIndex !== 0 && stageSoundEnabled && stageBgmEnabled && currentStageState.mode === 'standby') {
+          playStageBgmTrack(0);
         } else {
           updateBgmPlayingIndicator(false);
         }
@@ -745,7 +777,9 @@
       }
 
       const audio = ensureStageBgmAudio();
+      const seq = ++stageBgmLoadSeq;
       if (!audio.paused) {
+        markStageAudioUnlocked();
         fadeStageBgmVolume(STAGE_BGM_TARGET_VOL, 800, false);
         updateBgmPlayingIndicator(true);
         return;
@@ -755,14 +789,16 @@
       const p = audio.play();
       if (p && typeof p.then === 'function') {
         p.then(() => {
+          if (seq !== stageBgmLoadSeq) return;
           if (!stageSoundEnabled || !stageBgmEnabled || currentStageState.mode !== 'standby') {
             audio.pause();
             updateBgmPlayingIndicator(false);
             return;
           }
+          markStageAudioUnlocked();
           if (delayFadeMs > 0) {
             stageBgmStartDelayTimer = setTimeout(() => {
-              if (stageSoundEnabled && stageBgmEnabled && currentStageState.mode === 'standby') {
+              if (seq === stageBgmLoadSeq && stageSoundEnabled && stageBgmEnabled && currentStageState.mode === 'standby') {
                 fadeStageBgmVolume(STAGE_BGM_TARGET_VOL, 1200, false);
                 updateBgmPlayingIndicator(true);
               }
@@ -772,12 +808,18 @@
             updateBgmPlayingIndicator(true);
           }
         }).catch(() => {
-          updateBgmPlayingIndicator(false);
+          if (seq !== stageBgmLoadSeq) return;
+          if (stageBgmIndex !== 0) {
+            playStageBgmTrack(0, delayFadeMs);
+          } else {
+            updateBgmPlayingIndicator(false);
+          }
         });
       }
     }
 
     function stopStageBgm(immediate = false) {
+      stageBgmLoadSeq += 1;
       if (stageBgmResumeTimer) {
         clearTimeout(stageBgmResumeTimer);
         stageBgmResumeTimer = null;
@@ -830,6 +872,7 @@
     }
 
     function unlockStageAudioAndFullscreen() {
+      markStageAudioUnlocked();
       primeStageAudioTracks();
       if (currentStageState.mode === 'standby' && stageSoundEnabled && stageBgmEnabled) {
         startStageBgm(380);
@@ -838,7 +881,7 @@
         const ctx = getStageAudioContext();
         if (ctx) {
           const playConfirmChime = () => {
-            stageAudioUnlocked = true;
+            markStageAudioUnlocked();
             const now = ctx.currentTime + 0.01;
             [783.99, 1046.5, 1318.5].forEach((freq, idx) => {
               const osc = ctx.createOscillator();
@@ -862,9 +905,6 @@
         }
       } catch (e) {}
 
-      const banner = document.getElementById('stageAudioUnlockBanner');
-      if (banner) banner.classList.add('hidden');
-
       if (!document.fullscreenElement && document.documentElement.requestFullscreen) {
         document.documentElement.requestFullscreen().catch(() => {});
       }
@@ -873,9 +913,7 @@
     function hideAudioBannerIfRunning() {
       const ctx = getStageAudioContext();
       if (ctx && ctx.state === 'running') {
-        stageAudioUnlocked = true;
-        const banner = document.getElementById('stageAudioUnlockBanner');
-        if (banner) banner.classList.add('hidden');
+        markStageAudioUnlocked();
       }
     }
 
@@ -930,9 +968,7 @@
         if (!ctx) return;
 
         const scheduleSound = () => {
-          stageAudioUnlocked = true;
-          const banner = document.getElementById('stageAudioUnlockBanner');
-          if (banner) banner.classList.add('hidden');
+          markStageAudioUnlocked();
 
           const t0 = ctx.currentTime + 0.01;
 
@@ -1054,6 +1090,8 @@
         stopStageBgm(true);
         stopStageCelebrationAudio();
       } else {
+        primeStageAudioTracks();
+        markStageAudioUnlocked();
         playStageTickSound(880);
         if (currentStageState.mode === 'standby' && stageBgmEnabled) {
           startStageBgm(150);

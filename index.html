@@ -270,7 +270,7 @@
       </div>
     </div>
 
-    <!-- Admin Control Panel (แสดงเฉพาะ Admin UID = U1dcbd47c6981745c2f41c5691cde7ff3 เท่านั้น) -->
+    <!-- Admin Control Panel (แสดงเฉพาะบัญชีแอดมินที่ยืนยันสิทธิ์แล้วเท่านั้น) -->
     <div id="adminControlPanel" class="hidden mx-6 mt-4 transition-all"></div>
 
     <!-- Initial Loading State while checking LIFF & Friendship -->
@@ -892,14 +892,28 @@
     const SPREADSHEET_ID = CM_CFG.SPREADSHEET_ID || '1j2wb2cBiPK2IDfpNKJZBSUu3MDVwSEogAkRENvU-GJw';
     const SOURCE_SHEET_NAME = 'การตอบแบบฟอร์ม 1';
 
-    // บัญชีแอดมินสำหรับเปิด-ปิดระบบลงทะเบียน
-    const ADMIN_UID = CM_CFG.ADMIN_UID || 'U1dcbd47c6981745c2f41c5691cde7ff3';
-
+    // ฟังก์ชันตรวจสอบสิทธิ์แอดมิน (ยืนยันจากผลตรวจ Token ฝั่ง Server เท่านั้น)
     function isCurrentUserAdmin() {
       const uid = String((userProfile && userProfile.userId) || '').trim();
       if (!uid) return false;
-      if (uid === ADMIN_UID) return true;
       return Boolean(window.currentSysConfig && window.currentSysConfig.isAdmin === true);
+    }
+
+    function getLiffAuthTokens() {
+      const tokens = {};
+      try {
+        if (typeof liff !== 'undefined' && liff.isLoggedIn && liff.isLoggedIn()) {
+          if (typeof liff.getAccessToken === 'function') {
+            const at = liff.getAccessToken();
+            if (at) tokens.lineAccessToken = at;
+          }
+          if (typeof liff.getIDToken === 'function') {
+            const it = liff.getIDToken();
+            if (it) tokens.lineIdToken = it;
+          }
+        }
+      } catch (e) {}
+      return tokens;
     }
 
     function escapeAdminHtml(str) {
@@ -1004,7 +1018,7 @@
           document.getElementById('lineUid').value = userProfile.userId;
 
           // 1. ตรวจสอบสถานะแอดมิน และดึงสถานะการเปิด/ปิดระบบลงทะเบียน
-          let sysConfig = { systemStatus: 'OPEN', isOpen: true, openingDateTime: '', isBeforeOpeningTime: false, closingDateTime: '', isAdmin: (userProfile.userId === ADMIN_UID) };
+          let sysConfig = { systemStatus: 'OPEN', isOpen: true, openingDateTime: '', isBeforeOpeningTime: false, closingDateTime: '', isAdmin: false };
           try {
             sysConfig = await fetchSystemStatus(userProfile.userId);
           } catch (sysErr) {
@@ -1605,40 +1619,45 @@
       return false;
     }
 
-    // ดึงสถานะการเปิด/ปิดระบบจาก Backend
+    // ดึงสถานะการเปิด/ปิดระบบจาก Backend (ส่ง POST พร้อม Token ก่อน เพื่อไม่ให้ส่ง Token ใน Query String)
     async function fetchSystemStatus(uid) {
       const urlsToTry = [GAS_WEB_APP_URL, BACKUP_GAS_WEB_APP_URL].filter(Boolean);
+      const authTokens = getLiffAuthTokens();
       for (const apiUrl of urlsToTry) {
         try {
-          const url = `${apiUrl}?action=getSystemStatus&uid=${encodeURIComponent(uid || '')}&t=${Date.now()}`;
-          const res = await fetch(url, { method: 'GET', redirect: 'follow' });
-          const text = await res.text();
-          const data = JSON.parse(text);
-          if (data && (data.status === 'success' || data.isOpen !== undefined)) {
-            return data;
+          const resPost = await fetch(apiUrl, {
+            method: 'POST',
+            redirect: 'follow',
+            headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+            body: JSON.stringify({
+              action: 'getSystemStatus',
+              uid: uid || '',
+              ...authTokens
+            })
+          });
+          const textPost = await resPost.text();
+          const dataPost = JSON.parse(textPost);
+          if (dataPost && (dataPost.status === 'success' || dataPost.isOpen !== undefined)) {
+            return dataPost;
           }
-        } catch (e) {
+        } catch (postE) {
           try {
-            const resPost = await fetch(apiUrl, {
-              method: 'POST',
-              redirect: 'follow',
-              headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-              body: JSON.stringify({ action: 'getSystemStatus', uid: uid || '' })
-            });
-            const textPost = await resPost.text();
-            const dataPost = JSON.parse(textPost);
-            if (dataPost && (dataPost.status === 'success' || dataPost.isOpen !== undefined)) {
-              return dataPost;
+            const url = `${apiUrl}?action=getSystemStatus&uid=${encodeURIComponent(uid || '')}&t=${Date.now()}`;
+            const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+            const text = await res.text();
+            const data = JSON.parse(text);
+            if (data && (data.status === 'success' || data.isOpen !== undefined)) {
+              return data;
             }
-          } catch (postE) {
-            console.warn('fetchSystemStatus attempt failed for URL:', apiUrl, postE);
+          } catch (getE) {
+            console.warn('fetchSystemStatus attempt failed for URL:', apiUrl, getE);
           }
         }
       }
-      return { status: 'success', systemStatus: 'OPEN', isOpen: true, isAdmin: (uid === ADMIN_UID) };
+      return { status: 'success', systemStatus: 'OPEN', isOpen: true, isAdmin: false };
     }
 
-    // แสดงปุ่มเปิดแผงควบคุมระบบแบบซ่อนไว้ และสร้างเนื้อหา Pop-up Modal (สำหรับแอดมิน UID = U1dcbd47c6981745c2f41c5691cde7ff3 เท่านั้น)
+    // แสดงปุ่มเปิดแผงควบคุมระบบแบบซ่อนไว้ และสร้างเนื้อหา Pop-up Modal (สำหรับแอดมินที่ยืนยันสิทธิ์แล้วเท่านั้น)
     function renderAdminControlPanel(sysConfig) {
       const panel = document.getElementById('adminControlPanel');
       const modalContent = document.getElementById('adminModalContent');
@@ -1942,7 +1961,7 @@
           adminUid: userProfile.userId
         });
         if (data && data.status === 'success') {
-          renderAdminMembersList(data.superAdminUid || ADMIN_UID, data.admins || []);
+          renderAdminMembersList(data.superAdminUid || '', data.admins || []);
         } else {
           listEl.innerHTML = `<div class="text-[11px] text-rose-600 text-center py-1">${escapeAdminHtml((data && data.message) || 'โหลดรายชื่อแอดมินไม่สำเร็จ')}</div>`;
         }
@@ -2018,7 +2037,7 @@
 
         if (data && data.status === 'success') {
           if (inputEl) inputEl.value = '';
-          renderAdminMembersList(data.superAdminUid || ADMIN_UID, data.admins || []);
+          renderAdminMembersList(data.superAdminUid || '', data.admins || []);
           Swal.fire({
             toast: true,
             position: 'top-end',
@@ -2060,7 +2079,7 @@
         Swal.close();
 
         if (data && data.status === 'success') {
-          renderAdminMembersList(data.superAdminUid || ADMIN_UID, data.admins || []);
+          renderAdminMembersList(data.superAdminUid || '', data.admins || []);
           Swal.fire({
             toast: true,
             position: 'top-end',
@@ -2380,6 +2399,10 @@
     // ฟังก์ชันส่งคำสั่ง Admin ไปยัง Web App Backend (รองรับทั้ง POST และ GET ป้องกัน CORS issues)
     async function sendAdminAction(payload) {
       const urlsToTry = [GAS_WEB_APP_URL, BACKUP_GAS_WEB_APP_URL].filter(Boolean);
+      const securedPayload = {
+        ...payload,
+        ...getLiffAuthTokens()
+      };
       let lastErr = null;
 
       for (const apiUrl of urlsToTry) {
@@ -2389,7 +2412,7 @@
             method: 'POST',
             redirect: 'follow',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-            body: JSON.stringify(payload)
+            body: JSON.stringify(securedPayload)
           });
           const text = await res.text();
           const json = JSON.parse(text);
@@ -2402,7 +2425,7 @@
 
         // 2. ถ้า POST ไม่สำเร็จ ลองส่งผ่าน GET parameter
         try {
-          const params = new URLSearchParams(payload);
+          const params = new URLSearchParams(securedPayload);
           const getRes = await fetch(`${apiUrl}?${params.toString()}&t=${Date.now()}`, {
             method: 'GET',
             redirect: 'follow'
@@ -2611,7 +2634,7 @@
         } catch (postErr) {
           lastError = postErr;
           try {
-            const params = new URLSearchParams({
+            const getPayload = {
               action: 'saveRegistration',
               empId: payload.empId || '',
               empName: payload.empName || '',
@@ -2620,7 +2643,10 @@
               uid: payload.uid || '',
               displayName: payload.displayName || '',
               pictureUrl: payload.pictureUrl || ''
-            });
+            };
+            if (payload.lineAccessToken) getPayload.lineAccessToken = payload.lineAccessToken;
+            if (payload.lineIdToken) getPayload.lineIdToken = payload.lineIdToken;
+            const params = new URLSearchParams(getPayload);
             const getRes = await fetch(`${apiUrl}?${params.toString()}`, {
               method: 'GET',
               redirect: 'follow'
@@ -2684,8 +2710,8 @@
             title: 'ท่านไม่ได้มาร่วมงานลงทะเบียนไม่ได้',
             html: `
               <div class="text-left text-xs space-y-1.5 bg-red-50 p-3.5 rounded-xl border border-red-200 text-gray-800 mt-2">
-                <p><b>พนักงาน:</b> ${(res.data && res.data.empName) || '-'} (รหัส: ${empId})</p>
-                <p><b>สถานะในแบบฟอร์ม:</b> <span class="text-red-700 font-bold">"${(res.data && res.data.attendAnswer) || 'ไม่ไป'}"</span></p>
+                <p><b>พนักงาน:</b> ${escapeAdminHtml((res.data && res.data.empName) || '-')} (รหัส: ${escapeAdminHtml(empId)})</p>
+                <p><b>สถานะในแบบฟอร์ม:</b> <span class="text-red-700 font-bold">"${escapeAdminHtml((res.data && res.data.attendAnswer) || 'ไม่ไป')}"</span></p>
                 <p class="text-red-600 pt-1 font-semibold">⚠️ ระบบเปิดให้เฉพาะผู้ที่ตอบ "ไป" ร่วมงานเท่านั้นในการลงทะเบียน</p>
               </div>
             `,
@@ -2715,9 +2741,9 @@
               title: 'รหัสพนักงานนี้ได้ลงทะเบียนไปแล้ว',
               html: `
                 <div class="text-left text-xs space-y-1.5 bg-red-50 p-3.5 rounded-xl border border-red-200 text-gray-800 mt-2">
-                  <p><b>รหัสพนักงาน:</b> ${res.data.empId || empId}</p>
-                  <p><b>ชื่อ-สกุล:</b> ${res.data.empName || '-'}</p>
-                  ${res.registeredAt ? `<p><b>เวลาที่ลงทะเบียน:</b> ${res.registeredAt}</p>` : ''}
+                  <p><b>รหัสพนักงาน:</b> ${escapeAdminHtml(res.data.empId || empId)}</p>
+                  <p><b>ชื่อ-สกุล:</b> ${escapeAdminHtml(res.data.empName || '-')}</p>
+                  ${res.registeredAt ? `<p><b>เวลาที่ลงทะเบียน:</b> ${escapeAdminHtml(res.registeredAt)}</p>` : ''}
                   <p class="text-red-600 pt-1 font-semibold">⚠️ ไม่สามารถใช้รหัสพนักงานที่ลงทะเบียนไปแล้วซ้ำได้</p>
                 </div>
               `,
@@ -2735,14 +2761,14 @@
         } else {
           resetEmployeePreview();
           hintEl.className = 'text-xs text-red-600 mt-1.5 font-medium flex items-center gap-1.5';
-          hintEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i><span>${res && res.message ? res.message : 'ไม่พบรหัสพนักงานนี้ในระบบ'}</span>`;
+          hintEl.innerHTML = `<i class="fa-solid fa-circle-xmark"></i><span>${escapeAdminHtml(res && res.message ? res.message : 'ไม่พบรหัสพนักงานนี้ในระบบ')}</span>`;
         }
       } catch (error) {
         if (requestId !== currentCheckRequestId) return;
         loadingIcon.classList.add('hidden');
         resetEmployeePreview();
         hintEl.className = 'text-xs text-red-600 mt-1.5 flex items-center gap-1.5';
-        hintEl.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i><span>เกิดข้อผิดพลาดในการเชื่อมต่อ: ${error.message}</span>`;
+        hintEl.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i><span>เกิดข้อผิดพลาดในการเชื่อมต่อ: ${escapeAdminHtml(error.message)}</span>`;
       }
     }
 
@@ -2851,7 +2877,8 @@
         branch: verifiedEmployee.branch,
         uid: userProfile.userId || document.getElementById('lineUid').value,
         displayName: userProfile.displayName,
-        pictureUrl: userProfile.pictureUrl
+        pictureUrl: userProfile.pictureUrl,
+        ...getLiffAuthTokens()
       };
 
       try {
@@ -2874,10 +2901,10 @@
             title: 'ลงทะเบียนสำเร็จ!',
             html: `
               <div class="text-left text-sm space-y-1 bg-green-50 p-3 rounded-xl border border-green-200 mt-2">
-                <p><b>รหัสพนักงาน:</b> ${payload.empId}</p>
-                <p><b>ชื่อ-สกุล:</b> ${payload.empName}</p>
-                <p><b>แผนก:</b> ${payload.department}</p>
-                <p><b>สาขา:</b> ${payload.branch}</p>
+                <p><b>รหัสพนักงาน:</b> ${escapeAdminHtml(payload.empId)}</p>
+                <p><b>ชื่อ-สกุล:</b> ${escapeAdminHtml(payload.empName)}</p>
+                <p><b>แผนก:</b> ${escapeAdminHtml(payload.department)}</p>
+                <p><b>สาขา:</b> ${escapeAdminHtml(payload.branch)}</p>
               </div>
             `,
             confirmButtonText: 'ตกลง',
