@@ -1491,7 +1491,7 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
   if (params.action === 'inspectRichMenu') {
-    return ContentService.createTextOutput(JSON.stringify(inspectLineRichMenus(params)))
+    return ContentService.createTextOutput(JSON.stringify(adminInspectLineRichMenus(params)))
       .setMimeType(ContentService.MimeType.JSON);
   }
 
@@ -1537,7 +1537,7 @@ function doGet(e) {
 
   // กรณีจัดการข้อมูลรางวัล (Reward CRUD ผ่าน GET):
   // - ?action=getRewardInitData (เฉพาะแอดมิน)
-  // - ?action=checkRegisteredEmployee&empId=... (ค้นหาผู้ลงทะเบียนจาก Sheet Register เท่านั้น)
+  // - ?action=checkRegisteredEmployee&empId=... (เฉพาะแอดมิน - ค้นหาผู้ลงทะเบียนจาก Sheet Register เท่านั้น)
   // - ?action=getRewards (เฉพาะแอดมิน)
   // - ?action=saveReward&rowIndex=...&rewardName=...&empId=...
   // - ?action=deleteReward&rowIndex=...
@@ -1546,7 +1546,7 @@ function doGet(e) {
       .setMimeType(ContentService.MimeType.JSON);
   }
   if (params.action === 'checkRegisteredEmployee') {
-    return ContentService.createTextOutput(JSON.stringify(checkRegisteredEmployeeById(params.empId)))
+    return ContentService.createTextOutput(JSON.stringify(checkRegisteredEmployeeById(params)))
       .setMimeType(ContentService.MimeType.JSON);
   }
   if (params.action === 'getRewards') {
@@ -1700,7 +1700,7 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
     if (payload.action === 'inspectRichMenu') {
-      return ContentService.createTextOutput(JSON.stringify(inspectLineRichMenus()))
+      return ContentService.createTextOutput(JSON.stringify(adminInspectLineRichMenus(payload)))
         .setMimeType(ContentService.MimeType.JSON);
     }
 
@@ -1725,7 +1725,7 @@ function doPost(e) {
         .setMimeType(ContentService.MimeType.JSON);
     }
     if (payload.action === 'checkRegisteredEmployee') {
-      return ContentService.createTextOutput(JSON.stringify(checkRegisteredEmployeeById(payload.empId)))
+      return ContentService.createTextOutput(JSON.stringify(checkRegisteredEmployeeById(payload)))
         .setMimeType(ContentService.MimeType.JSON);
     }
     if (payload.action === 'getRewards') {
@@ -2083,11 +2083,19 @@ function setupShiftAutoSyncTrigger() {
 }
 
 /**
- * ค้นหาข้อมูลพนักงานเฉพาะผู้ที่ลงทะเบียนใน Sheet "Register" เท่านั้น
+ * ค้นหาข้อมูลพนักงานเฉพาะผู้ที่ลงทะเบียนใน Sheet "Register" เท่านั้น (เฉพาะแอดมิน)
  */
-function checkRegisteredEmployeeById(empId) {
+function checkRegisteredEmployeeById(empIdOrPayload) {
   try {
-    const searchId = String(empId || '').trim().replace(/\.0$/, '');
+    let rawEmpId = empIdOrPayload;
+    if (empIdOrPayload && typeof empIdOrPayload === 'object') {
+      if (!isAdminAuthorized(empIdOrPayload)) {
+        return { status: 'error', message: 'ไม่มีสิทธิ์เข้าถึงข้อมูล (อนุญาตเฉพาะแอดมินเท่านั้น)' };
+      }
+      rawEmpId = empIdOrPayload.empId;
+    }
+
+    const searchId = String(rawEmpId || '').trim().replace(/\.0$/, '');
     if (!searchId) {
       return { status: 'error', message: 'กรุณาระบุรหัสพนักงาน' };
     }
@@ -3062,6 +3070,29 @@ function handleLineWebhookPost(e) {
 
     for (let i = 0; i < events.length; i++) {
       const event = events[i];
+      const webhookEventId = String(event.webhookEventId || '').trim();
+      if (webhookEventId) {
+        try {
+          const evtCache = CacheService.getScriptCache();
+          const evtKey = 'WH_EVT_' + webhookEventId;
+          if (evtCache.get(evtKey) === '1') {
+            continue;
+          }
+          evtCache.put(evtKey, '1', 120);
+        } catch (dedupErr) {}
+      }
+
+      // กรณีบล็อกหรือเลิกติดตาม (unfollow) — ไม่มี replyToken จึงต้องจัดการก่อนตรวจ replyToken
+      if (event.type === 'unfollow') {
+        const unfollowUserId = event.source && event.source.userId;
+        if (unfollowUserId) {
+          try {
+            CacheService.getScriptCache().remove('IS_FRIEND_' + unfollowUserId);
+          } catch (e) {}
+        }
+        continue;
+      }
+
       const replyToken = event.replyToken;
 
       // ข้ามกรณี Verify Webhook ของ LINE (replyToken เป็น 0000...)
@@ -3078,16 +3109,6 @@ function handleLineWebhookPost(e) {
           } catch (e) {}
         }
         handleFollowEvent(event);
-      }
-
-      // 1.1) กรณีบล็อกหรือเลิกติดตาม (unfollow)
-      else if (event.type === 'unfollow') {
-        const unfollowUserId = event.source && event.source.userId;
-        if (unfollowUserId) {
-          try {
-            CacheService.getScriptCache().remove('IS_FRIEND_' + unfollowUserId);
-          } catch (e) {}
-        }
       }
 
       // 2) กรณีส่งข้อความ (message) -> ต้องตรวจสอบก่อนว่าผู้ใช้ได้กดเพิ่มเพื่อนกับ LINE Bot แล้วหรือไม่
@@ -5496,8 +5517,9 @@ function fetchRichMenuImageBlob() {
   const errors = [];
   for (let i = 0; i < RICH_MENU_IMAGE_URLS.length; i++) {
     const imgUrl = RICH_MENU_IMAGE_URLS[i];
+    const bustUrl = imgUrl + (imgUrl.indexOf('?') === -1 ? '?_t=' : '&_t=') + Date.now();
     try {
-      const res = UrlFetchApp.fetch(imgUrl, { muteHttpExceptions: true });
+      const res = UrlFetchApp.fetch(bustUrl, { muteHttpExceptions: true });
       const code = res.getResponseCode();
       if (code >= 200 && code < 300) {
         const blob = res.getBlob();
@@ -5864,6 +5886,13 @@ function adminClearLineRichMenu(payload) {
     return { status: 'forbidden', message: 'ไม่มีสิทธิ์ดำเนินการ (เฉพาะแอดมินเท่านั้น)' };
   }
   return clearLineRichMenu();
+}
+
+function adminInspectLineRichMenus(payload) {
+  if (!isAdminAuthorized(payload)) {
+    return { status: 'forbidden', message: 'ไม่มีสิทธิ์เข้าถึงข้อมูล Rich Menu (เฉพาะแอดมินเท่านั้น)' };
+  }
+  return inspectLineRichMenus(payload);
 }
 
 function createJsonResponse(obj) {

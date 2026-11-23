@@ -1420,6 +1420,19 @@
     const DRIVE_FOLDER_ID = '1Mob3ioDYe_67dLNHp3zQR4tGl2EtFJ-L';
     const DRIVE_FOLDER_URL = `https://drive.google.com/drive/folders/${DRIVE_FOLDER_ID}?usp=sharing`;
 
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+      if (typeof AbortController === 'undefined') {
+        return fetch(url, options);
+      }
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
     let allImages = [];
     let filteredImages = [];
     let currentLightboxIndex = -1;
@@ -1608,7 +1621,7 @@
         for (const apiUrl of urlsToTry) {
           try {
             const url = `${apiUrl}?action=getGalleryImages&nocache=${forceRefresh ? '1' : '0'}&t=${Date.now()}`;
-            const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+            const res = await fetchWithTimeout(url, { method: 'GET', redirect: 'follow' }, 15000);
             const json = await res.json();
             if (json && json.status === 'success') {
               result = json;
@@ -2795,7 +2808,7 @@
 
     async function fetchRegisterGvizJson(queryParam) {
       const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&${queryParam}&_t=${Date.now()}`;
-      const res = await fetch(url, { cache: 'no-store' });
+      const res = await fetchWithTimeout(url, { cache: 'no-store' }, 12000);
       const text = await res.text();
       const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]+)\);?/);
       if (!match || !match[1]) throw new Error('Invalid gviz response');
@@ -2852,7 +2865,7 @@
 
         // 2. Fallback ผ่าน GAS Web App หาก Gviz อ่านไม่สำเร็จ (ดึงเฉพาะข้อมูลแสดงตุ๊กตาหน้าเวทีโดยไม่เปิดเผย UID/ข้อมูลภายใน)
         if (!fetchedList) {
-          const gasRes = await fetch(`${GAS_WEB_APP_URL}?action=getStageAttendees&_t=${Date.now()}`, { cache: 'no-store' });
+          const gasRes = await fetchWithTimeout(`${GAS_WEB_APP_URL}?action=getStageAttendees&_t=${Date.now()}`, { cache: 'no-store' }, 12000);
           const gasJson = await gasRes.json();
           if (gasJson && gasJson.status === 'success' && Array.isArray(gasJson.attendees)) {
             fetchedList = gasJson.attendees
@@ -2917,7 +2930,7 @@
       isWishSyncing = true;
 
       try {
-        const res = await fetch(`${GAS_WEB_APP_URL}?action=getLiveWishes&_t=${Date.now()}`, { cache: 'no-store' });
+        const res = await fetchWithTimeout(`${GAS_WEB_APP_URL}?action=getLiveWishes&_t=${Date.now()}`, { cache: 'no-store' }, 12000);
         const data = await res.json();
         if (!data || data.status !== 'success' || !Array.isArray(data.wishes)) return;
 
@@ -3284,7 +3297,7 @@
 
       document.getElementById('lbCounter').innerText = `ภาพที่ ${index + 1} จาก ${filteredImages.length}`;
       document.getElementById('lbFileName').innerText = photo.name || '-';
-      document.getElementById('lbDate').innerHTML = `<i class="fa-regular fa-calendar-check mr-1 text-amber-400"></i>${photo.date || 'ไม่ระบุวันที่'}`;
+      document.getElementById('lbDate').innerHTML = `<i class="fa-regular fa-calendar-check mr-1 text-amber-400"></i>${escapeHtml(photo.date || 'ไม่ระบุวันที่')}`;
       document.getElementById('lbFileSize').innerText = formatFileSize(photo.size);
 
       document.getElementById('lbDriveBtn').href = photo.driveViewUrl || DRIVE_FOLDER_URL;

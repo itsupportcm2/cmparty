@@ -1056,6 +1056,19 @@
     const SPREADSHEET_ID = CM_CFG.SPREADSHEET_ID || '1j2wb2cBiPK2IDfpNKJZBSUu3MDVwSEogAkRENvU-GJw';
     const SOURCE_SHEET_NAME = 'การตอบแบบฟอร์ม 1';
 
+    async function fetchWithTimeout(url, options = {}, timeoutMs = 15000) {
+      if (typeof AbortController === 'undefined') {
+        return fetch(url, options);
+      }
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        return await fetch(url, { ...options, signal: controller.signal });
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
     // ฟังก์ชันตรวจสอบสิทธิ์แอดมิน (ยืนยันจากผลตรวจ Token ฝั่ง Server เท่านั้น)
     function isCurrentUserAdmin() {
       const uid = String((userProfile && userProfile.userId) || '').trim();
@@ -1319,7 +1332,7 @@
 
       for (const url of endpoints) {
         try {
-          const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+          const res = await fetchWithTimeout(url, { method: 'GET', redirect: 'follow' }, 12000);
           const text = await res.text();
           const json = JSON.parse(text);
           if (json && typeof json.isFriend === 'boolean') {
@@ -1497,7 +1510,7 @@
       boxEl.innerHTML = `
         ${t.hatSvg}
         <div class="w-7 h-7 rounded-full overflow-hidden border-2 border-white bg-rose-100 shadow-xs relative z-10">
-          <img src="${safeAvatar}" alt="Doll Avatar" referrerpolicy="no-referrer" class="w-full h-full object-cover" onerror="this.src='https://cdn-icons-png.flaticon.com/512/847/847969.png'" />
+          <img src="${escapeAdminHtml(safeAvatar)}" alt="Doll Avatar" referrerpolicy="no-referrer" class="w-full h-full object-cover" onerror="this.src='https://cdn-icons-png.flaticon.com/512/847/847969.png'" />
         </div>
         <svg viewBox="0 0 56 36" class="w-8 h-5 -mt-1 relative z-10 drop-shadow">
           <path d="M13 10 C5 8, 3 2, 7 1 C10 0, 13 6, 15 9" fill="${t.suit}" stroke="${t.trim}" stroke-width="1.5" stroke-linecap="round"/>
@@ -1794,7 +1807,7 @@
     async function fetchRegisterSheetRows() {
       const fetchGviz = async (sheetName) => {
         const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&headers=1&sheet=${encodeURIComponent(sheetName)}&t=${Date.now()}`;
-        const res = await fetch(url, { cache: 'no-store' });
+        const res = await fetchWithTimeout(url, { cache: 'no-store' }, 12000);
         const text = await res.text();
         const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?/);
         if (!match || !match[1]) throw new Error('Invalid gviz response');
@@ -1845,10 +1858,10 @@
 
         // 2. เช็คผ่าน GAS Web App API (?action=checkUid&uid=...)
         if (GAS_WEB_APP_URL) {
-          const res = await fetch(`${GAS_WEB_APP_URL}?action=checkUid&uid=${encodeURIComponent(uid)}`, {
+          const res = await fetchWithTimeout(`${GAS_WEB_APP_URL}?action=checkUid&uid=${encodeURIComponent(uid)}`, {
             method: 'GET',
             redirect: 'follow'
-          });
+          }, 12000);
           const data = await res.json();
           if (data && data.registered) {
             showAlreadyRegisteredView(data.data);
@@ -1867,7 +1880,7 @@
       const authTokens = getLiffAuthTokens();
       for (const apiUrl of urlsToTry) {
         try {
-          const resPost = await fetch(apiUrl, {
+          const resPost = await fetchWithTimeout(apiUrl, {
             method: 'POST',
             redirect: 'follow',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
@@ -1876,7 +1889,7 @@
               uid: uid || '',
               ...authTokens
             })
-          });
+          }, 12000);
           const textPost = await resPost.text();
           const dataPost = JSON.parse(textPost);
           if (dataPost && (dataPost.status === 'success' || dataPost.isOpen !== undefined)) {
@@ -1885,7 +1898,7 @@
         } catch (postE) {
           try {
             const url = `${apiUrl}?action=getSystemStatus&uid=${encodeURIComponent(uid || '')}&t=${Date.now()}`;
-            const res = await fetch(url, { method: 'GET', redirect: 'follow' });
+            const res = await fetchWithTimeout(url, { method: 'GET', redirect: 'follow' }, 12000);
             const text = await res.text();
             const data = JSON.parse(text);
             if (data && (data.status === 'success' || data.isOpen !== undefined)) {
@@ -2744,12 +2757,12 @@
       for (const apiUrl of urlsToTry) {
         // 1. ลองส่งผ่าน POST (text/plain เลี่ยง CORS preflight)
         try {
-          const res = await fetch(apiUrl, {
+          const res = await fetchWithTimeout(apiUrl, {
             method: 'POST',
             redirect: 'follow',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify(securedPayload)
-          });
+          }, 20000);
           const text = await res.text();
           const json = JSON.parse(text);
           if (json && (json.status === 'success' || json.status === 'error' || json.status === 'forbidden')) {
@@ -2762,10 +2775,10 @@
         // 2. ถ้า POST ไม่สำเร็จ ลองส่งผ่าน GET parameter
         try {
           const params = new URLSearchParams(securedPayload);
-          const getRes = await fetch(`${apiUrl}?${params.toString()}&t=${Date.now()}`, {
+          const getRes = await fetchWithTimeout(`${apiUrl}?${params.toString()}&t=${Date.now()}`, {
             method: 'GET',
             redirect: 'follow'
-          });
+          }, 20000);
           const text = await getRes.text();
           const json = JSON.parse(text);
           if (json && (json.status === 'success' || json.status === 'error' || json.status === 'forbidden')) {
@@ -2815,7 +2828,7 @@
       const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(SOURCE_SHEET_NAME)}&t=${Date.now()}`;
 
       const [response, regCheck] = await Promise.all([
-        fetch(url, { cache: 'no-store' }),
+        fetchWithTimeout(url, { cache: 'no-store' }, 12000),
         checkIfEmpIdAlreadyRegisteredInSheet(searchId)
       ]);
       const text = await response.text();
@@ -2914,10 +2927,10 @@
 
       // 3. Fallback ไปยัง GAS_WEB_APP_URL
       if (GAS_WEB_APP_URL) {
-        const res = await fetch(`${GAS_WEB_APP_URL}?action=checkEmployee&empId=${encodeURIComponent(empId)}&t=${Date.now()}`, {
+        const res = await fetchWithTimeout(`${GAS_WEB_APP_URL}?action=checkEmployee&empId=${encodeURIComponent(empId)}&t=${Date.now()}`, {
           method: 'GET',
           redirect: 'follow'
-        });
+        }, 12000);
         return await res.json();
       }
 
@@ -2952,12 +2965,12 @@
           await waitJitter(700, 1450);
         }
         try {
-          const res = await fetch(apiUrl, {
+          const res = await fetchWithTimeout(apiUrl, {
             method: 'POST',
             redirect: 'follow',
             headers: { 'Content-Type': 'text/plain;charset=utf-8' },
             body: JSON.stringify(payload)
-          });
+          }, 20000);
           const text = await res.text();
           const json = JSON.parse(text);
           if (json && json.status) {
@@ -2983,10 +2996,10 @@
             if (payload.lineAccessToken) getPayload.lineAccessToken = payload.lineAccessToken;
             if (payload.lineIdToken) getPayload.lineIdToken = payload.lineIdToken;
             const params = new URLSearchParams(getPayload);
-            const getRes = await fetch(`${apiUrl}?${params.toString()}`, {
+            const getRes = await fetchWithTimeout(`${apiUrl}?${params.toString()}`, {
               method: 'GET',
               redirect: 'follow'
-            });
+            }, 20000);
             const getText = await getRes.text();
             const getJson = JSON.parse(getText);
             if (getJson && getJson.status) {

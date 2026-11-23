@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cm-party-offline-v4';
+const CACHE_NAME = 'cm-party-offline-v5';
 
 const PRECACHE_URLS = [
   '/stage.html',
@@ -81,7 +81,7 @@ async function cacheFirstAsset(request) {
   return res;
 }
 
-async function staleWhileRevalidateAsset(request) {
+async function staleWhileRevalidateAsset(request, event) {
   const cache = await caches.open(CACHE_NAME);
   const urlObj = new URL(request.url);
   const cached = (await cache.match(request, { ignoreSearch: true })) || (await cache.match(urlObj.pathname));
@@ -95,7 +95,12 @@ async function staleWhileRevalidateAsset(request) {
     })
     .catch(() => null);
 
-  if (cached) return cached;
+  if (cached) {
+    if (event && typeof event.waitUntil === 'function') {
+      event.waitUntil(fetchPromise);
+    }
+    return cached;
+  }
   const fresh = await fetchPromise;
   if (fresh) return fresh;
   throw new Error('Asset unavailable offline');
@@ -112,7 +117,7 @@ self.addEventListener('fetch', (event) => {
 
   if (pathname.startsWith('/assets/') || pathname.startsWith('/logo/')) {
     if (/\.(?:png|jpg|jpeg|webp|svg)$/i.test(pathname)) {
-      event.respondWith(staleWhileRevalidateAsset(request));
+      event.respondWith(staleWhileRevalidateAsset(request, event));
     } else {
       event.respondWith(cacheFirstAsset(request));
     }
