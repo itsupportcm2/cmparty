@@ -235,6 +235,7 @@ function addExtraAdmin(payload) {
   const newEntry = { uid: targetUid, label: label, empId: empId, addedAt: nowStr };
   currentList.push(newEntry);
   saveExtraAdminsList(currentList);
+  try { CacheService.getScriptCache().remove('STAGE_ATTENDEES_CACHE'); } catch (cErr) {}
 
   return {
     status: 'success',
@@ -263,6 +264,7 @@ function removeExtraAdmin(payload) {
     return { status: 'error', message: 'ไม่พบรายชื่อแอดมินที่ต้องการลบ' };
   }
   saveExtraAdminsList(nextList);
+  try { CacheService.getScriptCache().remove('STAGE_ATTENDEES_CACHE'); } catch (cErr) {}
 
   return {
     status: 'success',
@@ -2185,15 +2187,21 @@ function getPublicStageAttendees() {
   try {
     const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
     const { employeesMap } = getRegisteredEmployeesFromRegisterSheet(ss);
+    const extraAdminUidMap = {};
+    getExtraAdminsList().forEach(a => {
+      if (a && a.uid) extraAdminUidMap[a.uid] = true;
+    });
     const attendees = [];
     Object.keys(employeesMap).forEach(k => {
       const emp = employeesMap[k];
       if (!emp || !emp.empId) return;
       if (String(emp.regStatus || '').indexOf('อยู่กะ') !== -1) return;
+      const empIsAdmin = Boolean(emp.uid && (emp.uid === ADMIN_UID || extraAdminUidMap[emp.uid]));
       attendees.push({
         empId: String(emp.empId || '').trim(),
         displayName: String(emp.displayName || emp.empName || emp.empId || '').trim(),
-        pictureUrl: String(emp.pictureUrl || '').trim()
+        pictureUrl: String(emp.pictureUrl || '').trim(),
+        isAdmin: empIsAdmin
       });
     });
 
