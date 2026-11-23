@@ -18,10 +18,8 @@
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
-  <!-- Custom Font: PK Christmas (+ Prompt fallback) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <!-- Preload Custom Font: PK Christmas -->
+  <link rel="preload" href="assets/PK_Christmas-Regular.ttf" as="font" type="font/ttf" crossorigin>
 
   <!-- Shared CM Party Configuration -->
   <script src="config.js"></script>
@@ -43,7 +41,7 @@
     }
 
     body {
-      font-family: 'PK Christmas', 'Prompt', sans-serif;
+      font-family: 'PK Christmas', system-ui, -apple-system, sans-serif;
       color: #ffffff;
       overflow: hidden;
       background:
@@ -144,11 +142,11 @@
     }
 
     .font-cute {
-      font-family: 'PK Christmas', 'Prompt', sans-serif;
+      font-family: 'PK Christmas', system-ui, -apple-system, sans-serif;
     }
 
     .font-display {
-      font-family: 'PK Christmas', 'Prompt', sans-serif;
+      font-family: 'PK Christmas', system-ui, -apple-system, sans-serif;
     }
 
     @keyframes stageBokehFloat {
@@ -304,7 +302,7 @@
     <button
       type="button"
       onclick="playStageAnnouncementSound()"
-      class="px-3.5 py-2 rounded-full bg-black/55 hover:bg-black/75 backdrop-blur-md border border-rose-300/45 text-rose-100 font-bold text-xs shadow-lg transition flex items-center gap-1.5 cursor-pointer"
+      class="px-3.5 py-2 rounded-full bg-black/75 hover:bg-black/90 border border-rose-300/45 text-rose-100 font-bold text-xs shadow-lg transition flex items-center gap-1.5 cursor-pointer"
       title="ทดสอบเสียงประกาศผล (เฮ + ตบมือ + พลุ + Fanfare)"
     >
       <i class="fa-solid fa-music text-rose-300"></i>
@@ -315,7 +313,7 @@
       type="button"
       id="stageBgmBtn"
       onclick="toggleStageBgm()"
-      class="px-3.5 py-2 rounded-full bg-black/55 hover:bg-black/75 backdrop-blur-md border border-emerald-300/45 text-emerald-200 font-bold text-xs shadow-lg transition flex items-center gap-1.5 cursor-pointer"
+      class="px-3.5 py-2 rounded-full bg-black/75 hover:bg-black/90 border border-emerald-300/45 text-emerald-200 font-bold text-xs shadow-lg transition flex items-center gap-1.5 cursor-pointer"
       title="เปิด / ปิด เพลงบรรเลงคริสต์มาสหน้ารอผล (B)"
     >
       <i id="stageBgmIcon" class="fa-solid fa-compact-disc text-emerald-300"></i>
@@ -326,7 +324,7 @@
       type="button"
       id="stageSoundBtn"
       onclick="toggleStageSound()"
-      class="px-3.5 py-2 rounded-full bg-black/55 hover:bg-black/75 backdrop-blur-md border border-amber-300/45 text-amber-200 font-bold text-xs shadow-lg transition flex items-center gap-1.5 cursor-pointer"
+      class="px-3.5 py-2 rounded-full bg-black/75 hover:bg-black/90 border border-amber-300/45 text-amber-200 font-bold text-xs shadow-lg transition flex items-center gap-1.5 cursor-pointer"
       title="เปิด / ปิดเสียง (M)"
     >
       <i id="stageSoundIcon" class="fa-solid fa-volume-high text-amber-300"></i>
@@ -337,7 +335,7 @@
       type="button"
       id="stageSyncModeBtn"
       onclick="toggleStageSyncMode()"
-      class="px-3.5 py-2 rounded-full bg-black/55 hover:bg-black/75 backdrop-blur-md border border-white/25 text-rose-100 font-bold text-xs shadow-lg transition flex items-center gap-1.5 cursor-pointer"
+      class="px-3.5 py-2 rounded-full bg-black/75 hover:bg-black/90 border border-white/25 text-rose-100 font-bold text-xs shadow-lg transition flex items-center gap-1.5 cursor-pointer"
       title="สลับโหมดซิงก์ (Auto: ทั้งในเครื่อง+ข้ามเครื่อง / Local: 2 จอเครื่องเดียว 0ms)"
     >
       <i class="fa-solid fa-tower-broadcast text-emerald-300"></i>
@@ -347,7 +345,7 @@
     <button
       type="button"
       onclick="toggleStageFullscreen()"
-      class="w-9 h-9 rounded-full bg-black/55 hover:bg-black/75 backdrop-blur-md border border-white/25 text-white flex items-center justify-center shadow-lg transition cursor-pointer"
+      class="w-9 h-9 rounded-full bg-black/75 hover:bg-black/90 border border-white/25 text-white flex items-center justify-center shadow-lg transition cursor-pointer"
       title="เปิด / ปิด เต็มจอ (F)"
     >
       <i id="stageFullscreenIcon" class="fa-solid fa-expand text-xs"></i>
@@ -392,7 +390,7 @@
 
       <!-- Event Pill & Hero Title -->
       <div class="space-y-2.5">
-        <span class="font-display inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-amber-300/50 text-amber-200 text-xs sm:text-sm font-bold tracking-widest uppercase shadow-lg">
+        <span class="font-display inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/15 border border-amber-300/50 text-amber-200 text-xs sm:text-sm font-bold tracking-widest uppercase shadow-lg">
           <span>🎄</span>
           <span>CM FROZENFOOD • CHRISTMAS &amp; NEW YEAR PARTY 2026</span>
           <span>🎁</span>
@@ -423,15 +421,15 @@
 
       <!-- Live Stage Stats Row -->
       <div id="stageStatsBar" class="hidden flex flex-wrap items-center justify-center gap-3 sm:gap-4 pt-1">
-        <div class="px-4 py-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-sky-300/35 text-center min-w-[115px]">
+        <div class="px-4 py-2.5 rounded-2xl bg-white/15 border border-sky-300/35 text-center min-w-[115px]">
           <span class="block text-[11px] text-sky-200 font-semibold">ผู้มีสิทธิ์ลุ้น</span>
           <span id="stageStatEligible" class="font-display text-xl sm:text-2xl font-bold text-white">0</span>
         </div>
-        <div class="px-4 py-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-amber-300/35 text-center min-w-[115px]">
+        <div class="px-4 py-2.5 rounded-2xl bg-white/15 border border-amber-300/35 text-center min-w-[115px]">
           <span class="block text-[11px] text-amber-200 font-semibold">รางวัลคงเหลือ</span>
           <span id="stageStatRemaining" class="font-display text-xl sm:text-2xl font-bold text-amber-300">0</span>
         </div>
-        <div class="px-4 py-2.5 rounded-2xl bg-white/10 backdrop-blur-md border border-emerald-300/35 text-center min-w-[115px]">
+        <div class="px-4 py-2.5 rounded-2xl bg-white/15 border border-emerald-300/35 text-center min-w-[115px]">
           <span class="block text-[11px] text-emerald-200 font-semibold">แจกไปแล้ว</span>
           <span id="stageStatAssigned" class="font-display text-xl sm:text-2xl font-bold text-emerald-300">0</span>
         </div>
@@ -440,7 +438,7 @@
       <!-- Recent Winners Ribbon on Standby Screen (Helps attendees returning to their table see who just won) -->
       <div
         id="stageRecentWinnersBox"
-        class="hidden w-full max-w-3xl rounded-2xl bg-black/40 backdrop-blur-md border border-amber-300/40 px-4 py-3 shadow-lg space-y-2"
+        class="hidden w-full max-w-3xl rounded-2xl bg-black/75 border border-amber-300/40 px-4 py-3 shadow-lg space-y-2"
       >
         <p class="text-[11px] sm:text-xs font-extrabold text-amber-300 tracking-wide flex items-center justify-center gap-1.5">
           <span>🏆</span>
@@ -452,7 +450,7 @@
       <!-- Subtle Christmas BGM Now Playing Equalizer Pill -->
       <div
         id="stageBgmNowPlaying"
-        class="hidden inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-black/45 backdrop-blur-md border border-emerald-300/45 text-xs text-emerald-200 font-semibold shadow-lg"
+        class="hidden inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-black/75 border border-emerald-300/45 text-xs text-emerald-200 font-semibold shadow-lg"
       >
         <i class="fa-solid fa-compact-disc fa-spin text-amber-300"></i>
         <span class="inline-flex items-end gap-0.5 h-3.5" aria-hidden="true">
@@ -606,7 +604,7 @@
       </div>
 
       <!-- Local Optional Multi-Winner Arrows (shown when winners.length > 1) -->
-      <div id="stageWinnerNav" class="hidden relative z-20 mt-4 items-center gap-3 bg-black/55 backdrop-blur-md px-4 py-2 rounded-full border border-white/20 shadow-xl">
+      <div id="stageWinnerNav" class="hidden relative z-20 mt-4 items-center gap-3 bg-black/75 px-4 py-2 rounded-full border border-white/20 shadow-xl">
         <button
           type="button"
           onclick="stepLocalWinner(-1)"
@@ -633,7 +631,7 @@
   <div class="fixed bottom-3.5 left-4 z-[45] flex items-center gap-2">
     <div
       id="stageConnPill"
-      class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/50 backdrop-blur-md border border-white/15 text-[11px] font-semibold text-rose-100/85 shadow"
+      class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-black/75 border border-white/15 text-[11px] font-semibold text-rose-100/85 shadow"
     >
       <span id="stageConnDot" class="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
       <span id="stageConnText">กำลังเชื่อมต่อ...</span>
@@ -1071,8 +1069,8 @@
       if (text) text.innerText = stageBgmEnabled ? 'เพลงรอผล: เปิด' : 'เพลงรอผล: ปิด';
       if (btn) {
         btn.className = stageBgmEnabled
-          ? 'px-3.5 py-2 rounded-full bg-black/55 hover:bg-black/75 backdrop-blur-md border border-emerald-300/45 text-emerald-200 font-bold text-xs shadow-lg transition flex items-center gap-1.5 cursor-pointer'
-          : 'px-3.5 py-2 rounded-full bg-black/55 hover:bg-black/75 backdrop-blur-md border border-white/20 text-slate-400 font-bold text-xs shadow-lg transition flex items-center gap-1.5 cursor-pointer';
+          ? 'px-3.5 py-2 rounded-full bg-black/75 hover:bg-black/90 border border-emerald-300/45 text-emerald-200 font-bold text-xs shadow-lg transition flex items-center gap-1.5 cursor-pointer'
+          : 'px-3.5 py-2 rounded-full bg-black/75 hover:bg-black/90 border border-white/20 text-slate-400 font-bold text-xs shadow-lg transition flex items-center gap-1.5 cursor-pointer';
       }
 
       if (!stageBgmEnabled) {

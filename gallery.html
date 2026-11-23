@@ -18,13 +18,11 @@
   <!-- Font Awesome 6 -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 
-  <!-- Custom Font: PK Christmas (+ Prompt fallback) -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Preload Custom Font: PK Christmas -->
+  <link rel="preload" href="assets/PK_Christmas-Regular.ttf" as="font" type="font/ttf" crossorigin>
 
-  <!-- SweetAlert2 -->
-  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- SweetAlert2 (Deferred for faster first paint) -->
+  <script defer src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
   <!-- Shared CM Party Configuration -->
   <script src="config.js"></script>
@@ -40,20 +38,29 @@
     }
 
     body {
-      font-family: 'PK Christmas', 'Prompt', sans-serif;
-      background:
-        radial-gradient(circle at 12% 10%, rgba(254, 205, 211, 0.55) 0%, transparent 40%),
-        radial-gradient(circle at 88% 12%, rgba(167, 243, 208, 0.45) 0%, transparent 42%),
-        radial-gradient(circle at 50% 90%, rgba(253, 230, 138, 0.35) 0%, transparent 45%),
-        linear-gradient(160deg, #fff5f7 0%, #fffdf9 45%, #f0fdf4 100%);
-      background-attachment: fixed;
+      position: relative;
+      font-family: 'PK Christmas', system-ui, -apple-system, sans-serif;
+      background: #fffdf9;
       min-height: 100vh;
       overflow-x: hidden;
       color: #4a2c35;
     }
 
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      pointer-events: none;
+      background:
+        radial-gradient(circle at 12% 10%, rgba(254, 205, 211, 0.55) 0%, transparent 40%),
+        radial-gradient(circle at 88% 12%, rgba(167, 243, 208, 0.45) 0%, transparent 42%),
+        radial-gradient(circle at 50% 90%, rgba(253, 230, 138, 0.35) 0%, transparent 45%),
+        linear-gradient(160deg, #fff5f7 0%, #fffdf9 45%, #f0fdf4 100%);
+    }
+
     .font-cursive {
-      font-family: 'PK Christmas', 'Prompt', sans-serif;
+      font-family: 'PK Christmas', system-ui, -apple-system, sans-serif;
     }
 
     /* แถบลาย Candy Cane น่ารักด้านบน */
@@ -132,14 +139,16 @@
     }
 
     .font-cute {
-      font-family: 'PK Christmas', 'Prompt', sans-serif;
+      font-family: 'PK Christmas', system-ui, -apple-system, sans-serif;
     }
 
     .font-display {
-      font-family: 'PK Christmas', 'Prompt', sans-serif;
+      font-family: 'PK Christmas', system-ui, -apple-system, sans-serif;
     }
 
     .gallery-img-card {
+      content-visibility: auto;
+      contain-intrinsic-size: 320px;
       transition: transform 0.32s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.32s ease;
     }
     .polaroid-tilt-left {
@@ -1572,13 +1581,21 @@
       }
     }
 
-    // แสดง Skeleton Placeholder ขณะกำลังโหลดรูป (Cute Pastel Card)
+    // แสดง Skeleton Placeholder ขณะกำลังโหลดรูป (Cute Pastel Polaroid Card)
     function renderSkeletons(count = 8) {
       const grid = document.getElementById('galleryGrid');
       grid.innerHTML = '';
       for (let i = 0; i < count; i++) {
         const card = document.createElement('div');
-        card.className = 'aspect-square rounded-3xl bg-white/85 border-2 border-rose-200/80 overflow-hidden relative shimmer-placeholder shadow-sm';
+        const tiltCls = i % 2 === 0 ? 'polaroid-tilt-left' : 'polaroid-tilt-right';
+        card.className = `rounded-2xl bg-[#fffdf9] p-2 sm:p-2.5 pb-2.5 border-2 border-rose-200/80 shadow-sm mt-2 ${tiltCls}`;
+        card.innerHTML = `
+          <div class="aspect-square w-full rounded-xl bg-rose-50/90 border border-rose-100 overflow-hidden relative shimmer-placeholder"></div>
+          <div class="pt-2 px-1 flex items-center justify-between gap-2">
+            <div class="h-3 w-20 rounded-full bg-rose-100/90 shimmer-placeholder"></div>
+            <div class="h-2.5 w-10 rounded-full bg-emerald-100/80 shimmer-placeholder"></div>
+          </div>
+        `;
         grid.appendChild(card);
       }
     }
@@ -2067,12 +2084,14 @@
           <span class="washi-tape ${tapeCls}" aria-hidden="true"></span>
 
           <div class="relative aspect-square w-full rounded-xl overflow-hidden bg-rose-50 border border-rose-100">
-            <!-- รูปภาพหลักแสดงผลผ่าน URL Google lh5 -->
+            <!-- รูปภาพหลักแสดงผลผ่าน Thumbnail URL Google lh5 เพื่อความรวดเร็ว -->
             <img
-              src="${img.url}"
+              src="${img.thumbnailUrl || img.url}"
               alt="${escapeHtml(img.name)}"
               loading="lazy"
-              class="w-full h-full object-cover transition duration-500 group-hover:scale-105"
+              decoding="async"
+              onload="this.classList.remove('opacity-0')"
+              class="w-full h-full object-cover opacity-0 transition duration-500 group-hover:scale-105"
               onerror="handleImgError(this, '${img.fallbackUrl}', '${img.driveThumbnailUrl}')"
             />
 
@@ -2095,7 +2114,7 @@
                   ${escapeHtml(img.name)}
                 </p>
                 <div class="flex items-center justify-between text-[11px] text-rose-100">
-                  <span class="truncate">${img.date || '-'}</span>
+                  <span class="truncate">${escapeHtml(img.date || '-')}</span>
                   <span class="text-amber-200 font-bold">${formattedSize}</span>
                 </div>
               </div>
@@ -2114,7 +2133,7 @@
 
           <!-- Polaroid Handwritten Bottom Strip -->
           <div class="pt-1.5 px-1 flex items-center justify-between gap-1 text-[10px] text-rose-800/80">
-            <span class="font-cute font-bold truncate">❄️ ${img.date ? img.date.split(' ')[0] : 'CM Party'}</span>
+            <span class="font-cute font-bold truncate">❄️ ${escapeHtml(img.date ? img.date.split(' ')[0] : 'CM Party')}</span>
             <span class="font-display font-bold text-emerald-700 shrink-0">${formattedSize}</span>
           </div>
         `;
@@ -2131,6 +2150,8 @@
       } else if (!imgEl.dataset.triedThumb && driveThumbUrl) {
         imgEl.dataset.triedThumb = 'true';
         imgEl.src = driveThumbUrl;
+      } else {
+        imgEl.classList.remove('opacity-0');
       }
     }
 

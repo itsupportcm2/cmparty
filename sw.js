@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cm-party-offline-v5';
+const CACHE_NAME = 'cm-party-offline-v6';
 
 const PRECACHE_URLS = [
   '/stage.html',
