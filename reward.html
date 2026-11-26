@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>ระบบบันทึกข้อมูลรางวัล - CM Party 2026</title>
   <meta name="theme-color" content="#881337" />
   <meta property="og:type" content="website" />
@@ -45,6 +45,8 @@
       font-family: 'PK Christmas', system-ui, -apple-system, sans-serif;
       background: #fffdf9;
       min-height: 100vh;
+      min-height: 100dvh;
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
       overflow-x: hidden;
     }
 
@@ -372,7 +374,7 @@
         class="px-5 sm:px-6 py-3 bg-gradient-to-r from-slate-900 via-rose-950 to-slate-900 text-white border-b border-rose-200/30 flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 text-xs"
       >
         <div class="flex flex-wrap items-center gap-2">
-          <span id="stageOnAirBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-300/45 text-emerald-200 font-display font-bold text-[10px] tracking-wider">
+          <span id="stageOnAirBadge" class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 border border-emerald-300/45 text-emerald-200 font-display font-bold text-[11px] tracking-wider">
             <span id="stageOnAirDot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
             <span id="stageOnAirText">STANDBY</span>
           </span>
@@ -417,6 +419,18 @@
               class="accent-amber-400 cursor-pointer"
             />
             <span class="text-[11px] font-medium text-rose-100">ส่งขึ้นจอ stage.html อัตโนมัติ</span>
+          </label>
+
+          <label
+            class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-500/25 border border-rose-300/45 cursor-pointer select-none"
+            title="เปิดเมื่อต้องการนับถอยหลัง 3... 2... 1... ก่อนเปิดชื่อผู้โชคดีรางวัลใหญ่บนจอเวที"
+          >
+            <input
+              type="checkbox"
+              id="stageDramaticCheck"
+              class="accent-amber-400 cursor-pointer"
+            />
+            <span class="text-[11px] font-bold text-amber-200">🔥 นับถอยหลัง 3-2-1 (รางวัลใหญ่)</span>
           </label>
 
           <button
@@ -3871,6 +3885,9 @@
         clientSeq: stageClientSeq,
         updatedAt: now
       };
+      if (merged.mode === 'winner' && partialUpdate.dramaticCountdown === undefined) {
+        merged.dramaticCountdown = Boolean(document.getElementById('stageDramaticCheck')?.checked);
+      }
 
       merged.winners = Array.isArray(merged.winners) ? merged.winners.slice(0, 50).map(sanitizeStageWinner) : [];
       merged.rollingNames = Array.isArray(merged.rollingNames) ? merged.rollingNames.slice(0, 40).map(n => String(n || '').trim()).filter(Boolean) : [];

@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>ภาพความประทับใจในงาน CM Party 2026</title>
   <meta name="theme-color" content="#881337" />
   <meta property="og:type" content="website" />
@@ -42,6 +42,8 @@
       font-family: 'PK Christmas', system-ui, -apple-system, sans-serif;
       background: #fffdf9;
       min-height: 100vh;
+      min-height: 100dvh;
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
       overflow-x: hidden;
       color: #4a2c35;
     }
@@ -653,6 +655,19 @@
       <!-- Skeletons will appear here on initial load -->
     </div>
 
+    <!-- Load More Pagination Sentinel / Button -->
+    <div id="galleryLoadMoreWrap" class="hidden pt-6 pb-2 text-center">
+      <button
+        type="button"
+        id="btnGalleryLoadMore"
+        onclick="appendNextGalleryBatch()"
+        class="inline-flex items-center gap-2 px-5 py-2.5 rounded-2xl bg-white/95 hover:bg-rose-50 text-rose-700 font-bold text-xs border-2 border-rose-200 shadow-sm transition cursor-pointer"
+      >
+        <i class="fa-solid fa-images text-rose-500"></i>
+        <span>โหลดรูปเพิ่มเติม</span>
+      </button>
+    </div>
+
     <!-- Empty State Container (Cute Cozy Pastel Card) -->
     <div id="galleryEmptyState" class="hidden text-center py-16 px-4 bg-white/85 backdrop-blur-md rounded-3xl border-2 border-dashed border-rose-200 my-8 shadow-md">
       <div class="w-20 h-20 mx-auto rounded-full bg-gradient-to-tr from-rose-100 via-pink-50 to-emerald-100 border-2 border-rose-300 flex items-center justify-center text-rose-500 mb-4 shadow-sm">
@@ -893,12 +908,13 @@
       >
         <img
           id="ssQrBadgeImg"
-          src="https://api.qrserver.com/v1/create-qr-code/?size=160x160&margin=4&data=https%3A%2F%2Fliff.line.me%2F2012486224-eFJTgFwr"
+          src="assets/qr-register.svg"
           alt="QR Code ลงทะเบียนเข้างาน"
           class="w-20 h-20 rounded-xl border border-rose-200 bg-white"
+          onerror="if(!this.dataset.fb){this.dataset.fb='1';this.src='https://cmparty.vercel.app/assets/qr-register.svg';}"
         />
-        <span class="text-[10px] font-extrabold text-rose-700 leading-tight text-center">สแกนลงทะเบียน</span>
-        <span class="text-[9px] font-semibold text-emerald-700 leading-tight text-center">ขึ้นจอ + ลุ้นรางวัล 🎁</span>
+        <span class="text-xs font-extrabold text-rose-700 leading-tight text-center">สแกนลงทะเบียน</span>
+        <span class="text-[11px] font-semibold text-emerald-700 leading-tight text-center">ขึ้นจอ + ลุ้นรางวัล 🎁</span>
       </div>
 
       <!-- Center Slide Image Display with Fixed Auto-Fit Party Stage Frame -->
@@ -2055,91 +2071,143 @@
       renderGalleryGrid();
     }
 
-    // แสดงรูปภาพลงใน Grid การ์ด
+    const GALLERY_PAGE_SIZE = 30;
+    let galleryRenderedCount = 0;
+    let galleryLoadObserver = null;
+
+    function createGalleryCardElement(img, index) {
+      const card = document.createElement('div');
+      const tiltCls = index % 2 === 0 ? 'polaroid-tilt-left' : 'polaroid-tilt-right';
+      const tapeCls = index % 2 === 0 ? 'washi-tape-red' : 'washi-tape-green';
+      card.className = `gallery-img-card group relative rounded-2xl bg-[#fffdf9] p-2 sm:p-2.5 pb-2.5 border-2 border-rose-200/80 shadow-md cursor-pointer mt-2 ${tiltCls}`;
+      card.onclick = () => openLightbox(index);
+
+      const formattedSize = formatFileSize(img.size);
+
+      card.innerHTML = `
+        <!-- Washi Tape Strip -->
+        <span class="washi-tape ${tapeCls}" aria-hidden="true"></span>
+
+        <div class="relative aspect-square w-full rounded-xl overflow-hidden bg-rose-50 border border-rose-100">
+          <!-- รูปภาพหลักแสดงผลผ่าน Thumbnail URL Google lh5 เพื่อความรวดเร็ว -->
+          <img
+            src="${img.thumbnailUrl || img.url}"
+            alt="${escapeHtml(img.name)}"
+            loading="lazy"
+            decoding="async"
+            onload="this.classList.remove('opacity-0')"
+            class="w-full h-full object-cover opacity-0 transition duration-500 group-hover:scale-105"
+            onerror="handleImgError(this, '${img.fallbackUrl}', '${img.driveThumbnailUrl}')"
+          />
+
+          <!-- Gradient Overlay ตอน Hover -->
+          <div class="absolute inset-0 bg-gradient-to-t from-rose-950/85 via-rose-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-3 pointer-events-none">
+            <!-- Top Tag: Event Badge & Zoom Icon -->
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] px-2.5 py-0.5 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-bold border border-white/80 shadow-sm flex items-center gap-1">
+                <span>🎄</span>
+                <span>CM Party</span>
+              </span>
+              <span class="w-7 h-7 rounded-full bg-white/85 backdrop-blur-sm text-rose-600 flex items-center justify-center text-xs shadow-xs">
+                <i class="fa-solid fa-magnifying-glass-plus"></i>
+              </span>
+            </div>
+
+            <!-- Bottom Metadata & Actions -->
+            <div class="space-y-1">
+              <p class="text-xs font-semibold text-white truncate drop-shadow">
+                ${escapeHtml(img.name)}
+              </p>
+              <div class="flex items-center justify-between text-[11px] text-rose-100">
+                <span class="truncate">${escapeHtml(img.date || '-')}</span>
+                <span class="text-amber-200 font-bold">${formattedSize}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Copy Link Button (มุมขวาบน) -->
+          <button
+            type="button"
+            onclick="copySpecificPhotoLink('${img.url}'); event.stopPropagation();"
+            class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 hover:bg-rose-500 hover:text-white text-rose-600 border border-rose-200 shadow-md flex items-center justify-center text-xs transition duration-200 z-10 cursor-pointer"
+            title="คัดลอกลิงก์รูปภาพ"
+          >
+            <i class="fa-regular fa-copy"></i>
+          </button>
+        </div>
+
+        <!-- Polaroid Handwritten Bottom Strip -->
+        <div class="pt-1.5 px-1 flex items-center justify-between gap-1 text-[11px] text-rose-800/80">
+          <span class="font-cute font-bold truncate">❄️ ${escapeHtml(img.date ? img.date.split(' ')[0] : 'CM Party')}</span>
+          <span class="font-display font-bold text-emerald-700 shrink-0">${formattedSize}</span>
+        </div>
+      `;
+      return card;
+    }
+
+    function updateGalleryLoadMoreUI() {
+      const wrap = document.getElementById('galleryLoadMoreWrap');
+      const btn = document.getElementById('btnGalleryLoadMore');
+      if (!wrap) return;
+      const remaining = filteredImages.length - galleryRenderedCount;
+      if (remaining > 0) {
+        wrap.classList.remove('hidden');
+        if (btn) {
+          const span = btn.querySelector('span');
+          if (span) span.textContent = `โหลดรูปเพิ่มเติม (เหลืออีก ${remaining} รูป)`;
+        }
+      } else {
+        wrap.classList.add('hidden');
+      }
+    }
+
+    function appendNextGalleryBatch() {
+      const grid = document.getElementById('galleryGrid');
+      if (!grid || galleryRenderedCount >= filteredImages.length) {
+        updateGalleryLoadMoreUI();
+        return;
+      }
+      const end = Math.min(filteredImages.length, galleryRenderedCount + GALLERY_PAGE_SIZE);
+      const frag = document.createDocumentFragment();
+      for (let i = galleryRenderedCount; i < end; i++) {
+        frag.appendChild(createGalleryCardElement(filteredImages[i], i));
+      }
+      grid.appendChild(frag);
+      galleryRenderedCount = end;
+      updateGalleryLoadMoreUI();
+    }
+
+    function ensureGalleryLoadObserver() {
+      if (galleryLoadObserver || typeof IntersectionObserver === 'undefined') return;
+      const wrap = document.getElementById('galleryLoadMoreWrap');
+      if (!wrap) return;
+      galleryLoadObserver = new IntersectionObserver((entries) => {
+        if (entries.some(e => e.isIntersecting) && galleryRenderedCount < filteredImages.length) {
+          appendNextGalleryBatch();
+        }
+      }, { rootMargin: '320px 0px' });
+      galleryLoadObserver.observe(wrap);
+    }
+
+    // แสดงรูปภาพลงใน Grid การ์ด (แบ่งแสดงทีละ 30 รูปเพื่อความลื่นไหล)
     function renderGalleryGrid() {
       const grid = document.getElementById('galleryGrid');
       const emptyState = document.getElementById('galleryEmptyState');
+      const wrap = document.getElementById('galleryLoadMoreWrap');
       grid.innerHTML = '';
+      galleryRenderedCount = 0;
 
       if (filteredImages.length === 0) {
         grid.classList.add('hidden');
         emptyState.classList.remove('hidden');
+        if (wrap) wrap.classList.add('hidden');
         return;
       }
 
       grid.classList.remove('hidden');
       emptyState.classList.add('hidden');
-
-      filteredImages.forEach((img, index) => {
-        const card = document.createElement('div');
-        const tiltCls = index % 2 === 0 ? 'polaroid-tilt-left' : 'polaroid-tilt-right';
-        const tapeCls = index % 2 === 0 ? 'washi-tape-red' : 'washi-tape-green';
-        card.className = `gallery-img-card group relative rounded-2xl bg-[#fffdf9] p-2 sm:p-2.5 pb-2.5 border-2 border-rose-200/80 shadow-md cursor-pointer mt-2 ${tiltCls}`;
-        card.onclick = () => openLightbox(index);
-
-        const formattedSize = formatFileSize(img.size);
-
-        card.innerHTML = `
-          <!-- Washi Tape Strip -->
-          <span class="washi-tape ${tapeCls}" aria-hidden="true"></span>
-
-          <div class="relative aspect-square w-full rounded-xl overflow-hidden bg-rose-50 border border-rose-100">
-            <!-- รูปภาพหลักแสดงผลผ่าน Thumbnail URL Google lh5 เพื่อความรวดเร็ว -->
-            <img
-              src="${img.thumbnailUrl || img.url}"
-              alt="${escapeHtml(img.name)}"
-              loading="lazy"
-              decoding="async"
-              onload="this.classList.remove('opacity-0')"
-              class="w-full h-full object-cover opacity-0 transition duration-500 group-hover:scale-105"
-              onerror="handleImgError(this, '${img.fallbackUrl}', '${img.driveThumbnailUrl}')"
-            />
-
-            <!-- Gradient Overlay ตอน Hover -->
-            <div class="absolute inset-0 bg-gradient-to-t from-rose-950/85 via-rose-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-between p-3 pointer-events-none">
-              <!-- Top Tag: Event Badge & Zoom Icon -->
-              <div class="flex items-center justify-between">
-                <span class="text-[10px] px-2.5 py-0.5 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white font-bold border border-white/80 shadow-sm flex items-center gap-1">
-                  <span>🎄</span>
-                  <span>CM Party</span>
-                </span>
-                <span class="w-7 h-7 rounded-full bg-white/85 backdrop-blur-sm text-rose-600 flex items-center justify-center text-xs shadow-xs">
-                  <i class="fa-solid fa-magnifying-glass-plus"></i>
-                </span>
-              </div>
-
-              <!-- Bottom Metadata & Actions -->
-              <div class="space-y-1">
-                <p class="text-xs font-semibold text-white truncate drop-shadow">
-                  ${escapeHtml(img.name)}
-                </p>
-                <div class="flex items-center justify-between text-[11px] text-rose-100">
-                  <span class="truncate">${escapeHtml(img.date || '-')}</span>
-                  <span class="text-amber-200 font-bold">${formattedSize}</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Quick Copy Link Button (มุมขวาบน) -->
-            <button
-              type="button"
-              onclick="copySpecificPhotoLink('${img.url}'); event.stopPropagation();"
-              class="opacity-0 group-hover:opacity-100 absolute top-2 right-2 w-8 h-8 rounded-full bg-white/90 hover:bg-rose-500 hover:text-white text-rose-600 border border-rose-200 shadow-md flex items-center justify-center text-xs transition duration-200 z-10 cursor-pointer"
-              title="คัดลอกลิงก์รูปภาพ"
-            >
-              <i class="fa-regular fa-copy"></i>
-            </button>
-          </div>
-
-          <!-- Polaroid Handwritten Bottom Strip -->
-          <div class="pt-1.5 px-1 flex items-center justify-between gap-1 text-[10px] text-rose-800/80">
-            <span class="font-cute font-bold truncate">❄️ ${escapeHtml(img.date ? img.date.split(' ')[0] : 'CM Party')}</span>
-            <span class="font-display font-bold text-emerald-700 shrink-0">${formattedSize}</span>
-          </div>
-        `;
-
-        grid.appendChild(card);
-      });
+      appendNextGalleryBatch();
+      ensureGalleryLoadObserver();
     }
 
     // กรณีโหลดภาพจาก lh5 ติดปัญหา ให้ fallback ไปที่ lh3 หรือ Google Drive thumbnail
@@ -3247,8 +3315,8 @@
       // ป้ายชื่อ LINE บนหัวตัวละคร
       const nameTag = document.createElement('div');
       nameTag.className = isAdmin
-        ? 'mb-1 max-w-[92px] sm:max-w-[106px] truncate px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-400 border border-white text-[10px] font-extrabold text-rose-950 shadow-md text-center'
-        : 'mb-1 max-w-[78px] sm:max-w-[92px] truncate px-2 py-0.5 rounded-full bg-black/70 backdrop-blur-xs border border-rose-200/45 text-[10px] font-semibold text-white shadow-sm text-center';
+        ? 'mb-1 max-w-[92px] sm:max-w-[106px] truncate px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-400 via-yellow-200 to-amber-400 border border-white text-[11px] font-extrabold text-rose-950 shadow-md text-center'
+        : 'mb-1 max-w-[82px] sm:max-w-[96px] truncate px-2 py-0.5 rounded-full bg-black/75 border border-rose-200/45 text-[11px] font-semibold text-white shadow-sm text-center';
       nameTag.title = (isAdmin ? '👑 Admin: ' : '') + attendee.displayName;
       nameTag.textContent = isAdmin ? `👑 ${attendee.displayName}` : attendee.displayName;
       doll.appendChild(nameTag);
@@ -3588,8 +3656,29 @@
       }
     });
 
+    function initLightboxTouchSwipe() {
+      const modal = document.getElementById('lightboxModal');
+      if (!modal) return;
+      let touchStartX = 0;
+      let touchStartY = 0;
+      modal.addEventListener('touchstart', (e) => {
+        if (!e.touches || e.touches.length !== 1) return;
+        touchStartX = e.touches[0].clientX;
+        touchStartY = e.touches[0].clientY;
+      }, { passive: true });
+      modal.addEventListener('touchend', (e) => {
+        if (!e.changedTouches || e.changedTouches.length !== 1 || currentZoomLevel > 1.05) return;
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        const dy = e.changedTouches[0].clientY - touchStartY;
+        if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.2) {
+          navigatePhoto(dx < 0 ? 1 : -1);
+        }
+      }, { passive: true });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
       createSnowflakes();
+      initLightboxTouchSwipe();
       loadGalleryImages();
     });
   </script>

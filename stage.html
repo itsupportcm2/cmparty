@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>🎉 หน้าจอประกาศผลรางวัล - CM Party 2026</title>
   <meta name="theme-color" content="#2a0410" />
   <meta property="og:type" content="website" />
@@ -36,6 +36,7 @@
 
     html, body {
       height: 100%;
+      height: 100dvh;
       margin: 0;
       padding: 0;
     }
@@ -597,6 +598,25 @@
       </div>
     </section>
 
+    <!-- ================= 4. GRAND PRIZE DRAMATIC COUNTDOWN OVERLAY ================= -->
+    <div
+      id="stageCountdownOverlay"
+      class="fixed inset-0 z-[42] hidden flex-col items-center justify-center bg-black/85 text-center p-6"
+    >
+      <span class="inline-flex items-center gap-2 px-5 py-1.5 rounded-full bg-rose-500/35 border border-amber-300/70 text-amber-200 text-sm sm:text-base font-extrabold tracking-wider mb-3 shadow-lg">
+        <span>🔥</span>
+        <span>รางวัลใหญ่กำลังจะเปิดเผย!</span>
+      </span>
+      <p id="stageCountdownPrize" class="text-2xl sm:text-4xl font-extrabold text-white drop-shadow mb-4 max-w-3xl leading-normal">-</p>
+      <div
+        id="stageCountdownNumber"
+        class="font-display text-[8rem] sm:text-[11rem] font-black leading-none stage-gold-text drop-shadow-[0_0_45px_rgba(251,191,36,0.75)] select-none"
+      >
+        3
+      </div>
+      <p class="text-sm sm:text-lg text-rose-100/90 font-semibold mt-4">เตรียมตัวลุ้นผู้โชคดีได้เลย ✨</p>
+    </div>
+
   </main>
 
   <!-- Bottom-Left Minimal Sync Status Pill -->
@@ -1131,6 +1151,57 @@
           fire();
         }
       } catch (e) {}
+    }
+
+    let stageCountdownTimers = [];
+
+    function playStageCountdownTick(step = 3) {
+      if (!stageSoundEnabled) return;
+      try {
+        const ctx = getStageAudioContext();
+        if (!ctx) return;
+        const fire = () => {
+          const now = ctx.currentTime;
+          // Deep resonant tom thump + sparkling high chime
+          const drumOsc = ctx.createOscillator();
+          const drumGain = ctx.createGain();
+          drumOsc.type = 'sine';
+          drumOsc.frequency.setValueAtTime(step === 1 ? 190 : 140, now);
+          drumOsc.frequency.exponentialRampToValueAtTime(52, now + 0.24);
+          drumGain.gain.setValueAtTime(0.32, now);
+          drumGain.gain.exponentialRampToValueAtTime(0.001, now + 0.26);
+          drumOsc.connect(drumGain);
+          drumGain.connect(ctx.destination);
+          drumOsc.start(now);
+          drumOsc.stop(now + 0.28);
+
+          const bellOsc = ctx.createOscillator();
+          const bellGain = ctx.createGain();
+          bellOsc.type = 'triangle';
+          bellOsc.frequency.setValueAtTime(step === 1 ? 880 : (step === 2 ? 660 : 523.25), now);
+          bellGain.gain.setValueAtTime(0.11, now);
+          bellGain.gain.exponentialRampToValueAtTime(0.0001, now + 0.22);
+          bellOsc.connect(bellGain);
+          bellGain.connect(ctx.destination);
+          bellOsc.start(now);
+          bellOsc.stop(now + 0.24);
+        };
+        if (ctx.state === 'suspended') {
+          ctx.resume().then(fire).catch(() => {});
+        } else {
+          fire();
+        }
+      } catch (e) {}
+    }
+
+    function cancelStageDramaticCountdown() {
+      stageCountdownTimers.forEach(t => clearTimeout(t));
+      stageCountdownTimers = [];
+      const overlay = document.getElementById('stageCountdownOverlay');
+      if (overlay) {
+        overlay.classList.add('hidden');
+        overlay.classList.remove('flex');
+      }
     }
 
     function playStageAnnouncementSound() {
@@ -1703,6 +1774,7 @@
       const mode = state.mode || 'standby';
 
       if (mode === 'rolling') {
+        cancelStageDramaticCountdown();
         stopStageBgm(false);
         stopStageCelebrationAudio();
         stopStageContinuousFx();
@@ -1724,7 +1796,6 @@
         stopStageBgm(false);
         if (standbyView) standbyView.classList.add('hidden');
         if (rollingView) rollingView.classList.add('hidden');
-        if (winnerView) winnerView.classList.remove('hidden');
 
         const total = state.winners.length;
         const idx = Math.max(0, Math.min(parseInt(state.activeIndex, 10) || 0, total - 1));
@@ -1799,23 +1870,69 @@
           }
         }
 
-        startStageContinuousFx();
+        const revealWinnerCardNow = (shouldCelebrate) => {
+          if (winnerView) winnerView.classList.remove('hidden');
+          startStageContinuousFx();
+          if (shouldCelebrate) {
+            if (cardEl) {
+              cardEl.classList.remove('stage-card-pop');
+              void cardEl.offsetWidth;
+              cardEl.classList.add('stage-card-pop');
+            }
+            playStageAnnouncementSound();
+            burstStageCelebration(4);
+          }
+        };
 
         const celebrateKey = `${winner.empId}|${winner.rewardName}|${idx}|${state.celebrateNonce || 0}`;
         if (celebrateKey !== lastCelebratedKey) {
           lastCelebratedKey = celebrateKey;
-          if (cardEl) {
-            cardEl.classList.remove('stage-card-pop');
-            void cardEl.offsetWidth;
-            cardEl.classList.add('stage-card-pop');
+          cancelStageDramaticCountdown();
+
+          if (state.dramaticCountdown === true) {
+            const overlay = document.getElementById('stageCountdownOverlay');
+            const numEl = document.getElementById('stageCountdownNumber');
+            const cPrizeEl = document.getElementById('stageCountdownPrize');
+            if (overlay && numEl) {
+              if (winnerView) winnerView.classList.add('hidden');
+              if (cPrizeEl) cPrizeEl.innerText = winner.rewardName || state.prizeLabel || 'รางวัลพิเศษ';
+              overlay.classList.remove('hidden');
+              overlay.classList.add('flex');
+
+              const runStep = (n) => {
+                numEl.textContent = String(n);
+                numEl.classList.remove('stage-card-pop');
+                void numEl.offsetWidth;
+                numEl.classList.add('stage-card-pop');
+                playStageCountdownTick(n);
+              };
+
+              runStep(3);
+              stageCountdownTimers.push(setTimeout(() => runStep(2), 800));
+              stageCountdownTimers.push(setTimeout(() => runStep(1), 1600));
+              stageCountdownTimers.push(setTimeout(() => {
+                overlay.classList.add('hidden');
+                overlay.classList.remove('flex');
+                stageCountdownTimers = [];
+                if (currentStageState.mode === 'winner') {
+                  revealWinnerCardNow(true);
+                }
+              }, 2400));
+              return;
+            }
           }
-          playStageAnnouncementSound();
-          burstStageCelebration(4);
+
+          revealWinnerCardNow(true);
+        } else {
+          if (stageCountdownTimers.length === 0) {
+            revealWinnerCardNow(false);
+          }
         }
         return;
       }
 
       // Standby mode
+      cancelStageDramaticCountdown();
       stopStageCelebrationAudio();
       stopStageContinuousFx();
       lastCelebratedKey = '';

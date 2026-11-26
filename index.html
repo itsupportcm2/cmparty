@@ -2,7 +2,7 @@
 <html lang="th">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title>ลงทะเบียนเข้างานเลี้ยง - CM Party 2026</title>
   <meta name="theme-color" content="#881337" />
   <meta property="og:type" content="website" />
@@ -45,6 +45,8 @@
       font-family: 'PK Christmas', system-ui, -apple-system, sans-serif;
       background: #fffdf7;
       min-height: 100vh;
+      min-height: 100dvh;
+      padding-bottom: max(1rem, env(safe-area-inset-bottom));
       overflow-x: hidden;
     }
 
@@ -375,11 +377,11 @@
         <div class="relative shrink-0">
           <img
             id="lineProfileImg"
-            src="https://cdn-icons-png.flaticon.com/512/847/847969.png"
+            src="assets/default-avatar.svg"
             alt="LINE Profile"
             class="w-14 h-14 rounded-full object-cover border-2 border-emerald-400 shadow-sm"
           />
-          <span class="absolute -bottom-1 -right-1 bg-[#06C755] text-white text-[10px] px-1.5 py-0.5 rounded-full font-semibold shadow flex items-center gap-1 border border-white">
+          <span class="absolute -bottom-1 -right-1 bg-[#06C755] text-white text-[11px] px-1.5 py-0.5 rounded-full font-semibold shadow flex items-center gap-1 border border-white">
             <i class="fa-brands fa-line"></i>
           </span>
         </div>
@@ -594,9 +596,9 @@
     <div id="alreadyRegisteredContainer" class="hidden p-5 sm:p-6 text-center space-y-4">
       <div class="relative rounded-3xl overflow-hidden bg-gradient-to-b from-[#fff7f5] via-white to-emerald-50/75 border-2 border-amber-300/80 shadow-xl">
         <!-- Ticket Top Holographic Foil Ribbon -->
-        <div class="ticket-foil-ribbon px-4 py-2.5 text-white flex items-center justify-between text-[11px] font-extrabold tracking-wide shadow-xs">
+        <div class="ticket-foil-ribbon px-4 py-2.5 text-white flex items-center justify-between text-xs font-extrabold tracking-wide shadow-xs">
           <span class="font-display">🎄 CM PARTY 2026</span>
-          <span class="px-2.5 py-0.5 rounded-full bg-white/25 border border-white/60 text-[10px] font-display">VIP E-TICKET ✨</span>
+          <span class="px-2.5 py-0.5 rounded-full bg-white/25 border border-white/60 text-[11px] font-display">VIP E-TICKET ✨</span>
         </div>
 
         <!-- Wax Seal Verified Stamp SVG (Top Right Corner) -->
@@ -612,7 +614,7 @@
           <div class="relative w-20 h-20 mx-auto">
             <img
               id="regInfoProfileImg"
-              src="https://cdn-icons-png.flaticon.com/512/847/847969.png"
+              src="assets/default-avatar.svg"
               alt="LINE Profile"
               referrerpolicy="no-referrer"
               class="w-20 h-20 rounded-full object-cover border-4 border-white shadow-md bg-rose-100 ring-2 ring-amber-300"
@@ -623,13 +625,13 @@
           </div>
 
           <div class="space-y-0.5">
-            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 text-[11px] font-extrabold">
+            <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-extrabold">
               <i class="fa-solid fa-circle-check"></i> ลงทะเบียนเข้าร่วมงานสำเร็จแล้ว
             </span>
             <h3 id="regInfoLineName" class="font-cute text-lg font-bold text-slate-800 truncate px-2">
               ผู้ร่วมงาน CM Party 2026
             </h3>
-            <p class="text-[11px] text-slate-500">
+            <p class="text-xs text-slate-500">
               บันทึกสิทธิ์จับรางวัล Lucky Draw เรียบร้อย 🎁
             </p>
           </div>
@@ -669,21 +671,21 @@
               <div id="vipStageDollAvatarBox" class="w-14 h-16 shrink-0 rounded-2xl bg-gradient-to-b from-rose-900 via-rose-950 to-emerald-950 border-2 border-amber-300 shadow-sm flex flex-col items-center justify-center relative overflow-hidden pt-1">
               </div>
               <div class="min-w-0 flex-1 space-y-0.5">
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200 text-[9px] font-extrabold">
+                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200 text-[11px] font-extrabold">
                   <span>🎭</span>
                   <span>ตัวละครของคุณบนจอเวทีใหญ่</span>
                 </span>
-                <p id="vipStageDollTitle" class="font-cute text-xs sm:text-sm font-bold text-rose-950 truncate">
+                <p id="vipStageDollTitle" class="font-cute text-sm font-bold text-rose-950 truncate">
                   🎅 ซานต้าหมวกแดง
                 </p>
-                <p class="text-[10px] text-slate-600 leading-snug">
+                <p class="text-[11px] text-slate-600 leading-snug">
                   มองหาตุ๊กตาตัวนี้เดินโบกมือหน้าเวทีในหน้า <b>Photo Gallery</b> และพิมพ์ <b>"อวยพร"</b> ในแชทเพื่อให้ข้อความเด้งบนหัวตุ๊กตาได้เลย!
                 </p>
               </div>
             </div>
           </div>
 
-          <div class="rounded-2xl bg-amber-50/90 border border-amber-200/90 px-3 py-2.5 text-[11px] text-amber-900 leading-relaxed text-left">
+          <div class="rounded-2xl bg-amber-50/90 border border-amber-200/90 px-3 py-2.5 text-xs text-amber-900 leading-relaxed text-left">
             <p class="font-bold flex items-center gap-1 text-amber-800 mb-0.5">
               <span>💡</span>
               <span>ทิปส์ความสนุกในแชท LINE:</span>
@@ -712,12 +714,21 @@
               <rect x="196" y="0" width="4.5" height="22" fill="#881337"/><rect x="204" y="0" width="2" height="22" fill="#881337"/>
               <rect x="209" y="0" width="4" height="22" fill="#881337"/>
             </svg>
-            <span class="font-display text-[9px] tracking-[0.22em] text-rose-800/70 font-bold">CM FROZENFOOD • VIP PASS 2026</span>
+            <span class="font-display text-[11px] tracking-[0.2em] text-rose-800/75 font-bold">CM FROZENFOOD • VIP PASS 2026</span>
           </div>
         </div>
       </div>
 
       <div class="space-y-2.5">
+        <button
+          type="button"
+          onclick="downloadVipTicketPng()"
+          class="btn-candy-3d w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-amber-400 via-yellow-400 to-amber-500 hover:from-amber-500 hover:to-yellow-500 text-rose-950 font-extrabold text-sm border-2 border-amber-600/70 shadow-lg shadow-amber-400/25 hover:shadow-xl flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <i class="fa-solid fa-download text-base"></i>
+          <span>💾 บันทึกภาพบัตร VIP เก็บเป็นที่ระลึก</span>
+        </button>
+
         <a
           href="gallery.html"
           class="btn-candy-3d w-full py-3.5 px-5 rounded-2xl bg-gradient-to-r from-rose-500 via-pink-500 to-rose-500 hover:from-rose-600 hover:to-pink-600 text-white font-bold text-sm border-2 border-rose-700/70 shadow-lg shadow-rose-500/20 hover:shadow-xl flex items-center justify-center gap-2"
@@ -1124,7 +1135,7 @@
     let userProfile = {
       userId: '',
       displayName: 'ผู้ใช้งาน LINE',
-      pictureUrl: 'https://cdn-icons-png.flaticon.com/512/847/847969.png'
+      pictureUrl: 'assets/default-avatar.svg'
     };
 
     let verifiedEmployee = null;
@@ -1206,7 +1217,7 @@
           userProfile = {
             userId: profile.userId || '',
             displayName: profile.displayName || 'ผู้ใช้งาน LINE',
-            pictureUrl: profile.pictureUrl || 'https://cdn-icons-png.flaticon.com/512/847/847969.png'
+            pictureUrl: profile.pictureUrl || 'assets/default-avatar.svg'
           };
 
           document.getElementById('lineProfileImg').src = userProfile.pictureUrl;
@@ -1587,7 +1598,7 @@
       const t = isAdminDoll ? VIP_ADMIN_DOLL_THEME : VIP_STAGE_DOLL_THEMES[themeIdx];
       const safeAvatar = (pictureUrl && /^https?:\/\//i.test(pictureUrl))
         ? pictureUrl
-        : 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+        : 'assets/default-avatar.svg';
 
       cardEl.className = isAdminDoll
         ? 'rounded-2xl bg-gradient-to-r from-amber-50 via-yellow-50 to-rose-50 border-2 border-amber-400 p-3 text-left shadow-md'
@@ -1602,7 +1613,7 @@
       boxEl.innerHTML = `
         <svg viewBox="0 0 48 26" class="w-7 h-4 -mb-2 relative z-20 drop-shadow overflow-visible">${t.hat}</svg>
         <div class="w-7 h-7 rounded-full overflow-hidden border-2 ${avatarRingCls} bg-rose-100 shadow-xs relative z-10">
-          <img src="${escapeAdminHtml(safeAvatar)}" alt="Doll Avatar" referrerpolicy="no-referrer" class="w-full h-full object-cover" onerror="this.src='https://cdn-icons-png.flaticon.com/512/847/847969.png'" />
+          <img src="${escapeAdminHtml(safeAvatar)}" alt="Doll Avatar" referrerpolicy="no-referrer" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='assets/default-avatar.svg'" />
         </div>
         <svg viewBox="0 0 56 36" class="w-8 h-5 -mt-1 relative z-10 drop-shadow overflow-visible">
           ${t.back}
@@ -1628,7 +1639,8 @@
 
       const profileImgEl = document.getElementById('regInfoProfileImg');
       if (profileImgEl) {
-        const picUrl = (userProfile && userProfile.pictureUrl) ? userProfile.pictureUrl : 'https://cdn-icons-png.flaticon.com/512/847/847969.png';
+        const picUrl = (userProfile && userProfile.pictureUrl) ? userProfile.pictureUrl : 'assets/default-avatar.svg';
+        profileImgEl.onerror = () => { profileImgEl.onerror = null; profileImgEl.src = 'assets/default-avatar.svg'; };
         profileImgEl.src = picUrl;
       }
 
@@ -1656,6 +1668,327 @@
           title: 'ยินดีต้อนรับ! คุณลงทะเบียนเรียบร้อยแล้ว 🎄',
           showConfirmButton: false,
           timer: 2400
+        });
+      }
+    }
+
+    function vipCanvasRoundRect(ctx, x, y, w, h, r) {
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.arcTo(x + w, y, x + w, y + h, r);
+      ctx.arcTo(x + w, y + h, x, y + h, r);
+      ctx.arcTo(x, y + h, x, y, r);
+      ctx.arcTo(x, y, x + w, y, r);
+      ctx.closePath();
+    }
+
+    function loadCorsSafeImageForCanvas(url, timeoutMs = 2500) {
+      return new Promise((resolve) => {
+        if (!url) return resolve(null);
+        let settled = false;
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        const timer = setTimeout(() => {
+          if (!settled) { settled = true; resolve(null); }
+        }, timeoutMs);
+        img.onload = () => {
+          if (!settled) { settled = true; clearTimeout(timer); resolve(img); }
+        };
+        img.onerror = () => {
+          if (!settled) { settled = true; clearTimeout(timer); resolve(null); }
+        };
+        img.src = url;
+      });
+    }
+
+    async function downloadVipTicketPng() {
+      try {
+        if (document.fonts && document.fonts.ready) {
+          await document.fonts.ready.catch(() => {});
+        }
+        const reg = window.lastRegisteredEmpData || {};
+        const empId = String(reg.empId || document.getElementById('regInfoEmpId')?.innerText || '-').trim();
+        const empName = String(reg.empName || document.getElementById('regInfoEmpName')?.innerText || '-').trim();
+        const dept = String(reg.department || document.getElementById('regInfoDept')?.innerText || '-').trim();
+        const branch = String(reg.branch || document.getElementById('regInfoBranch')?.innerText || '-').trim();
+        const lineName = String(document.getElementById('regInfoLineName')?.innerText || (userProfile && userProfile.displayName) || 'ผู้ร่วมงาน CM Party 2026').trim();
+        const dollTitle = String(document.getElementById('vipStageDollTitle')?.innerText || '🎅 ซานต้าหมวกแดง').trim();
+
+        const W = 900, H = 1320;
+        const canvas = document.createElement('canvas');
+        canvas.width = W;
+        canvas.height = H;
+        const ctx = canvas.getContext('2d');
+
+        // Soft festive background
+        const bgGrad = ctx.createLinearGradient(0, 0, W, H);
+        bgGrad.addColorStop(0, '#fff1f2');
+        bgGrad.addColorStop(0.5, '#fffdf7');
+        bgGrad.addColorStop(1, '#ecfdf5');
+        ctx.fillStyle = bgGrad;
+        ctx.fillRect(0, 0, W, H);
+
+        // Card container (layered translucent shadow fills for 60fps-safe rendering)
+        const cx = 54, cy = 48, cw = W - 108, ch = H - 96;
+        ctx.save();
+        vipCanvasRoundRect(ctx, cx, cy + 16, cw, ch, 46);
+        ctx.fillStyle = 'rgba(190, 18, 60, 0.06)';
+        ctx.fill();
+        vipCanvasRoundRect(ctx, cx, cy + 8, cw, ch, 45);
+        ctx.fillStyle = 'rgba(190, 18, 60, 0.09)';
+        ctx.fill();
+        vipCanvasRoundRect(ctx, cx, cy, cw, ch, 44);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+        ctx.restore();
+
+        // Gold border
+        vipCanvasRoundRect(ctx, cx, cy, cw, ch, 44);
+        ctx.lineWidth = 5;
+        ctx.strokeStyle = '#fbbf24';
+        ctx.stroke();
+
+        // Top foil header clipped to card
+        ctx.save();
+        vipCanvasRoundRect(ctx, cx, cy, cw, ch, 44);
+        ctx.clip();
+        const hdrGrad = ctx.createLinearGradient(cx, cy, cx + cw, cy + 120);
+        hdrGrad.addColorStop(0, '#b91c3b');
+        hdrGrad.addColorStop(0.42, '#e11d48');
+        hdrGrad.addColorStop(0.75, '#f59e0b');
+        hdrGrad.addColorStop(1, '#15803d');
+        ctx.fillStyle = hdrGrad;
+        ctx.fillRect(cx, cy, cw, 114);
+        ctx.restore();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 34px "PK Christmas", sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('🎄 CM PARTY 2026', cx + 38, cy + 68);
+
+        // VIP E-Ticket pill in header
+        vipCanvasRoundRect(ctx, cx + cw - 252, cy + 28, 214, 56, 28);
+        ctx.fillStyle = 'rgba(255,255,255,0.22)';
+        ctx.fill();
+        ctx.lineWidth = 2;
+        ctx.strokeStyle = 'rgba(255,255,255,0.75)';
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 26px "PK Christmas", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('VIP E-TICKET ✨', cx + cw - 145, cy + 65);
+
+        // Wax Seal Verified Badge (top right)
+        ctx.save();
+        ctx.translate(cx + cw - 102, cy + 195);
+        ctx.rotate(0.18);
+        ctx.beginPath();
+        for (let a = 0; a < 24; a++) {
+          const ang = (a * Math.PI) / 12;
+          const rr = a % 2 === 0 ? 58 : 49;
+          if (a === 0) ctx.moveTo(Math.cos(ang) * rr, Math.sin(ang) * rr);
+          else ctx.lineTo(Math.cos(ang) * rr, Math.sin(ang) * rr);
+        }
+        ctx.closePath();
+        ctx.fillStyle = '#b91c3b';
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#fbbf24';
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(0, 0, 38, 0, Math.PI * 2);
+        ctx.fillStyle = '#991b35';
+        ctx.fill();
+        ctx.fillStyle = '#fef08a';
+        ctx.font = 'bold 17px "PK Christmas", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('VERIFIED', 0, -4);
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 24px "PK Christmas", sans-serif';
+        ctx.fillText('2026', 0, 22);
+        ctx.restore();
+
+        // Avatar circle
+        const avX = W / 2, avY = cy + 258, avR = 96;
+        const avatarUrl = (userProfile && userProfile.pictureUrl && userProfile.pictureUrl !== 'assets/default-avatar.svg')
+          ? userProfile.pictureUrl
+          : 'assets/party-logo.jpg';
+        const avatarImg = await loadCorsSafeImageForCanvas(avatarUrl, 2500);
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(avX, avY, avR + 8, 0, Math.PI * 2);
+        ctx.fillStyle = '#fde68a';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(avX, avY, avR, 0, Math.PI * 2);
+        ctx.clip();
+        if (avatarImg) {
+          try {
+            ctx.drawImage(avatarImg, avX - avR, avY - avR, avR * 2, avR * 2);
+          } catch (drawErr) {
+            ctx.fillStyle = '#ffe4e6';
+            ctx.fillRect(avX - avR, avY - avR, avR * 2, avR * 2);
+            ctx.font = 'bold 78px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('🎄', avX, avY + 26);
+          }
+        } else {
+          ctx.fillStyle = '#ffe4e6';
+          ctx.fillRect(avX - avR, avY - avR, avR * 2, avR * 2);
+          ctx.fillStyle = '#be123c';
+          ctx.font = 'bold 78px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('🎄', avX, avY + 26);
+        }
+        ctx.restore();
+
+        // Green check badge
+        ctx.beginPath();
+        ctx.arc(avX + 68, avY + 68, 24, 0, Math.PI * 2);
+        ctx.fillStyle = '#10b981';
+        ctx.fill();
+        ctx.lineWidth = 4;
+        ctx.strokeStyle = '#ffffff';
+        ctx.stroke();
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 26px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('✓', avX + 68, avY + 77);
+
+        // Status pill & LINE Display Name
+        vipCanvasRoundRect(ctx, W / 2 - 205, cy + 382, 410, 44, 22);
+        ctx.fillStyle = '#d1fae5';
+        ctx.fill();
+        ctx.fillStyle = '#047857';
+        ctx.font = 'bold 24px "PK Christmas", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('✓ ลงทะเบียนเข้าร่วมงานสำเร็จแล้ว', W / 2, cy + 412);
+
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 42px "PK Christmas", sans-serif';
+        ctx.fillText(lineName.slice(0, 28), W / 2, cy + 474);
+
+        ctx.fillStyle = '#64748b';
+        ctx.font = '24px "PK Christmas", sans-serif';
+        ctx.fillText('บันทึกสิทธิ์จับรางวัล Lucky Draw เรียบร้อย 🎁', W / 2, cy + 514);
+
+        // Ticket Perforation Divider
+        const divY = cy + 556;
+        ctx.save();
+        ctx.setLineDash([12, 10]);
+        ctx.beginPath();
+        ctx.moveTo(cx + 28, divY);
+        ctx.lineTo(cx + cw - 28, divY);
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#fcd34d';
+        ctx.stroke();
+        ctx.restore();
+        ctx.beginPath();
+        ctx.arc(cx, divY, 20, 0, Math.PI * 2);
+        ctx.fillStyle = '#fff5f7';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(cx + cw, divY, 20, 0, Math.PI * 2);
+        ctx.fillStyle = '#f0fdf4';
+        ctx.fill();
+
+        // Info Box
+        const boxX = cx + 44, boxY = divY + 38, boxW = cw - 88, boxH = 278;
+        vipCanvasRoundRect(ctx, boxX, boxY, boxW, boxH, 26);
+        ctx.fillStyle = '#fffdf9';
+        ctx.fill();
+        ctx.lineWidth = 2.5;
+        ctx.strokeStyle = '#a7f3d0';
+        ctx.stroke();
+
+        const rows = [
+          ['รหัสพนักงาน', empId, '#e11d48'],
+          ['ชื่อ - นามสกุล', empName, '#1e293b'],
+          ['แผนก', dept, '#334155'],
+          ['สาขา', branch, '#059669']
+        ];
+        rows.forEach(([label, val, color], idx) => {
+          const ry = boxY + 58 + idx * 62;
+          ctx.textAlign = 'left';
+          ctx.fillStyle = '#64748b';
+          ctx.font = '26px "PK Christmas", sans-serif';
+          ctx.fillText(label + ':', boxX + 28, ry);
+          ctx.textAlign = 'right';
+          ctx.fillStyle = color;
+          ctx.font = 'bold 30px "PK Christmas", sans-serif';
+          ctx.fillText(String(val).slice(0, 26), boxX + boxW - 28, ry);
+        });
+
+        // Assigned Doll Character Box
+        const dollY = boxY + boxH + 28;
+        vipCanvasRoundRect(ctx, boxX, dollY, boxW, 132, 26);
+        const isAdm = isCurrentUserAdmin();
+        ctx.fillStyle = isAdm ? '#fef9c3' : '#fff1f2';
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = isAdm ? '#f59e0b' : '#fde68a';
+        ctx.stroke();
+
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#9f1239';
+        ctx.font = 'bold 24px "PK Christmas", sans-serif';
+        ctx.fillText('🎭 ตัวละครของคุณบนจอเวทีใหญ่', W / 2, dollY + 46);
+        ctx.fillStyle = '#4c0519';
+        ctx.font = 'bold 34px "PK Christmas", sans-serif';
+        ctx.fillText(dollTitle.slice(0, 34), W / 2, dollY + 98);
+
+        // Decorative barcode bars + footer
+        const bcY = dollY + 162;
+        const barWidths = [8, 4, 12, 5, 14, 4, 10, 4, 12, 6, 8, 14, 5, 10, 12, 4, 10, 5, 14, 6, 10];
+        let bx = W / 2 - 190;
+        barWidths.forEach((bw, idx) => {
+          ctx.fillStyle = idx % 5 === 0 ? '#15803d' : (idx % 4 === 0 ? '#d97706' : '#881337');
+          ctx.fillRect(bx, bcY, bw, 46);
+          bx += bw + 7;
+        });
+
+        ctx.fillStyle = '#9f1239';
+        ctx.font = 'bold 22px "PK Christmas", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('CM FROZENFOOD • VIP PASS 2026', W / 2, bcY + 80);
+
+        let dataUrl = '';
+        try {
+          dataUrl = canvas.toDataURL('image/png');
+        } catch (taintErr) {
+          throw new Error('ไม่สามารถสร้างภาพ PNG ได้ กรุณาลองอีกครั้ง');
+        }
+
+        const safeFileId = empId.replace(/[^a-zA-Z0-9_-]/g, '') || '2026';
+        const dlLink = document.createElement('a');
+        dlLink.href = dataUrl;
+        dlLink.download = `CM-Party-VIP-Ticket-${safeFileId}.png`;
+        document.body.appendChild(dlLink);
+        dlLink.click();
+        dlLink.remove();
+
+        Swal.fire({
+          title: '🎫 บัตร VIP พร้อมบันทึกแล้ว!',
+          html: `
+            <div class="space-y-3">
+              <img src="${dataUrl}" alt="VIP Ticket" class="w-full max-w-[260px] mx-auto rounded-2xl shadow-lg border-2 border-amber-300" />
+              <p class="text-xs text-slate-600 leading-relaxed">
+                หากดาวน์โหลดอัตโนมัติไม่ขึ้นใน LINE<br/>
+                สามารถ <b>แตะค้างที่ภาพบัตร</b> แล้วเลือก <b>"บันทึกรูปภาพ"</b> ลงมือถือได้ทันทีครับ 💖
+              </p>
+            </div>
+          `,
+          confirmButtonText: 'เรียบร้อย',
+          confirmButtonColor: '#e11d48'
+        });
+      } catch (err) {
+        console.error('downloadVipTicketPng error:', err);
+        Swal.fire({
+          icon: 'error',
+          title: 'สร้างรูปบัตรไม่สำเร็จ',
+          text: err.message || 'กรุณาลองแคปหน้าจอแทนชั่วคราวครับ',
+          confirmButtonColor: '#e11d48'
         });
       }
     }
@@ -3412,7 +3745,7 @@
             ? data.pictureUrl
             : (userProfile.pictureUrl && userProfile.pictureUrl.startsWith('https://')
                 ? userProfile.pictureUrl
-                : 'https://cdn-icons-png.flaticon.com/512/847/847969.png');
+                : 'https://cmparty.vercel.app/assets/party-logo.jpg');
 
           const lineName = data.displayName || userProfile.displayName || 'ผู้เข้าร่วมงาน';
           const empName = data.empName || '-';

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'cm-party-offline-v6';
+const CACHE_NAME = 'cm-party-offline-v7';
 
 const PRECACHE_URLS = [
   '/stage.html',
@@ -6,6 +6,8 @@ const PRECACHE_URLS = [
   '/styles.css',
   '/config.js',
   '/assets/PK_Christmas-Regular.ttf',
+  '/assets/qr-register.svg',
+  '/assets/default-avatar.svg',
   '/logo/logoparty.png',
   '/assets/party-logo.jpg',
   '/assets/sender-elf.png',

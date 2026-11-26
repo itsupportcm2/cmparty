@@ -2954,6 +2954,7 @@ function setStageDisplayState(payload) {
       winners: winners,
       activeIndex: activeIndex,
       celebrateNonce: Math.max(0, parseInt(rawState.celebrateNonce, 10) || 0),
+      dramaticCountdown: Boolean(rawState.dramaticCountdown),
       stats: stats,
       updatedAt: now
     };
@@ -3231,6 +3232,16 @@ function clearChatWaitState(cache, props, key) {
   } catch (pErr) {}
 }
 
+function isChatCommandOnCooldown(cache, userId, bucket, ttlSec) {
+  if (!userId || userId === 'anon') return false;
+  const cdKey = 'CHAT_CD_' + bucket + '_' + userId;
+  try {
+    if (cache.get(cdKey) === '1') return true;
+    cache.put(cdKey, '1', Math.max(1, ttlSec || 3));
+  } catch (e) {}
+  return false;
+}
+
 function handleTextMessage(event) {
   const replyToken = event.replyToken;
   const rawUserId = (event.source && event.source.userId) ? String(event.source.userId).trim() : '';
@@ -3348,6 +3359,13 @@ function handleTextMessage(event) {
   if (isFortuneRequest) {
     clearAllWaitStates();
 
+    if (isChatCommandOnCooldown(cache, userId, 'fortune', 3)) {
+      replyLineMessage(replyToken, [
+        buildQuotedRewardTextMessage('⏳ ใจเย็นๆ นะคะ รอสัก 3 วินาทีแล้วค่อยลองใหม่อีกครั้งค่ะ 🎄', userQuoteToken, null, 'elf')
+      ]);
+      return;
+    }
+
     if (rawUserId) {
       startLoadingAnimation(rawUserId, 5);
     }
@@ -3386,6 +3404,13 @@ function handleTextMessage(event) {
   const inlineWishMatch = rawText.match(/^(?:ส่งคำอวยพรขึ้นจอ|ส่งคำอวยพร|อวยพรขึ้นจอ|อวยพร)\s+([\s\S]+)/i);
   if (inlineWishMatch && inlineWishMatch[1] && inlineWishMatch[1].trim()) {
     clearAllWaitStates();
+
+    if (isChatCommandOnCooldown(cache, userId, 'wish', 3)) {
+      replyLineMessage(replyToken, [
+        buildQuotedRewardTextMessage('⏳ ใจเย็นๆ นะคะ รอสัก 3 วินาทีแล้วค่อยลองใหม่อีกครั้งค่ะ 🎄', userQuoteToken, null, 'elf')
+      ]);
+      return;
+    }
 
     if (rawUserId) {
       startLoadingAnimation(rawUserId, 5);
@@ -3502,14 +3527,21 @@ function handleTextMessage(event) {
 
   // 5. หากอยู่ในสถานะรอพิมพ์คำอวยพร (หลังจากกด/พิมพ์ "อวยพร" และไม่ใช่คำสั่ง "ตรวจสอบรางวัล <รหัส>")
   if (isWaitingForWish && !isInlineRewardCmd) {
-    clearWishWaitState();
-
     if (normalizedCommand === 'ยกเลิกอวยพร' || normalizedCommand === 'ยกเลิก') {
+      clearWishWaitState();
       replyLineMessage(replyToken, [
         buildQuotedRewardTextMessage('❌ ยกเลิกการส่งคำอวยพรเรียบร้อยแล้วค่ะ', userQuoteToken, null, 'elf')
       ]);
       return;
     }
+
+    if (isChatCommandOnCooldown(cache, userId, 'wish', 3)) {
+      replyLineMessage(replyToken, [
+        buildQuotedRewardTextMessage('⏳ ใจเย็นๆ นะคะ รอสัก 3 วินาทีแล้วค่อยลองใหม่อีกครั้งค่ะ 🎄', userQuoteToken, null, 'elf')
+      ]);
+      return;
+    }
+    clearWishWaitState();
 
     if (rawUserId) {
       startLoadingAnimation(rawUserId, 5);
